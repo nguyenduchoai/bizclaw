@@ -124,6 +124,36 @@ section{padding:100px 24px}
 .form-success h3{font-size:22px;margin-bottom:8px;color:var(--green)}
 .form-success p{color:var(--muted);font-size:14px}
 
+/* ═══ SHOWCASE ═══ */
+#showcase{background:var(--bg2)}
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;margin-top:48px}
+.showcase-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s;position:relative;overflow:hidden}
+.showcase-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.showcase-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad1);opacity:0;transition:.3s}
+.showcase-card:hover::after{opacity:1}
+.showcase-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.tag-automation{background:rgba(251,146,60,.12);color:var(--orange);border:1px solid rgba(251,146,60,.2)}
+.tag-developer{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.tag-productivity{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.tag-smarthome{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.tag-family{background:rgba(244,114,182,.12);color:var(--pink);border:1px solid rgba(244,114,182,.2)}
+.tag-poweruser{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.showcase-card h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.showcase-card p{font-size:13px;color:var(--muted);line-height:1.6}
+.showcase-card ul{list-style:none;margin-top:10px}
+.showcase-card li{padding:3px 0;font-size:13px;color:var(--muted);display:flex;align-items:flex-start;gap:8px}
+.showcase-card li::before{content:'→';color:var(--accent2);font-weight:700;flex-shrink:0}
+
+/* ═══ SPONSOR ═══ */
+.sponsor-section{padding:60px 24px;text-align:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%)}
+.sponsor-label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:24px}
+.sponsor-logo{display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:var(--card);border:1px solid var(--border);border-radius:16px;text-decoration:none;transition:all .3s;font-family:'Space Grotesk',sans-serif}
+.sponsor-logo:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 12px 40px rgba(99,102,241,.2)}
+.sponsor-logo .sp-icon{font-size:36px}
+.sponsor-logo .sp-text{text-align:left}
+.sponsor-logo .sp-name{font-size:24px;font-weight:700;background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sponsor-logo .sp-desc{font-size:13px;color:var(--muted);margin-top:2px}
+
 /* ═══ TECH ═══ */
 .tech-badges{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
 .tech-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--muted)}
@@ -145,6 +175,7 @@ footer a{color:var(--accent2);text-decoration:none}
   .hero{padding:100px 16px 60px}
   section{padding:60px 16px}
   .register-box{padding:28px 20px}
+  .showcase-grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){h1{font-size:32px!important}}
 </style>
@@ -157,6 +188,7 @@ footer a{color:var(--accent2);text-decoration:none}
     <a href="#" class="logo">⚡ <span>BizClaw</span></a>
     <div class="nav-links">
       <a href="#features" data-vi="Tính năng" data-en="Features">Tính năng</a>
+      <a href="#showcase" data-vi="Showcase" data-en="Showcase">Showcase</a>
       <a href="#how" data-vi="Cách dùng" data-en="How it works">Cách dùng</a>
       <a href="#pricing" data-vi="Bảng giá" data-en="Pricing">Bảng giá</a>
       <button class="lang-toggle" onclick="toggleLang()">🌐 EN</button>
@@ -326,6 +358,90 @@ footer a{color:var(--accent2);text-decoration:none}
   </div>
 </section>
 
+<!-- SHOWCASE -->
+<section id="showcase">
+  <div class="container">
+    <div class="section-label" data-vi="SHOWCASE" data-en="SHOWCASE">SHOWCASE</div>
+    <div class="section-title" data-vi="Những gì BizClaw có thể làm" data-en="What BizClaw Can Do">Những gì BizClaw có thể làm</div>
+    <div class="section-desc" data-vi="Từ tự động hóa email đến quản lý đội ngũ AI agent — mọi thứ đều có thể." data-en="From email automation to managing AI agent teams — anything is possible.">Từ tự động hóa email đến quản lý đội ngũ AI agent — mọi thứ đều có thể.</div>
+    <div class="showcase-grid">
+
+      <div class="showcase-card fade-up" style="--i:0">
+        <div class="showcase-tag tag-automation" data-vi="⚡ Tự động hóa" data-en="⚡ Automation">⚡ Tự động hóa</div>
+        <h3 data-vi="Trợ lý Email & Lịch thông minh" data-en="Smart Email & Calendar Assistant">Trợ lý Email & Lịch thông minh</h3>
+        <ul>
+          <li data-vi="Kiểm tra email, lọc spam tự động" data-en="Check incoming mail, auto-filter spam">Kiểm tra email, lọc spam tự động</li>
+          <li data-vi="Quản lý lịch, giải quyết xung đột" data-en="Manage calendar, resolve conflicts">Quản lý lịch, giải quyết xung đột</li>
+          <li data-vi="Gửi báo cáo sáng: thời tiết, cuộc họp, việc cần làm" data-en="Morning brief: weather, meetings, todos">Gửi báo cáo sáng: thời tiết, cuộc họp, việc cần làm</li>
+          <li data-vi="Check-in chuyến bay, chọn ghế cửa sổ" data-en="Flight check-in, pick window seats">Check-in chuyến bay, chọn ghế cửa sổ</li>
+          <li data-vi="Theo dõi chi phí, chia bill sau chuyến đi" data-en="Track expenses, split bills after trips">Theo dõi chi phí, chia bill sau chuyến đi</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:1">
+        <div class="showcase-tag tag-developer" data-vi="💻 Developer" data-en="💻 Developer">💻 Developer</div>
+        <h3 data-vi="Agent Lập trình từ xa" data-en="Remote Coding Agent">Agent Lập trình từ xa</h3>
+        <ul>
+          <li data-vi="Build website từ Telegram trong khi nằm xem Netflix" data-en="Build websites from Telegram while watching Netflix">Build website từ Telegram trong khi nằm xem Netflix</li>
+          <li data-vi="Tạo GitHub issues, refactor PRs từ code review" data-en="Create GitHub issues, refactor PRs from code reviews">Tạo GitHub issues, refactor PRs từ code review</li>
+          <li data-vi="Build CLI tools, publish lên npm" data-en="Build CLI tools, publish to npm">Build CLI tools, publish lên npm</li>
+          <li data-vi="Review logs, fix lỗi deploy, auto-redeploy" data-en="Review logs, fix deploy errors, auto-redeploy">Review logs, fix lỗi deploy, auto-redeploy</li>
+          <li data-vi="Code agents chạy xuyên đêm khi bạn ngủ" data-en="Coding agents run overnight while you sleep">Code agents chạy xuyên đêm khi bạn ngủ</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:2">
+        <div class="showcase-tag tag-productivity" data-vi="📋 Năng suất" data-en="📋 Productivity">📋 Năng suất</div>
+        <h3 data-vi="Quản lý công việc thông minh" data-en="Smart Task Management">Quản lý công việc thông minh</h3>
+        <ul>
+          <li data-vi="Timeblock tasks trong calendar theo mức ưu tiên" data-en="Timeblock tasks in calendar by priority">Timeblock tasks trong calendar theo mức ưu tiên</li>
+          <li data-vi="Chấm điểm công việc theo urgency & importance" data-en="Score tasks by urgency & importance">Chấm điểm công việc theo urgency & importance</li>
+          <li data-vi="Tóm tắt 122 slides Google cho cuộc họp" data-en="Summarize 122 Google Slides for meetings">Tóm tắt 122 slides Google cho cuộc họp</li>
+          <li data-vi="Tạo hóa đơn, báo cáo công việc đẹp mắt" data-en="Create invoices, beautiful work summaries">Tạo hóa đơn, báo cáo công việc đẹp mắt</li>
+          <li data-vi="Xóa 10,000 email trong ngày đầu tiên" data-en="Clear 10,000 emails on day one">Xóa 10,000 email trong ngày đầu tiên</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:3">
+        <div class="showcase-tag tag-smarthome" data-vi="🏠 Smart Home" data-en="🏠 Smart Home">🏠 Smart Home</div>
+        <h3 data-vi="Nhà thông minh & Sức khỏe" data-en="Smart Home & Health">Nhà thông minh & Sức khỏe</h3>
+        <ul>
+          <li data-vi="Kết nối Garmin, WHOOP — theo dõi sức khỏe" data-en="Connect Garmin, WHOOP — track health metrics">Kết nối Garmin, WHOOP — theo dõi sức khỏe</li>
+          <li data-vi="Chạy trên Raspberry Pi với Cloudflare tunnel" data-en="Run on Raspberry Pi with Cloudflare tunnel">Chạy trên Raspberry Pi với Cloudflare tunnel</li>
+          <li data-vi="Điều khiển Home Assistant qua chat" data-en="Control Home Assistant via chat">Điều khiển Home Assistant qua chat</li>
+          <li data-vi="Nhắc nhở lịch, kỳ nghỉ, kiểm tra sức khỏe" data-en="Reminders for schedule, vacations, health checks">Nhắc nhở lịch, kỳ nghỉ, kiểm tra sức khỏe</li>
+          <li data-vi="Theo dõi bạn và nhắn tin nếu im lặng quá lâu" data-en="Check on you if you're quiet too long">Theo dõi bạn và nhắn tin nếu im lặng quá lâu</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:4">
+        <div class="showcase-tag tag-family" data-vi="👨‍👩‍👧 Gia đình" data-en="👨‍👩‍👧 Family">👨‍👩‍👧 Gia đình</div>
+        <h3 data-vi="Trợ lý Gia đình" data-en="Family Assistant">Trợ lý Gia đình</h3>
+        <ul>
+          <li data-vi="Lên thực đơn tuần trong Notion (365 ngày)" data-en="Weekly meal planning in Notion (365 days)">Lên thực đơn tuần trong Notion (365 ngày)</li>
+          <li data-vi="Danh sách mua sắm theo cửa hàng & kệ hàng" data-en="Shopping lists sorted by store & aisle">Danh sách mua sắm theo cửa hàng & kệ hàng</li>
+          <li data-vi="Thông báo lịch kiểm tra của con" data-en="Notify about kids' upcoming school tests">Thông báo lịch kiểm tra của con</li>
+          <li data-vi="Research và gửi roundup chủ nhật hàng tuần" data-en="Research & send weekly Sunday roundups">Research và gửi roundup chủ nhật hàng tuần</li>
+          <li data-vi="Dự báo thời tiết để gợi ý nấu nướng" data-en="Weather forecasts for cooking suggestions">Dự báo thời tiết để gợi ý nấu nướng</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:5">
+        <div class="showcase-tag tag-poweruser" data-vi="🚀 Multi-Agent" data-en="🚀 Multi-Agent">🚀 Multi-Agent</div>
+        <h3 data-vi="Đội ngũ AI Agent" data-en="AI Agent Army">Đội ngũ AI Agent</h3>
+        <ul>
+          <li data-vi="15+ agents trên 1 VPS, rollcall hàng ngày" data-en="15+ agents on 1 VPS, daily roll call">15+ agents trên 1 VPS, rollcall hàng ngày</li>
+          <li data-vi="4 agents cho solo founder: Strategy, Dev, Marketing, Business" data-en="4 agents for solo founders: Strategy, Dev, Marketing, Business">4 agents cho solo founder: Strategy, Dev, Marketing, Business</li>
+          <li data-vi="Sub-agents chạy research qua đêm" data-en="Sub-agents run research overnight">Sub-agents chạy research qua đêm</li>
+          <li data-vi="Viết LinkedIn/X posts theo giọng nói của bạn" data-en="Draft LinkedIn/X posts in your voice">Viết LinkedIn/X posts theo giọng nói của bạn</li>
+          <li data-vi="Agents tự cập nhật, tự tạo skills mới" data-en="Agents self-update, create their own skills">Agents tự cập nhật, tự tạo skills mới</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- REGISTER -->
 <section id="register">
   <div class="container">
@@ -407,6 +523,20 @@ footer a{color:var(--accent2);text-decoration:none}
     </div>
   </div>
 </section>
+
+<!-- SPONSOR -->
+<div class="sponsor-section">
+  <div class="container">
+    <div class="sponsor-label" data-vi="NHÀ TÀI TRỢ" data-en="SPONSOR">NHÀ TÀI TRỢ</div>
+    <a href="https://bizino.ai" target="_blank" class="sponsor-logo">
+      <div class="sp-icon">🤖</div>
+      <div class="sp-text">
+        <div class="sp-name">Bizino AI</div>
+        <div class="sp-desc" data-vi="Premium Software Company — AI Solutions" data-en="Premium Software Company — AI Solutions">Premium Software Company — AI Solutions</div>
+      </div>
+    </a>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer>
