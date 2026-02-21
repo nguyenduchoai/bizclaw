@@ -187,10 +187,10 @@ footer a{color:var(--accent2);text-decoration:none}
   <div class="nav-inner">
     <a href="#" class="logo">⚡ <span>BizClaw</span></a>
     <div class="nav-links">
-      <a href="#features" data-vi="Tính năng" data-en="Features">Tính năng</a>
+      <a href="#features" data-vi="Năng lực" data-en="Features">Năng lực</a>
       <a href="#showcase" data-vi="Showcase" data-en="Showcase">Showcase</a>
-      <a href="#how" data-vi="Cách dùng" data-en="How it works">Cách dùng</a>
-      <a href="#pricing" data-vi="Bảng giá" data-en="Pricing">Bảng giá</a>
+      <a href="#how" data-vi="Bắt đầu" data-en="Get Started">Bắt đầu</a>
+      <a href="#why" data-vi="Tại sao BizClaw" data-en="Why BizClaw">Tại sao BizClaw</a>
       <button class="lang-toggle" onclick="toggleLang()">🌐 EN</button>
       <a href="#register" class="nav-cta" data-vi="Đăng ký ngay" data-en="Get Started">Đăng ký ngay</a>
     </div>
@@ -279,8 +279,8 @@ footer a{color:var(--accent2);text-decoration:none}
     <div class="section-desc" data-vi="Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn." data-en="No technical knowledge needed — sign up, configure, and let AI work for you.">Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn.</div>
     <div class="steps">
       <div class="step fade-up" style="--i:0">
-        <h4 data-vi="📝 Đăng ký & Thanh toán" data-en="📝 Sign up & Pay">📝 Đăng ký & Thanh toán</h4>
-        <p data-vi="Chọn gói phù hợp, thanh toán qua chuyển khoản. Nhận license ngay lập tức." data-en="Choose your plan, pay via bank transfer. Receive license instantly.">Chọn gói phù hợp, thanh toán qua chuyển khoản. Nhận license ngay lập tức.</p>
+        <h4 data-vi="📝 Clone từ GitHub" data-en="📝 Clone from GitHub">📝 Clone từ GitHub</h4>
+        <p data-vi="Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn." data-en="Open source, MIT license — git clone, cargo build, run instantly. Free forever.">Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn.</p>
       </div>
       <div class="step fade-up" style="--i:1">
         <h4 data-vi="⚙️ Cài đặt lên thiết bị" data-en="⚙️ Install on your device">⚙️ Cài đặt lên thiết bị</h4>
@@ -294,96 +294,115 @@ footer a{color:var(--accent2);text-decoration:none}
   </div>
 </section>
 
-<!-- PRICING -->
-<section id="pricing">
+<!-- WHY BIZCLAW -->
+<section id="why">
   <div class="container">
-    <div class="section-label" data-vi="BẢNG GIÁ" data-en="PRICING">BẢNG GIÁ</div>
-    <div class="section-title" data-vi="Chọn gói phù hợp" data-en="Choose your plan">Chọn gói phù hợp</div>
-    <div class="section-desc" data-vi="Bạn mua cấu hình + license — tự cài đặt trên VPS của bạn. Chạy trên bất kỳ máy nào có 512MB RAM với LLM sẵn có." data-en="You purchase config + license — self-deploy on your own VPS. Runs on any machine with 512MB RAM and built-in LLM.">Bạn mua cấu hình + license — tự cài đặt trên VPS của bạn. Chạy trên bất kỳ máy nào có 512MB RAM với LLM sẵn có.</div>
-    <div class="pricing-grid">
-      <div class="price-card fade-up" style="--i:0">
-        <h3>Free</h3>
-        <div class="price">0đ <span>/tháng</span></div>
-        <div class="desc" data-vi="Dùng thử, dự án cá nhân" data-en="Try it out, personal projects">Dùng thử, dự án cá nhân</div>
-        <ul>
-          <li data-vi="1 AI Agent" data-en="1 AI Agent">1 AI Agent</li>
-          <li data-vi="100 tin nhắn/ngày" data-en="100 messages/day">100 tin nhắn/ngày</li>
-          <li data-vi="Zalo Bot cơ bản" data-en="Basic Zalo Bot">Zalo Bot cơ bản</li>
-          <li data-vi="Telegram + Discord" data-en="Telegram + Discord">Telegram + Discord</li>
-          <li data-vi="Brain Engine (LLM sẵn có)" data-en="Brain Engine (Built-in LLM)">Brain Engine (LLM sẵn có)</li>
-          <li data-vi="512MB RAM là đủ" data-en="512MB RAM is enough">512MB RAM là đủ</li>
-        </ul>
-        <a href="#register" class="btn-secondary" style="width:100%;justify-content:center" data-vi="Bắt đầu miễn phí" data-en="Start Free">Bắt đầu miễn phí</a>
+    <div class="section-label" data-vi="TẠI SAO BIZCLAW" data-en="WHY BIZCLAW">TẠI SAO BIZCLAW</div>
+    <div class="section-title" data-vi="Thế mạnh của BizClaw" data-en="BizClaw's Advantages">Thế mạnh của BizClaw</div>
+    <div class="section-desc" data-vi="Mã nguồn mở 100% — Miễn phí mãi mãi — License MIT — Tự triển khai trên thiết bị của bạn." data-en="100% Open Source — Free forever — MIT License — Self-deploy on your own device.">Mã nguồn mở 100% — Miễn phí mãi mãi — License MIT — Tự triển khai trên thiết bị của bạn.</div>
+
+    <!-- Comparison Table -->
+    <div style="overflow-x:auto;margin:32px 0">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:12px 16px;color:var(--muted);font-weight:500" data-vi="Tính năng" data-en="Feature">Tính năng</th>
+            <th style="padding:12px 16px;color:var(--muted);font-weight:500">OpenClaw</th>
+            <th style="padding:12px 16px;color:var(--muted);font-weight:500">ZeroClaw</th>
+            <th style="padding:12px 16px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(6,182,212,.15));border-radius:12px 12px 0 0;font-weight:700;color:var(--text)">BizClaw ⚡</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500" data-vi="🎯 Đối tượng" data-en="🎯 Target">🎯 Đối tượng</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="Cá nhân" data-en="Personal">Cá nhân</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">Developers</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:600;background:rgba(139,92,246,.05)" data-vi="🇻🇳 Doanh nhân Việt Nam" data-en="🇻🇳 Vietnamese Business">🇻🇳 Doanh nhân Việt Nam</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500" data-vi="💬 Zalo" data-en="💬 Zalo">💬 Zalo</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">❌</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">❌</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)" data-vi="✅ Bot + Cá nhân" data-en="✅ Bot + Personal">✅ Bot + Cá nhân</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500" data-vi="🧠 LLM Local" data-en="🧠 Local LLM">🧠 LLM Local</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="❌ Cần cloud API" data-en="❌ Needs cloud API">❌ Cần cloud API</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="✅ LlamaCpp" data-en="✅ LlamaCpp">✅ LlamaCpp</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)" data-vi="✅ Pure Rust GGUF" data-en="✅ Pure Rust GGUF">✅ Pure Rust GGUF</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500">RAM</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">~390MB</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">&lt;5MB</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)">&lt;10MB</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500">Multi-Tenant</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="❌ 1 agent/máy" data-en="❌ 1 agent/machine">❌ 1 agent/máy</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">❌</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)" data-vi="✅ 50+ agents/VPS" data-en="✅ 50+ agents/VPS">✅ 50+ agents/VPS</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500" data-vi="📱 Thiết bị cầm tay" data-en="📱 Portable">📱 Thiết bị cầm tay</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="❌ Chỉ Mac/PC" data-en="❌ Mac/PC only">❌ Chỉ Mac/PC</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="✅ ARM" data-en="✅ ARM">✅ ARM</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)" data-vi="✅ Pi bỏ túi" data-en="✅ Pocket Pi">✅ Pi bỏ túi</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:500" data-vi="💰 Giá" data-en="💰 Price">💰 Giá</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="Miễn phí" data-en="Free">Miễn phí</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)" data-vi="Miễn phí" data-en="Free">Miễn phí</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05)" data-vi="✅ Miễn phí vĩnh viễn" data-en="✅ Free forever">✅ Miễn phí vĩnh viễn</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;font-weight:500">Admin Dashboard</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">❌ CLI</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--muted)">❌ CLI</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:700;color:var(--green);background:rgba(139,92,246,.05);border-radius:0 0 12px 12px" data-vi="✅ Web UI" data-en="✅ Web UI">✅ Web UI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Install Box -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-top:32px" class="fade-up">
+      <div style="font-size:48px;margin-bottom:12px">📦</div>
+      <h3 style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:8px" data-vi="Cài đặt miễn phí từ GitHub" data-en="Install free from GitHub">Cài đặt miễn phí từ GitHub</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px" data-vi="Mã nguồn mở toàn bộ — License MIT — Tự do sử dụng, chỉnh sửa, phân phối." data-en="Fully open source — MIT License — Free to use, modify, distribute.">Mã nguồn mở toàn bộ — License MIT — Tự do sử dụng, chỉnh sửa, phân phối.</p>
+      <div style="background:#0d1117;border-radius:12px;padding:16px 20px;font-family:'Space Grotesk',monospace;font-size:15px;color:#58a6ff;text-align:left;position:relative;margin-bottom:20px;overflow-x:auto">
+        <span style="color:#8b949e">$</span> git clone https://github.com/nguyenduchoai/bizclaw.git<br>
+        <span style="color:#8b949e">$</span> cd bizclaw<br>
+        <span style="color:#8b949e">$</span> cargo build --release<br>
+        <span style="color:#8b949e">$</span> ./target/release/bizclaw
       </div>
-      <div class="price-card popular fade-up" style="--i:1">
-        <h3>Pro</h3>
-        <div class="price">499K <span>/tháng</span></div>
-        <div class="desc" data-vi="Cho freelancer & startup" data-en="For freelancers & startups">Cho freelancer & startup</div>
-        <ul>
-          <li data-vi="5 AI Agents" data-en="5 AI Agents">5 AI Agents</li>
-          <li data-vi="1,000 tin nhắn/ngày" data-en="1,000 messages/day">1,000 tin nhắn/ngày</li>
-          <li data-vi="🇻🇳 Zalo Bot + Zalo Cá nhân" data-en="🇻🇳 Zalo Bot + Personal Zalo">🇻🇳 Zalo Bot + Zalo Cá nhân</li>
-          <li data-vi="Telegram, Discord, Webhook" data-en="Telegram, Discord, Webhook">Telegram, Discord, Webhook</li>
-          <li data-vi="Brain Engine + 8 Providers" data-en="Brain Engine + 8 Providers">Brain Engine + 8 Providers</li>
-          <li data-vi="Web Search + KV Cache" data-en="Web Search + KV Cache">Web Search + KV Cache</li>
-          <li data-vi="Tự deploy lên VPS của bạn" data-en="Self-deploy to your VPS">Tự deploy lên VPS của bạn</li>
-        </ul>
-        <button onclick="openPayment('pro',499000)" class="btn-primary" style="width:100%;justify-content:center" data-vi="💳 Mua Pro — 499K" data-en="💳 Buy Pro — 499K">💳 Mua Pro — 499K</button>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="btn-primary" data-vi="⭐ GitHub Repository" data-en="⭐ GitHub Repository">⭐ GitHub Repository</a>
+        <a href="https://github.com/nguyenduchoai/bizclaw/wiki" target="_blank" class="btn-secondary" data-vi="📖 Hướng dẫn cài đặt" data-en="📖 Installation Guide">📖 Hướng dẫn cài đặt</a>
       </div>
-      <div class="price-card fade-up" style="--i:2">
-        <h3>Business</h3>
-        <div class="price">999K <span>/tháng</span></div>
-        <div class="desc" data-vi="Cho doanh nghiệp" data-en="For businesses">Cho doanh nghiệp</div>
-        <ul>
-          <li data-vi="20 AI Agents" data-en="20 AI Agents">20 AI Agents</li>
-          <li data-vi="Unlimited tin nhắn" data-en="Unlimited messages">Unlimited tin nhắn</li>
-          <li data-vi="🇻🇳 Zalo Bot + nhiều Zalo Cá nhân" data-en="🇻🇳 Zalo Bot + multiple Personal Zalo">🇻🇳 Zalo Bot + nhiều Zalo Cá nhân</li>
-          <li data-vi="Tất cả channels" data-en="All channels">Tất cả channels</li>
-          <li data-vi="Brain Engine + Postgres" data-en="Brain Engine + Postgres">Brain Engine + Postgres</li>
-          <li data-vi="Custom domain" data-en="Custom domain">Custom domain</li>
-          <li data-vi="Priority support" data-en="Priority support">Priority support</li>
-        </ul>
-        <button onclick="openPayment('business',999000)" class="btn-primary" style="width:100%;justify-content:center;background:var(--grad2)" data-vi="💳 Mua Business — 999K" data-en="💳 Buy Business — 999K">💳 Mua Business — 999K</button>
+      <p style="color:var(--muted);font-size:12px;margin-top:16px" data-vi="💻 Chạy trên Linux, macOS, Windows, Raspberry Pi — Bất kỳ thiết bị nào có 512MB RAM." data-en="💻 Runs on Linux, macOS, Windows, Raspberry Pi — any device with 512MB RAM.">💻 Chạy trên Linux, macOS, Windows, Raspberry Pi — Bất kỳ thiết bị nào có 512MB RAM.</p>
+    </div>
+
+    <!-- Thế mạnh cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:32px">
+      <div class="feature-card fade-up" style="--i:0">
+        <span class="feature-icon">🇻🇳</span>
+        <h3 data-vi="Dành riêng cho Việt Nam" data-en="Built for Vietnam">Dành riêng cho Việt Nam</h3>
+        <p data-vi="Tích hợp Zalo Bot + Zalo Cá nhân — kênh giao tiếp số 1 của 70 triệu người Việt. Không *Claw nào khác có điều này." data-en="Zalo Bot + Personal Zalo integration — the #1 messaging channel for 70M Vietnamese. No other *Claw has this.">Tích hợp Zalo Bot + Zalo Cá nhân — kênh giao tiếp số 1 của 70 triệu người Việt. Không *Claw nào khác có điều này.</p>
       </div>
-      <div class="price-card fade-up" style="--i:3">
-        <h3>Enterprise</h3>
-        <div class="price" data-vi="Liên hệ" data-en="Contact us">Liên hệ</div>
-        <div class="desc" data-vi="Giải pháp tuỳ chỉnh" data-en="Custom solutions">Giải pháp tuỳ chỉnh</div>
-        <ul>
-          <li data-vi="Unlimited AI Agents" data-en="Unlimited AI Agents">Unlimited AI Agents</li>
-          <li data-vi="Unlimited mọi thứ" data-en="Unlimited everything">Unlimited mọi thứ</li>
-          <li data-vi="On-premise / Private cloud" data-en="On-premise / Private cloud">On-premise / Private cloud</li>
-          <li data-vi="SLA 99.9%" data-en="SLA 99.9%">SLA 99.9%</li>
-          <li data-vi="Dedicated support" data-en="Dedicated support">Dedicated support</li>
-          <li data-vi="Custom Zalo/Platform integration" data-en="Custom Zalo/Platform integration">Custom Zalo/Platform integration</li>
-        </ul>
-        <a href="mailto:hello@bizclaw.vn" class="btn-secondary" style="width:100%;justify-content:center" data-vi="📞 Liên hệ tư vấn" data-en="📞 Contact us">📞 Liên hệ tư vấn</a>
+      <div class="feature-card fade-up" style="--i:1">
+        <span class="feature-icon">🧠</span>
+        <h3 data-vi="AI độc lập — Không cần cloud" data-en="Independent AI — No cloud needed">AI độc lập — Không cần cloud</h3>
+        <p data-vi="Brain Engine chạy LLM ngay trên thiết bị. Dữ liệu của bạn không bao giờ rời khỏi máy bạn. Hoạt động kể cả khi mất internet." data-en="Brain Engine runs LLM directly on your device. Your data never leaves your machine. Works even offline.">Brain Engine chạy LLM ngay trên thiết bị. Dữ liệu của bạn không bao giờ rời khỏi máy bạn. Hoạt động kể cả khi mất internet.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:2">
+        <span class="feature-icon">📱</span>
+        <h3 data-vi="Mang theo bên mình" data-en="Carry it with you">Mang theo bên mình</h3>
+        <p data-vi="1 file binary duy nhất, chạy trên Raspberry Pi bỏ túi. Cắm nguồn là AI hoạt động. Trợ lý riêng của bạn, đi đâu cũng có." data-en="Single binary file, runs on a pocket Raspberry Pi. Plug in and AI works. Your personal assistant, wherever you go.">1 file binary duy nhất, chạy trên Raspberry Pi bỏ túi. Cắm nguồn là AI hoạt động. Trợ lý riêng của bạn, đi đâu cũng có.</p>
       </div>
     </div>
-    <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:24px" data-vi="💡 Tất cả gói đều bao gồm Brain Engine (LLM chạy local) — không cần API key bên ngoài. Chạy trên VPS 512MB RAM." data-en="💡 All plans include Brain Engine (local LLM) — no external API key needed. Runs on 512MB RAM VPS.">💡 Tất cả gói đều bao gồm Brain Engine (LLM chạy local) — không cần API key bên ngoài. Chạy trên VPS 512MB RAM.</p>
   </div>
 </section>
-
-<!-- PAYMENT MODAL (SePay VietQR) -->
-<div id="payment-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:480px;width:100%;position:relative;text-align:center">
-    <button onclick="closePayment()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer">&times;</button>
-    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;margin-bottom:4px" data-vi="💳 Thanh toán chuyển khoản" data-en="💳 Bank Transfer Payment">💳 Thanh toán chuyển khoản</h2>
-    <p style="color:var(--muted);font-size:14px;margin-bottom:24px" data-vi="Quét mã QR bằng app ngân hàng" data-en="Scan QR code with your banking app">Quét mã QR bằng app ngân hàng</p>
-    <div id="payment-qr" style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:20px">
-      <img id="qr-img" src="" alt="VietQR Payment" style="width:220px;height:220px">
-    </div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left;margin-bottom:16px">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:8px" data-vi="Thông tin chuyển khoản:" data-en="Transfer details:">Thông tin chuyển khoản:</p>
-      <p style="font-size:14px"><strong>Ngân hàng:</strong> MB Bank</p>
-      <p style="font-size:14px"><strong>STK:</strong> 0969597517</p>
-      <p style="font-size:14px"><strong>Chủ TK:</strong> NGUYEN DUC HOAI</p>
-      <p style="font-size:14px"><strong data-vi="Số tiền:" data-en="Amount:">Số tiền:</strong> <span id="modal-amount" style="color:var(--green);font-weight:700"></span></p>
-      <p style="font-size:14px"><strong data-vi="Nội dung:" data-en="Content:">Nội dung:</strong> <span id="modal-content" style="color:var(--accent2);font-weight:600"></span></p>
-    </div>
-    <p style="font-size:12px;color:var(--muted)" data-vi="⚡ Sau khi chuyển khoản, hệ thống sẽ tự động xác nhận qua SePay webhook. Bạn sẽ nhận được email hướng dẫn cài đặt trong vòng 5 phút." data-en="⚡ After transfer, our system auto-confirms via SePay webhook. You'll receive setup instructions via email within 5 minutes.">⚡ Sau khi chuyển khoản, hệ thống sẽ tự động xác nhận qua SePay webhook. Bạn sẽ nhận được email hướng dẫn cài đặt trong vòng 5 phút.</p>
-  </div>
-</div>
 
 <!-- SHOWCASE -->
 <section id="showcase">
@@ -509,14 +528,7 @@ footer a{color:var(--accent2);text-decoration:none}
             <label data-vi="Mật khẩu" data-en="Password">Mật khẩu</label>
             <input type="password" id="reg-password" required minlength="8" placeholder="••••••••">
           </div>
-          <div class="form-group">
-            <label>Plan</label>
-            <select id="reg-plan">
-              <option value="free">Free — $0/mo</option>
-              <option value="pro" selected>Pro — $19/mo</option>
-              <option value="business">Business — $49/mo</option>
-            </select>
-          </div>
+          <input type="hidden" id="reg-plan" value="community">
           <button type="submit" class="form-submit" id="submit-btn" data-vi="Tạo tài khoản" data-en="Create account">Tạo tài khoản</button>
           <p class="form-note" data-vi="Bằng việc đăng ký, bạn đồng ý với Điều khoản dịch vụ" data-en="By signing up, you agree to our Terms of Service">Bằng việc đăng ký, bạn đồng ý với Điều khoản dịch vụ</p>
         </form>
@@ -654,47 +666,6 @@ async function handleRegister(e) {
     `;
   }
 }
-
-// ═══ SePay Payment Modal ═══
-const SEPAY_CONFIG = {
-  bank: 'MBBank',
-  account: '0969597517',
-  accountName: 'NGUYEN DUC HOAI'
-};
-
-function openPayment(plan, amount) {
-  const orderId = 'BC' + Date.now().toString(36).toUpperCase();
-  const content = `BIZCLAW ${plan.toUpperCase()} ${orderId}`;
-  
-  // Generate SePay VietQR
-  const qrUrl = `https://qr.sepay.vn/img?acc=${SEPAY_CONFIG.account}&bank=${SEPAY_CONFIG.bank}&amount=${amount}&des=${encodeURIComponent(content)}&template=compact`;
-  
-  document.getElementById('qr-img').src = qrUrl;
-  document.getElementById('modal-amount').textContent = amount.toLocaleString('vi-VN') + 'đ';
-  document.getElementById('modal-content').textContent = content;
-  
-  const modal = document.getElementById('payment-modal');
-  modal.style.display = 'flex';
-  
-  // Store pending order
-  const orders = JSON.parse(localStorage.getItem('bizclaw_orders') || '[]');
-  orders.push({ orderId, plan, amount, content, timestamp: new Date().toISOString() });
-  localStorage.setItem('bizclaw_orders', JSON.stringify(orders));
-}
-
-function closePayment() {
-  document.getElementById('payment-modal').style.display = 'none';
-}
-
-// Close modal on backdrop click
-document.getElementById('payment-modal')?.addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closePayment();
-});
-
-// Close modal on Escape key
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closePayment();
-});
 
 // ═══ Smooth scroll for anchor links ═══
 document.querySelectorAll('a[href^="#"]').forEach(a => {
