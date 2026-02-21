@@ -122,8 +122,9 @@ async function loadDashboard(){
 }
 async function loadTenants(){
     const d=await(await fetch(API+'/tenants')).json();
+    const host=location.hostname;
     document.getElementById('tenants-list').innerHTML=d.tenants.map(t=>
-      `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${t.name}</strong> <span class="badge ${t.status}">${t.status}</span><div class="tenant-slug" style="margin-top:4px"><a href="http://localhost:${t.port}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">🔗 Open Dashboard (Port ${t.port})</a> · ${t.slug} · ${t.provider}/${t.model} · ${t.plan}</div></div><div style="display:flex;gap:8px">`+
+      `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${t.name}</strong> <span class="badge ${t.status}">${t.status}</span><div class="tenant-slug" style="margin-top:4px"><a href="http://${host}:${t.port}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">🔗 Open Dashboard (Port ${t.port})</a> · ${t.slug} · ${t.provider}/${t.model} · ${t.plan}</div></div><div style="display:flex;gap:8px">`+
     (t.status!=='running'?`<button class="btn btn-primary" onclick="tenantAction('${t.id}','start')">▶ Start</button>`:`<button class="btn btn-outline" onclick="tenantAction('${t.id}','stop')">⏹ Stop</button>`)+
     `<button class="btn btn-outline" onclick="tenantAction('${t.id}','restart')">🔄</button><button class="btn btn-danger" onclick="tenantAction('${t.id}','delete')">✕</button></div></div>${t.pairing_code?`<div style="margin-top:10px;font-size:12px;color:var(--muted)">Pairing: <strong style="color:var(--yellow);font-size:16px">${t.pairing_code}</strong></div>`:''}</div>`).join('')
 }

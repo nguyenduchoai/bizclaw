@@ -16,5 +16,11 @@ Cargo.lock
 .gemini/
 plans/
 
+# Internal DEV files — NOT for public repo
+GEMINI.md
+GETTING_STARTED.md
+install.sh
+update.sh
+
 # OS
 Thumbs.db

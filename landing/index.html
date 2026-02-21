@@ -655,9 +655,9 @@ async function handleRegister(e) {
     document.getElementById('register-form-container').style.display = 'none';
     document.getElementById('register-success').style.display = 'block';
     document.getElementById('pairing-display').innerHTML = `
-      <p style="color:var(--muted);font-size:13px">${currentLang === 'vi' ? 'Đăng ký lưu trữ thành công trên local! Tên agent của bạn:' : 'Local registration recorded! Your agent name:'}</p>
+      <p style="color:var(--muted);font-size:13px">${currentLang === 'vi' ? 'Đăng ký lưu trữ thành công! Tên agent của bạn:' : 'Registration recorded! Your agent name:'}</p>
       <p style="font-size:18px;font-weight:600;color:var(--accent2);margin-top:8px;margin-bottom:16px">${data.slug}.bizclaw.vn</p>
-      <a href="http://localhost:3000" target="_blank" class="btn-primary" style="padding:8px 24px;display:inline-block">${currentLang === 'vi' ? 'Mở Admin Dashboard (Test)' : 'Open Admin Dashboard (Test)'} 🔗</a>
+      <a href="http://${location.hostname}:3001" target="_blank" class="btn-primary" style="padding:8px 24px;display:inline-block">${currentLang === 'vi' ? 'Mở Admin Dashboard' : 'Open Admin Dashboard'} 🔗</a>
     `;
   }
 }
