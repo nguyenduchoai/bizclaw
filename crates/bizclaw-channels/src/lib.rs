@@ -7,3 +7,4 @@ pub mod discord;
 pub mod whatsapp;
 pub mod webhook;
 pub mod zalo;
+pub mod email;

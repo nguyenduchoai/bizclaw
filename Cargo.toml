@@ -73,6 +73,11 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
+# Email
+lettre = { version = "0.11", features = ["tokio1-native-tls", "builder"] }
+imap = "2"
+native-tls = "0.2"
+mail-parser = "0.9"
 
 # Internal crates
 bizclaw-core = { path = "crates/bizclaw-core" }

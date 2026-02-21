@@ -15,4 +15,5 @@ async-trait.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 reqwest.workspace = true
+chrono.workspace = true
 urlencoding = "2"

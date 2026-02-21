@@ -5,6 +5,8 @@ pub mod shell;
 pub mod file;
 pub mod registry;
 pub mod web_search;
+pub mod group_summarizer;
+pub mod calendar;
 
 use bizclaw_core::traits::Tool;
 
@@ -36,6 +38,12 @@ impl ToolRegistry {
         reg.register(Box::new(shell::ShellTool::new()));
         reg.register(Box::new(file::FileTool::new()));
         reg.register(Box::new(web_search::WebSearchTool::new()));
+        reg.register(Box::new(group_summarizer::GroupSummarizerTool::new(
+            group_summarizer::SummarizerConfig::default(),
+        )));
+        reg.register(Box::new(calendar::CalendarTool::new(
+            calendar::CalendarConfig::default(),
+        )));
         reg
     }
 }
@@ -54,6 +62,8 @@ mod tests {
         assert!(reg.get("shell").is_some());
         assert!(reg.get("file").is_some());
         assert!(reg.get("web_search").is_some());
+        assert!(reg.get("group_summarizer").is_some());
+        assert!(reg.get("calendar").is_some());
         assert!(reg.get("nonexistent").is_none());
     }
 
@@ -61,10 +71,12 @@ mod tests {
     fn test_registry_list() {
         let reg = ToolRegistry::with_defaults();
         let defs = reg.list();
-        assert!(defs.len() >= 3);
+        assert!(defs.len() >= 5);
         assert!(defs.iter().any(|d| d.name == "shell"));
         assert!(defs.iter().any(|d| d.name == "file"));
         assert!(defs.iter().any(|d| d.name == "web_search"));
+        assert!(defs.iter().any(|d| d.name == "group_summarizer"));
+        assert!(defs.iter().any(|d| d.name == "calendar"));
     }
 
     #[test]

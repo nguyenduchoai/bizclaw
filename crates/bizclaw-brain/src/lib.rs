@@ -17,6 +17,7 @@ pub mod kv_cache;
 pub mod grammar;
 pub mod rope;
 pub mod thread_pool;
+pub mod llamacpp;
 
 use std::path::{Path, PathBuf};
 use bizclaw_core::error::{BizClawError, Result};
