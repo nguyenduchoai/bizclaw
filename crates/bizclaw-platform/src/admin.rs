@@ -94,8 +94,13 @@ async fn create_tenant(
     Json(req): Json<CreateTenantReq>,
 ) -> Json<serde_json::Value> {
     let port = {
-        let mgr = state.manager.lock().unwrap();
-        mgr.next_port(state.base_port)
+        let db = state.db.lock().unwrap();
+        let used_ports = db.used_ports().unwrap_or_default();
+        let mut port = state.base_port;
+        while used_ports.contains(&port) {
+            port += 1;
+        }
+        port
     };
 
     match state.db.lock().unwrap().create_tenant(

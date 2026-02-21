@@ -288,6 +288,17 @@ impl PlatformDb {
             .unwrap_or(0);
         Ok((total, running, stopped, error))
     }
+
+    /// Get all ports currently assigned to tenants.
+    pub fn used_ports(&self) -> Result<Vec<u16>> {
+        let mut stmt = self.conn.prepare("SELECT port FROM tenants")
+            .map_err(|e| BizClawError::Memory(format!("Prepare: {e}")))?;
+        let ports = stmt.query_map([], |row| row.get::<_, u16>(0))
+            .map_err(|e| BizClawError::Memory(format!("Query: {e}")))?  
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(ports)
+    }
 }
 
 fn rand_code() -> u32 {
