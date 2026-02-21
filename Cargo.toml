@@ -1,0 +1,122 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bizclaw-core",
+    "crates/bizclaw-brain",
+    "crates/bizclaw-providers",
+    "crates/bizclaw-channels",
+    "crates/bizclaw-memory",
+    "crates/bizclaw-tools",
+    "crates/bizclaw-security",
+    "crates/bizclaw-runtime",
+    "crates/bizclaw-gateway",
+    "crates/bizclaw-agent",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["BizClaw Team"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/BizClaw/bizclaw"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+# HTTP
+reqwest = { version = "0.12", features = ["json", "cookies", "socks"] }
+# Error handling
+thiserror = "2"
+anyhow = "1"
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# CLI
+clap = { version = "4", features = ["derive"] }
+# Async utilities
+futures = "0.3"
+async-trait = "0.1"
+tokio-stream = "0.1"
+# Crypto
+aes = "0.8"
+rsa = "0.9"
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.22"
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+# Memory mapping
+memmap2 = "0.9"
+# Parallelism
+rayon = "1"
+# FP16
+half = "2"
+# Binary parsing
+byteorder = "1"
+# Misc
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"
+dirs = "6"
+shellexpand = "3"
+# WebSocket
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+# HTTP server
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# Internal crates
+bizclaw-core = { path = "crates/bizclaw-core" }
+bizclaw-brain = { path = "crates/bizclaw-brain" }
+bizclaw-providers = { path = "crates/bizclaw-providers" }
+bizclaw-channels = { path = "crates/bizclaw-channels" }
+bizclaw-memory = { path = "crates/bizclaw-memory" }
+bizclaw-tools = { path = "crates/bizclaw-tools" }
+bizclaw-security = { path = "crates/bizclaw-security" }
+bizclaw-runtime = { path = "crates/bizclaw-runtime" }
+bizclaw-gateway = { path = "crates/bizclaw-gateway" }
+bizclaw-agent = { path = "crates/bizclaw-agent" }
+
+[package]
+name = "bizclaw"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Fast, small, and fully autonomous AI assistant infrastructure with local brain"
+default-run = "bizclaw"
+
+[dependencies]
+bizclaw-core.workspace = true
+bizclaw-brain.workspace = true
+bizclaw-providers.workspace = true
+bizclaw-channels.workspace = true
+bizclaw-memory.workspace = true
+bizclaw-tools.workspace = true
+bizclaw-security.workspace = true
+bizclaw-agent.workspace = true
+bizclaw-gateway.workspace = true
+tokio.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[[bin]]
+name = "bizclaw"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

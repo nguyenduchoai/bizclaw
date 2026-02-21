@@ -1,0 +1,1 @@
+//! Encrypted secrets management stub.

@@ -1,0 +1,15 @@
+[package]
+name = "bizclaw-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Runtime adapters (native, docker) for BizClaw"
+
+[dependencies]
+bizclaw-core.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true

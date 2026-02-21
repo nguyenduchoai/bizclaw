@@ -1,0 +1,62 @@
+{
+  "description": "Bizino AI DEV v3.2 - Event hooks for automation",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "id": "block-md-creation",
+        "matcher": "tool == \"Write\" && tool_input.file_path matches \"\\\\.(md|txt)$\" && !(tool_input.file_path matches \"README|CLAUDE|GEMINI|ARCHITECTURE|CHANGELOG|CONTRIBUTING\")",
+        "action": "warn",
+        "message": "[Hook] Consider: Is this documentation necessary? Use README.md or existing docs instead of creating new files.",
+        "description": "Warn about creating random .md files"
+      },
+      {
+        "id": "git-push-review",
+        "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
+        "action": "confirm",
+        "message": "[Hook] Review changes before push. Press Enter to continue or Ctrl+C to abort.",
+        "description": "Pause before git push for review"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "id": "console-log-warning",
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\\\.(ts|tsx|js|jsx)$\"",
+        "action": "check",
+        "check": {
+          "pattern": "console\\.log",
+          "message": "[Hook] WARNING: console.log found. Remember to remove before committing."
+        },
+        "description": "Warn about console.log in edited JS/TS files"
+      },
+      {
+        "id": "pr-created-helper",
+        "matcher": "tool == \"Bash\" && tool_input.command matches \"gh pr create\"",
+        "action": "info",
+        "message": "[Hook] PR created! To review: gh pr view",
+        "description": "Helper message after PR creation"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "id": "uncommitted-warning",
+        "action": "check",
+        "check": {
+          "command": "git status --porcelain",
+          "not_empty_message": "[Hook] WARNING: You have uncommitted changes. Consider running /git before ending."
+        },
+        "description": "Warn about uncommitted changes at session end"
+      },
+      {
+        "id": "save-brain-reminder",
+        "action": "info",
+        "message": "[Hook] Session ending. Consider running /save-brain to persist context for next time.",
+        "description": "Reminder to save context"
+      }
+    ]
+  },
+  "_implementation_notes": {
+    "antigravity_support": "Check Antigravity documentation for hook implementation",
+    "manual_reminders": "Until hooks are fully supported, these serve as documentation of desired behaviors",
+    "claude_code_hooks": "For Claude Code, copy hooks to ~/.claude/settings.json"
+  }
+}

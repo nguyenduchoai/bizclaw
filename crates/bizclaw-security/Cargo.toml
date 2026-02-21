@@ -1,0 +1,21 @@
+[package]
+name = "bizclaw-security"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Security policies, sandboxing, and encryption for BizClaw"
+
+[dependencies]
+bizclaw-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+aes.workspace = true
+sha2.workspace = true
+rand.workspace = true
+base64.workspace = true
+dirs.workspace = true

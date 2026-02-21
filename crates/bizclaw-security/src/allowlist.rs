@@ -1,0 +1,1 @@
+//! Allowlist management stub.
