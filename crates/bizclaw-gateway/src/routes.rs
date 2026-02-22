@@ -449,6 +449,171 @@ pub async fn whatsapp_webhook(
     Json(serde_json::json!({"status": "ok"}))
 }
 
+// ---- Scheduler API ----
+
+/// List all scheduled tasks.
+pub async fn scheduler_list_tasks(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let engine = state.scheduler.lock().await;
+    let tasks: Vec<_> = engine.list_tasks().iter().map(|t| {
+        serde_json::json!({
+            "id": t.id,
+            "name": t.name,
+            "status": format!("{:?}", t.status),
+            "enabled": t.enabled,
+            "run_count": t.run_count,
+            "next_run": t.next_run.map(|d| d.to_rfc3339()),
+            "last_run": t.last_run.map(|d| d.to_rfc3339()),
+        })
+    }).collect();
+    Json(serde_json::json!({"ok": true, "tasks": tasks, "count": tasks.len()}))
+}
+
+/// Add a new scheduled task.
+pub async fn scheduler_add_task(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let name = body["name"].as_str().unwrap_or("unnamed");
+    let action_str = body["action"].as_str().unwrap_or("");
+    let action = bizclaw_scheduler::tasks::TaskAction::Notify(action_str.to_string());
+
+    let task_type = body["type"].as_str().unwrap_or("interval");
+    let task = match task_type {
+        "cron" => {
+            let expr = body["expression"].as_str().unwrap_or("0 * * * *");
+            bizclaw_scheduler::Task::cron(name, expr, action)
+        }
+        "once" => {
+            let at = chrono::Utc::now() + chrono::Duration::seconds(
+                body["delay_secs"].as_i64().unwrap_or(60)
+            );
+            bizclaw_scheduler::Task::once(name, at, action)
+        }
+        _ => {
+            let secs = body["interval_secs"].as_u64().unwrap_or(300);
+            bizclaw_scheduler::Task::interval(name, secs, action)
+        }
+    };
+
+    let id = task.id.clone();
+    state.scheduler.lock().await.add_task(task);
+    Json(serde_json::json!({"ok": true, "id": id}))
+}
+
+/// Remove a scheduled task.
+pub async fn scheduler_remove_task(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
+    let removed = state.scheduler.lock().await.remove_task(&id);
+    Json(serde_json::json!({"ok": removed}))
+}
+
+/// Get notification history.
+pub async fn scheduler_notifications(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let engine = state.scheduler.lock().await;
+    let history: Vec<_> = engine.router.history().iter().map(|n| {
+        serde_json::json!({
+            "title": n.title,
+            "body": n.body,
+            "source": n.source,
+            "priority": format!("{:?}", n.priority),
+            "timestamp": n.timestamp.to_rfc3339(),
+        })
+    }).collect();
+    Json(serde_json::json!({"ok": true, "notifications": history}))
+}
+
+// ---- Knowledge Base API ----
+
+/// Search the knowledge base.
+pub async fn knowledge_search(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let query = body["query"].as_str().unwrap_or("");
+    let limit = body["limit"].as_u64().unwrap_or(5) as usize;
+
+    let kb = state.knowledge.lock().await;
+    match kb.as_ref() {
+        Some(store) => {
+            let results = store.search(query, limit);
+            let items: Vec<_> = results.iter().map(|r| {
+                serde_json::json!({
+                    "doc_name": r.doc_name,
+                    "content": r.content,
+                    "score": r.score,
+                    "chunk_idx": r.chunk_idx,
+                })
+            }).collect();
+            Json(serde_json::json!({"ok": true, "results": items, "count": items.len()}))
+        }
+        None => Json(serde_json::json!({"ok": false, "error": "Knowledge base not available"})),
+    }
+}
+
+/// List all knowledge documents.
+pub async fn knowledge_list_docs(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let kb = state.knowledge.lock().await;
+    match kb.as_ref() {
+        Some(store) => {
+            let docs: Vec<_> = store.list_documents().iter().map(|(id, name, source, chunks)| {
+                serde_json::json!({"id": id, "name": name, "source": source, "chunks": chunks})
+            }).collect();
+            let (total_docs, total_chunks) = store.stats();
+            Json(serde_json::json!({
+                "ok": true, "documents": docs,
+                "total_docs": total_docs, "total_chunks": total_chunks
+            }))
+        }
+        None => Json(serde_json::json!({"ok": false, "error": "Knowledge base not available"})),
+    }
+}
+
+/// Add a document to the knowledge base.
+pub async fn knowledge_add_doc(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let name = body["name"].as_str().unwrap_or("unnamed.txt");
+    let content = body["content"].as_str().unwrap_or("");
+    let source = body["source"].as_str().unwrap_or("api");
+
+    let kb = state.knowledge.lock().await;
+    match kb.as_ref() {
+        Some(store) => {
+            match store.add_document(name, content, source) {
+                Ok(chunks) => Json(serde_json::json!({"ok": true, "chunks": chunks})),
+                Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
+            }
+        }
+        None => Json(serde_json::json!({"ok": false, "error": "Knowledge base not available"})),
+    }
+}
+
+/// Remove a document from the knowledge base.
+pub async fn knowledge_remove_doc(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<i64>,
+) -> Json<serde_json::Value> {
+    let kb = state.knowledge.lock().await;
+    match kb.as_ref() {
+        Some(store) => {
+            match store.remove_document(id) {
+                Ok(()) => Json(serde_json::json!({"ok": true})),
+                Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
+            }
+        }
+        None => Json(serde_json::json!({"ok": false, "error": "Knowledge base not available"})),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -463,6 +628,10 @@ mod tests {
             start_time: std::time::Instant::now(),
             pairing_code: None,
             agent: std::sync::Arc::new(tokio::sync::Mutex::new(None)),
+            scheduler: Arc::new(tokio::sync::Mutex::new(
+                bizclaw_scheduler::SchedulerEngine::new(&std::env::temp_dir().join("bizclaw-test-sched"))
+            )),
+            knowledge: Arc::new(tokio::sync::Mutex::new(None)),
         }))
     }
 

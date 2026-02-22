@@ -22,3 +22,5 @@ uuid.workspace = true
 chrono.workspace = true
 toml.workspace = true
 reqwest.workspace = true
+bizclaw-scheduler.workspace = true
+bizclaw-knowledge.workspace = true

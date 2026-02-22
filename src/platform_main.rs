@@ -135,6 +135,7 @@ async fn main() -> Result<()> {
         jwt_secret: cli.jwt_secret.clone(),
         bizclaw_bin: cli.bizclaw_bin.clone(),
         base_port: cli.base_port,
+        login_attempts: Mutex::new(std::collections::HashMap::new()),
     });
 
     // Start server
@@ -146,6 +147,39 @@ async fn main() -> Result<()> {
     println!("   🔧 BizClaw Binary:  {}", cli.bizclaw_bin);
     println!("   🔌 Tenant Base Port: {}", cli.base_port);
     println!();
+
+    // Auto-restart tenants that were previously running
+    {
+        let db_lock = state.db.lock().unwrap();
+        match db_lock.list_tenants() {
+            Ok(tenants) => {
+                let running: Vec<_> = tenants.iter()
+                    .filter(|t| t.status == "running")
+                    .collect();
+                if !running.is_empty() {
+                    println!("🔄 Auto-restarting {} tenant(s)...", running.len());
+                    // We need to keep our own Vec since we're about to drop the lock
+                    let running_owned: Vec<_> = running.into_iter().cloned().collect();
+                    drop(db_lock); // Release lock before starting tenants
+                    for tenant in &running_owned {
+                        let db = state.db.lock().unwrap();
+                        let mut mgr = state.manager.lock().unwrap();
+                        match mgr.start_tenant(tenant, &state.bizclaw_bin, &db) {
+                            Ok(pid) => {
+                                println!("   ✅ {} (port {}) → pid {}", tenant.name, tenant.port, pid);
+                                db.update_tenant_status(&tenant.id, "running", Some(pid)).ok();
+                            }
+                            Err(e) => {
+                                println!("   ❌ {} failed: {}", tenant.name, e);
+                                db.update_tenant_status(&tenant.id, "error", None).ok();
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => println!("⚠️ Failed to load tenants: {e}"),
+        }
+    }
 
     bizclaw_platform::AdminServer::start(state, cli.port).await
         .map_err(|e| anyhow::anyhow!("{e}"))?;

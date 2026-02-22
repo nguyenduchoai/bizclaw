@@ -13,6 +13,8 @@ pub struct AdminState {
     pub jwt_secret: String,
     pub bizclaw_bin: String,
     pub base_port: u16,
+    /// Rate limiter: email → (attempt_count, first_attempt_time)
+    pub login_attempts: Mutex<std::collections::HashMap<String, (u32, std::time::Instant)>>,
 }
 
 /// JWT auth middleware — validates Authorization: Bearer <token>.
@@ -265,6 +267,27 @@ async fn login(
     State(state): State<Arc<AdminState>>,
     Json(req): Json<LoginReq>,
 ) -> Json<serde_json::Value> {
+    // Rate limiting — max 5 attempts per email per 5 minutes
+    {
+        let mut attempts = state.login_attempts.lock().unwrap();
+        let now = std::time::Instant::now();
+        if let Some((count, first_at)) = attempts.get(&req.email) {
+            if now.duration_since(*first_at).as_secs() < 300 && *count >= 5 {
+                return Json(serde_json::json!({
+                    "ok": false,
+                    "error": "Too many login attempts. Please wait 5 minutes."
+                }));
+            }
+            // Reset if window expired
+            if now.duration_since(*first_at).as_secs() >= 300 {
+                attempts.remove(&req.email);
+            }
+        }
+        // Record attempt
+        let entry = attempts.entry(req.email.clone()).or_insert((0, now));
+        entry.0 += 1;
+    }
+
     let user = state.db.lock().unwrap().get_user_by_email(&req.email);
     match user {
         Ok(Some((id, hash, role))) => {

@@ -5,7 +5,7 @@ use axum::response::Html;
 use bizclaw_core::config::{GatewayConfig, BizClawConfig};
 use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{CorsLayer, Any};
 use tower_http::trace::TraceLayer;
 
 /// Shared state for the gateway server.
@@ -18,6 +18,10 @@ pub struct AppState {
     pub pairing_code: Option<String>,
     /// The Agent engine — handles chat with tools, memory, and all providers.
     pub agent: Arc<tokio::sync::Mutex<Option<bizclaw_agent::Agent>>>,
+    /// Scheduler engine — manages scheduled tasks and notifications.
+    pub scheduler: Arc<tokio::sync::Mutex<bizclaw_scheduler::SchedulerEngine>>,
+    /// Knowledge base — personal RAG with FTS5 search.
+    pub knowledge: Arc<tokio::sync::Mutex<Option<bizclaw_knowledge::KnowledgeStore>>>,
 }
 
 /// Serve the dashboard HTML page.
@@ -92,6 +96,16 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/channels", get(super::routes::list_channels))
         .route("/api/v1/channels/update", post(super::routes::update_channel))
         .route("/api/v1/zalo/qr", post(super::routes::zalo_qr_code))
+        // Scheduler API
+        .route("/api/v1/scheduler/tasks", get(super::routes::scheduler_list_tasks))
+        .route("/api/v1/scheduler/tasks", post(super::routes::scheduler_add_task))
+        .route("/api/v1/scheduler/tasks/{id}", axum::routing::delete(super::routes::scheduler_remove_task))
+        .route("/api/v1/scheduler/notifications", get(super::routes::scheduler_notifications))
+        // Knowledge Base API
+        .route("/api/v1/knowledge/search", post(super::routes::knowledge_search))
+        .route("/api/v1/knowledge/documents", get(super::routes::knowledge_list_docs))
+        .route("/api/v1/knowledge/documents", post(super::routes::knowledge_add_doc))
+        .route("/api/v1/knowledge/documents/{id}", axum::routing::delete(super::routes::knowledge_remove_doc))
         .route("/ws", get(super::ws::ws_handler))
         .route_layer(axum::middleware::from_fn_with_state(shared.clone(), require_pairing));
 
@@ -111,7 +125,17 @@ pub fn build_router(state: AppState) -> Router {
         .fallback(get(dashboard_page));
 
     protected.merge(public).merge(spa_fallback)
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any) // Dashboard is same-origin; external API callers need this
+                .allow_methods([
+                    axum::http::Method::GET,
+                    axum::http::Method::POST,
+                    axum::http::Method::OPTIONS,
+                ])
+                .allow_headers(Any)
+                .max_age(std::time::Duration::from_secs(3600))
+        )
         .layer(TraceLayer::new_for_http())
         .with_state(shared)
 }
@@ -142,6 +166,39 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         }
     };
 
+    // Initialize Scheduler engine
+    let sched_dir = config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("scheduler");
+    let scheduler = bizclaw_scheduler::SchedulerEngine::new(&sched_dir);
+    let task_count = scheduler.task_count();
+    if task_count > 0 {
+        tracing::info!("⏰ Scheduler loaded: {} task(s)", task_count);
+    }
+    let scheduler = Arc::new(tokio::sync::Mutex::new(scheduler));
+
+    // Spawn scheduler background loop (check every 30 seconds)
+    let sched_clone = scheduler.clone();
+    tokio::spawn(bizclaw_scheduler::engine::spawn_scheduler(sched_clone, 30));
+
+    // Initialize Knowledge Base
+    let kb_path = config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("knowledge.db");
+    let knowledge = match bizclaw_knowledge::KnowledgeStore::open(&kb_path) {
+        Ok(kb) => {
+            let (docs, chunks) = kb.stats();
+            if docs > 0 {
+                tracing::info!("📚 Knowledge base: {} documents, {} chunks", docs, chunks);
+            }
+            Some(kb)
+        }
+        Err(e) => {
+            tracing::warn!("⚠️ Knowledge base not available: {e}");
+            None
+        }
+    };
+
     let state = AppState {
         gateway_config: config.clone(),
         full_config: Arc::new(Mutex::new(full_config)),
@@ -160,6 +217,8 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
             None
         },
         agent: Arc::new(tokio::sync::Mutex::new(agent)),
+        scheduler,
+        knowledge: Arc::new(tokio::sync::Mutex::new(knowledge)),
     };
 
     let app = build_router(state);
