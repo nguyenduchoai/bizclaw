@@ -95,6 +95,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/providers", get(super::routes::list_providers))
         .route("/api/v1/channels", get(super::routes::list_channels))
         .route("/api/v1/channels/update", post(super::routes::update_channel))
+        .route("/api/v1/ollama/models", get(super::routes::ollama_models))
         .route("/api/v1/zalo/qr", post(super::routes::zalo_qr_code))
         // Scheduler API
         .route("/api/v1/scheduler/tasks", get(super::routes::scheduler_list_tasks))

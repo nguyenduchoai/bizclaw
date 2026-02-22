@@ -93,6 +93,16 @@ pub async fn get_config(
         "secrets": {
             "encrypt": cfg.secrets.encrypt,
         },
+        "mcp_servers": cfg.mcp_servers.iter().map(|s| {
+            let mut masked_env = std::collections::HashMap::new();
+            for (k, v) in &s.env {
+                masked_env.insert(k.clone(), mask_secret(v));
+            }
+            serde_json::json!({
+                "name": s.name, "command": s.command,
+                "args": s.args, "env": masked_env, "enabled": s.enabled,
+            })
+        }).collect::<Vec<_>>(),
         "channels": {
             "telegram": cfg.channel.telegram.as_ref().map(|t| serde_json::json!({
                 "enabled": t.enabled,
@@ -211,6 +221,13 @@ pub async fn update_config(
         }
         if let Some(v) = brain.get("temperature").and_then(|v| v.as_f64()) {
             cfg.brain.temperature = v as f32;
+        }
+    }
+
+    // Update MCP servers
+    if let Some(mcp) = req.get("mcp_servers") {
+        if let Ok(servers) = serde_json::from_value::<Vec<bizclaw_core::config::McpServerEntry>>(mcp.clone()) {
+            cfg.mcp_servers = servers;
         }
     }
 
@@ -375,6 +392,37 @@ pub async fn list_channels(
             {"name": "whatsapp", "type": "messaging", "status": if cfg.channel.whatsapp.as_ref().map_or(false, |w| w.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.whatsapp.is_some()},
         ]
     }))
+}
+
+/// List installed Ollama models.
+pub async fn ollama_models() -> Json<serde_json::Value> {
+    let url = "http://localhost:11434/api/tags";
+    match reqwest::Client::new().get(url).timeout(std::time::Duration::from_secs(5)).send().await {
+        Ok(resp) => {
+            if let Ok(body) = resp.json::<serde_json::Value>().await {
+                let models: Vec<serde_json::Value> = body.get("models")
+                    .and_then(|m| m.as_array())
+                    .unwrap_or(&vec![])
+                    .iter()
+                    .map(|m| {
+                        let name = m.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        let size_bytes = m.get("size").and_then(|v| v.as_u64()).unwrap_or(0);
+                        let size = if size_bytes > 1_000_000_000 {
+                            format!("{:.1} GB", size_bytes as f64 / 1e9)
+                        } else {
+                            format!("{} MB", size_bytes / 1_000_000)
+                        };
+                        let family = m.get("details").and_then(|d| d.get("family")).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        serde_json::json!({"name": name, "size": size, "family": family})
+                    })
+                    .collect();
+                Json(serde_json::json!({"ok": true, "models": models}))
+            } else {
+                Json(serde_json::json!({"ok": true, "models": []}))
+            }
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": format!("Ollama not running: {e}")})),
+    }
 }
 
 /// Generate Zalo QR code for login.

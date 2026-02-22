@@ -151,6 +151,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <a href="/providers" onclick="navigateTo(event,'providers')" id="nav-providers">🔌 <span data-i18n="nav.providers">Nhà cung cấp</span></a>
       <a href="/channels" onclick="navigateTo(event,'channels')" id="nav-channels">📱 <span data-i18n="nav.channels">Kênh liên lạc</span></a>
       <a href="/tools" onclick="navigateTo(event,'tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
+      <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 MCP Servers</a>
       <div class="nav-sep"></div>
       <a href="/brain" onclick="navigateTo(event,'brain')" id="nav-brain">🧠 <span data-i18n="nav.brain">Brain Engine</span></a>
       <a href="/configfile" onclick="navigateTo(event,'configfile')" id="nav-configfile">📄 config.toml</a>
@@ -260,9 +261,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <!-- Ollama fields -->
         <div id="provider-ollama-fields" style="display:none">
-          <div class="form-row"><span class="form-label">Model</span><input id="set-ollama-model" placeholder="tinyllama, llama3.2, deepseek-r1:7b"></div>
+          <div class="form-row"><span class="form-label">Model</span>
+            <div style="display:flex;gap:8px;flex:1">
+              <select id="set-ollama-model" style="flex:1"><option value="">Loading models...</option></select>
+              <button class="btn btn-outline btn-sm" onclick="loadOllamaModels()" title="Refresh models">🔄</button>
+            </div>
+          </div>
           <div class="form-row"><span class="form-label">Ollama URL</span><input id="set-ollama-url" placeholder="http://localhost:11434"></div>
-          <div class="form-row" style="background:var(--accent-glow);border-color:var(--accent)"><span class="form-label" style="color:var(--accent2)">💡 Tip</span><span style="font-size:12px;color:var(--text2)">Install: <code style="color:var(--cyan)">curl -fsSL https://ollama.ai/install.sh | sh</code> then <code style="color:var(--cyan)">ollama pull tinyllama</code></span></div>
+          <div id="ollama-status-row" class="form-row" style="background:var(--accent-glow);border-color:var(--accent)"><span class="form-label" style="color:var(--accent2)">💡 Status</span><span id="ollama-status-msg" style="font-size:12px;color:var(--text2)">Checking Ollama...</span></div>
         </div>
         <!-- Brain Engine fields -->
         <div id="provider-brain-fields" style="display:none">
@@ -327,6 +333,47 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="card"><div class="card-label">Calendar</div><div class="card-value orange">● Available</div><div class="card-sub">Google Calendar integration</div></div>
         <div class="card"><div class="card-label">Document Reader</div><div class="card-value green">● Active</div><div class="card-sub">PDF, DOCX, Excel, CSV extraction</div></div>
         <div class="card"><div class="card-label">Group Summarizer</div><div class="card-value green">● Active</div><div class="card-sub">Zalo/Telegram group message summary</div></div>
+      </div>
+    </div>
+
+    <!-- ═══ MCP SERVERS ═══ -->
+    <div id="page-mcp" style="display:none">
+      <div class="page-header"><div><h1>🔗 MCP Servers</h1><div class="sub">Model Context Protocol — extend your agent with external tools</div></div>
+        <button class="btn btn-primary" onclick="showMcpForm()">+ Add Server</button>
+      </div>
+      <div class="stats" id="mcp-stats">
+        <div class="card"><div class="card-label">Total Servers</div><div class="card-value accent" id="mcp-total">0</div></div>
+        <div class="card"><div class="card-label">Active</div><div class="card-value green" id="mcp-active">0</div></div>
+        <div class="card"><div class="card-label">Protocol</div><div class="card-value blue">MCP v2024-11-05</div></div>
+      </div>
+      <div id="mcp-list" class="ch-grid" style="margin-top:16px"></div>
+      <!-- Add MCP Server Form (hidden) -->
+      <div id="mcp-add-form" class="card" style="display:none;margin-top:16px">
+        <h3>➕ Add MCP Server</h3>
+        <label>Name</label>
+        <input id="mcp-name" placeholder="e.g. filesystem, github, memory">
+        <label>Command</label>
+        <input id="mcp-command" placeholder="e.g. npx, uvx, node">
+        <label>Arguments (comma-separated)</label>
+        <input id="mcp-args" placeholder="e.g. -y,@modelcontextprotocol/server-filesystem,/home">
+        <label>Environment Variables (KEY=VALUE, one per line)</label>
+        <textarea id="mcp-env" rows="3" placeholder="GITHUB_TOKEN=ghp_xxx&#10;API_KEY=sk-xxx"></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary" onclick="addMcpServer()">💾 Save</button>
+          <button class="btn btn-outline" onclick="hideMcpForm()">Cancel</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>📖 Popular MCP Servers</h3>
+        <table><thead><tr><th>Name</th><th>Command</th><th>Description</th></tr></thead><tbody>
+          <tr><td><strong>Filesystem</strong></td><td><code>npx -y @modelcontextprotocol/server-filesystem /path</code></td><td>Read/write files</td></tr>
+          <tr><td><strong>GitHub</strong></td><td><code>npx -y @modelcontextprotocol/server-github</code></td><td>Issues, PRs, repos</td></tr>
+          <tr><td><strong>Memory</strong></td><td><code>npx -y @modelcontextprotocol/server-memory</code></td><td>Persistent memory</td></tr>
+          <tr><td><strong>Brave Search</strong></td><td><code>npx -y @modelcontextprotocol/server-brave-search</code></td><td>Web search</td></tr>
+          <tr><td><strong>Puppeteer</strong></td><td><code>npx -y @modelcontextprotocol/server-puppeteer</code></td><td>Browser automation</td></tr>
+          <tr><td><strong>Postgres</strong></td><td><code>npx -y @modelcontextprotocol/server-postgres "postgresql://..."</code></td><td>Database queries</td></tr>
+        </tbody></table>
+        <div style="margin-top:8px;font-size:12px;color:var(--text2)">More at <a href="https://github.com/modelcontextprotocol/servers" target="_blank" style="color:var(--accent)">github.com/modelcontextprotocol/servers</a></div>
       </div>
     </div>
 
@@ -430,6 +477,7 @@ function showPage(name, pushState) {
   if (name === 'settings') loadSettingsForm();
   if (name === 'channels') renderChannelCards();
   if (name === 'configfile') loadConfigToml();
+  if (name === 'mcp') loadMcpServers();
 }
 
 // Handle browser back/forward
@@ -523,10 +571,40 @@ function onProviderChange() {
     document.getElementById('provider-brain-fields').style.display = '';
   } else if (provider === 'ollama') {
     document.getElementById('provider-ollama-fields').style.display = '';
+    loadOllamaModels();
   } else if (provider === 'llamacpp') {
     document.getElementById('provider-llamacpp-fields').style.display = '';
   } else {
     document.getElementById('provider-cloud-fields').style.display = '';
+  }
+}
+
+let _ollamaModelsLoaded = false;
+async function loadOllamaModels() {
+  const sel = document.getElementById('set-ollama-model');
+  const statusEl = document.getElementById('ollama-status-msg');
+  const currentModel = configData.default_provider === 'ollama' ? configData.default_model : '';
+  sel.innerHTML = '<option value="">⏳ Loading...</option>';
+  statusEl.textContent = 'Checking Ollama...';
+  try {
+    const res = await authFetch(API + '/api/v1/ollama/models');
+    const r = await res.json();
+    if (r.ok && r.models && r.models.length > 0) {
+      sel.innerHTML = r.models.map(m =>
+        `<option value="${m.name}" ${m.name === currentModel ? 'selected' : ''}>${m.name} (${m.size})</option>`
+      ).join('');
+      statusEl.innerHTML = `<span style="color:var(--green)">✅ Ollama running — ${r.models.length} models available</span>`;
+      _ollamaModelsLoaded = true;
+    } else if (r.ok && (!r.models || r.models.length === 0)) {
+      sel.innerHTML = '<option value="">No models installed</option>';
+      statusEl.innerHTML = '<span style="color:var(--orange)">⚠️ Ollama running but no models. Run: <code style="color:var(--cyan)">ollama pull tinyllama</code></span>';
+    } else {
+      sel.innerHTML = '<option value="">Ollama not available</option>';
+      statusEl.innerHTML = `<span style="color:var(--red)">❌ ${r.error || 'Cannot connect to Ollama'}</span>`;
+    }
+  } catch(e) {
+    sel.innerHTML = '<option value="">Connection error</option>';
+    statusEl.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
   }
 }
 
@@ -539,14 +617,20 @@ function loadSettingsForm() {
   // Fill model & API key for cloud providers
   document.getElementById('set-model').value = c.default_model || '';
   document.getElementById('set-apikey').value = c.api_key_set ? '••••••••' : '';
-  // Fill Ollama fields
-  document.getElementById('set-ollama-model').value = (provider === 'ollama' ? c.default_model : '') || '';
   // Fill Brain fields
   const brain = c.brain || {};
   document.getElementById('set-brain-path').value = brain.model_path || '';
   document.getElementById('set-brain-threads').value = brain.threads || 4;
-  // Toggle visibility
+  // Toggle visibility (also triggers loadOllamaModels if provider is ollama)
   onProviderChange();
+  // After loading ollama models, select the current one
+  if (provider === 'ollama' && c.default_model) {
+    // Wait for models to load then select
+    setTimeout(() => {
+      const sel = document.getElementById('set-ollama-model');
+      if (sel) sel.value = c.default_model;
+    }, 1500);
+  }
   // Identity
   const id = c.identity || {};
   document.getElementById('set-name').value = id.name || '';
@@ -744,6 +828,100 @@ async function loadConfigToml() {
     document.getElementById('config-toml-content').textContent = data.toml || 'No config loaded';
     document.getElementById('config-path').textContent = data.config_path || '';
   } catch(e) {}
+}
+
+// ═══ MCP SERVERS ═══
+function loadMcpServers() {
+  const servers = configData.mcp_servers || [];
+  document.getElementById('mcp-total').textContent = servers.length;
+  document.getElementById('mcp-active').textContent = servers.filter(s => s.enabled !== false).length;
+  renderMcpList(servers);
+}
+
+function renderMcpList(servers) {
+  const el = document.getElementById('mcp-list');
+  if (!servers.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:30px;color:var(--text2)">🔗 No MCP servers configured yet.<br>Click "+ Add Server" to connect external tools.</div>';
+    return;
+  }
+  el.innerHTML = servers.map((s, i) => `<div class="ch-card">
+    <div class="ch-header">
+      <span class="ch-name">🔗 ${s.name}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-${s.enabled !== false ? 'green' : 'orange'}">${s.enabled !== false ? 'Active' : 'Disabled'}</span>
+        <label class="toggle"><input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="toggleMcp(${i}, this.checked)"><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="ch-fields" style="font-size:12px;">
+      <div><strong>Command:</strong> <code>${s.command} ${(s.args||[]).join(' ')}</code></div>
+      ${Object.keys(s.env||{}).length ? '<div><strong>Env:</strong> ' + Object.keys(s.env).map(k => k + '=•••').join(', ') + '</div>' : ''}
+    </div>
+    <div class="ch-actions" style="margin-top:8px">
+      <button class="btn btn-danger btn-sm" onclick="removeMcp(${i})">🗑️ Remove</button>
+    </div>
+  </div>`).join('');
+}
+
+function showMcpForm() { document.getElementById('mcp-add-form').style.display = ''; }
+function hideMcpForm() { document.getElementById('mcp-add-form').style.display = 'none'; }
+
+async function addMcpServer() {
+  const name = document.getElementById('mcp-name').value.trim();
+  const command = document.getElementById('mcp-command').value.trim();
+  const argsStr = document.getElementById('mcp-args').value.trim();
+  const envStr = document.getElementById('mcp-env').value.trim();
+  if (!name || !command) { toast('Name and command are required', 'error'); return; }
+  
+  const args = argsStr ? argsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const env = {};
+  envStr.split('\n').forEach(line => {
+    const [k, ...v] = line.split('=');
+    if (k && v.length) env[k.trim()] = v.join('=').trim();
+  });
+  
+  const servers = configData.mcp_servers || [];
+  servers.push({ name, command, args, env, enabled: true });
+  
+  try {
+    const res = await authFetch(API + '/api/v1/config/update', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ mcp_servers: servers })
+    });
+    const r = await res.json();
+    if (r.ok) {
+      toast('✅ MCP server added: ' + name);
+      hideMcpForm();
+      // Clear form
+      ['mcp-name','mcp-command','mcp-args','mcp-env'].forEach(id => document.getElementById(id).value = '');
+      await loadConfig();
+      loadMcpServers();
+    } else { toast('❌ ' + r.error, 'error'); }
+  } catch(e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function removeMcp(index) {
+  const servers = (configData.mcp_servers || []).filter((_, i) => i !== index);
+  try {
+    const res = await authFetch(API + '/api/v1/config/update', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ mcp_servers: servers })
+    });
+    const r = await res.json();
+    if (r.ok) { toast('🗑️ Server removed'); await loadConfig(); loadMcpServers(); }
+  } catch(e) { toast('❌ ' + e.message, 'error'); }
+}
+
+async function toggleMcp(index, enabled) {
+  const servers = configData.mcp_servers || [];
+  if (servers[index]) servers[index].enabled = enabled;
+  try {
+    const res = await authFetch(API + '/api/v1/config/update', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ mcp_servers: servers })
+    });
+    const r = await res.json();
+    if (r.ok) { toast(enabled ? '✅ Server enabled' : '⏸ Server disabled'); await loadConfig(); loadMcpServers(); }
+  } catch(e) { toast('❌ ' + e.message, 'error'); }
 }
 
 // ═══ WEBSOCKET CHAT ═══
