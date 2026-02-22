@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use bizclaw_core::config::BizClawConfig;
-use bizclaw_core::error::Result;
+use bizclaw_core::error::{BizClawError, Result};
 use bizclaw_core::traits::provider::{GenerateParams, Provider};
-use bizclaw_core::types::{Message, ModelInfo, ProviderResponse, ToolDefinition};
+use bizclaw_core::types::{Message, ModelInfo, ProviderResponse, Role, ToolDefinition};
 use tokio::sync::Mutex;
 
 pub struct BrainProvider {
@@ -23,7 +23,7 @@ impl BrainProvider {
         let mut engine = bizclaw_brain::BrainEngine::new(brain_config);
 
         // Try to load model from configured path
-        let model_dir = bizclaw_core::config::BizClawConfig::home_dir().join("models");
+        let model_dir = BizClawConfig::home_dir().join("models");
         let model_path = if !config.brain.model_path.is_empty() {
             std::path::PathBuf::from(&config.brain.model_path)
         } else {
@@ -33,7 +33,9 @@ impl BrainProvider {
 
         if model_path.exists() {
             match engine.load_model(&model_path) {
-                Ok(()) => tracing::info!("Brain provider: model loaded from {}", model_path.display()),
+                Ok(()) => {
+                    tracing::info!("Brain provider: model loaded from {}", model_path.display())
+                }
                 Err(e) => tracing::warn!("Brain provider: failed to load model: {e}"),
             }
         } else {
@@ -43,7 +45,9 @@ impl BrainProvider {
             );
         }
 
-        Ok(Self { engine: Mutex::new(engine) })
+        Ok(Self {
+            engine: Mutex::new(engine),
+        })
     }
 }
 
@@ -52,20 +56,25 @@ fn find_gguf_model(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     if !dir.exists() {
         return None;
     }
-    std::fs::read_dir(dir).ok()?.filter_map(|entry| {
-        let entry = entry.ok()?;
-        let path = entry.path();
-        if path.extension()?.to_str()? == "gguf" {
-            Some(path)
-        } else {
-            None
-        }
-    }).next()
+    std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            if path.extension()?.to_str()? == "gguf" {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .next()
 }
 
 #[async_trait]
 impl Provider for BrainProvider {
-    fn name(&self) -> &str { "brain" }
+    fn name(&self) -> &str {
+        "brain"
+    }
 
     async fn chat(
         &self,
@@ -74,7 +83,7 @@ impl Provider for BrainProvider {
         params: &GenerateParams,
     ) -> Result<ProviderResponse> {
         if !self.engine.lock().await.is_loaded() {
-            return Err(bizclaw_core::error::BizClawError::Brain(
+            return Err(BizClawError::Brain(
                 "No model loaded. Place a .gguf file in ~/.bizclaw/models/ or set brain.model_path in config.".into()
             ));
         }
@@ -106,13 +115,14 @@ impl Provider for BrainProvider {
         }
 
         // List available models in ~/.bizclaw/models/
-        let model_dir = bizclaw_core::config::BizClawConfig::home_dir().join("models");
+        let model_dir = BizClawConfig::home_dir().join("models");
         if model_dir.exists() {
             if let Ok(entries) = std::fs::read_dir(&model_dir) {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.extension().and_then(|e| e.to_str()) == Some("gguf") {
-                        let name = path.file_name()
+                        let name = path
+                            .file_name()
                             .map(|f| f.to_string_lossy().to_string())
                             .unwrap_or_default();
                         let size_mb = std::fs::metadata(&path)
@@ -157,16 +167,16 @@ fn format_chat_prompt(messages: &[Message]) -> String {
 
     for msg in messages {
         match msg.role {
-            bizclaw_core::types::Role::System => {
+            Role::System => {
                 prompt.push_str(&format!("[INST] <<SYS>>\n{}\n<</SYS>>\n\n", msg.content));
             }
-            bizclaw_core::types::Role::User => {
+            Role::User => {
                 prompt.push_str(&format!("{} [/INST]", msg.content));
             }
-            bizclaw_core::types::Role::Assistant => {
+            Role::Assistant => {
                 prompt.push_str(&format!(" {} </s><s>[INST] ", msg.content));
             }
-            bizclaw_core::types::Role::Tool => {
+            Role::Tool => {
                 prompt.push_str(&format!("Tool result: {} [/INST]", msg.content));
             }
         }

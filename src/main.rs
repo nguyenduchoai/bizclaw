@@ -143,10 +143,7 @@ enum ConfigAction {
     /// Reset to defaults
     Reset,
     /// Set a config value
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
 }
 
 #[tokio::main]
@@ -160,7 +157,9 @@ async fn main() -> Result<()> {
         "bizclaw=info"
     };
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(filter)))
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(filter)),
+        )
         .with_target(false)
         .init();
 
@@ -172,7 +171,12 @@ async fn main() -> Result<()> {
     };
 
     match cli.command {
-        Commands::Agent { message, interactive, provider, model } => {
+        Commands::Agent {
+            message,
+            interactive,
+            provider,
+            model,
+        } => {
             // Apply overrides
             if let Some(p) = provider {
                 config.default_provider = p;
@@ -185,8 +189,15 @@ async fn main() -> Result<()> {
 
             if interactive || message.is_none() {
                 // Interactive mode
-                println!("🦀 BizClaw v{} — Interactive Mode", env!("CARGO_PKG_VERSION"));
-                println!("   Provider: {} | Model: {}", agent.provider_name(), "default");
+                println!(
+                    "🦀 BizClaw v{} — Interactive Mode",
+                    env!("CARGO_PKG_VERSION")
+                );
+                println!(
+                    "   Provider: {} | Model: {}",
+                    agent.provider_name(),
+                    "default"
+                );
                 println!("   Type /quit to exit, /clear to reset conversation\n");
 
                 let mut cli_channel = bizclaw_channels::cli::CliChannel::new();
@@ -243,7 +254,8 @@ async fn main() -> Result<()> {
                     if let Some(zalo_config) = &config.channel.zalo {
                         if zalo_config.enabled {
                             println!("  📱 Zalo ({}) channel starting...", zalo_config.mode);
-                            let mut zalo = bizclaw_channels::zalo::ZaloChannel::new(zalo_config.clone());
+                            let mut zalo =
+                                bizclaw_channels::zalo::ZaloChannel::new(zalo_config.clone());
                             use bizclaw_core::traits::Channel;
                             zalo.connect().await?;
                         }
@@ -256,12 +268,30 @@ async fn main() -> Result<()> {
                 ChannelAction::List => {
                     println!("Available channels:");
                     println!("  ✅ cli       — Interactive terminal");
-                    println!("  {} zalo      — Zalo Personal/OA",
-                        if config.channel.zalo.as_ref().is_some_and(|z| z.enabled) { "✅" } else { "⬜" });
-                    println!("  {} telegram  — Telegram bot",
-                        if config.channel.telegram.is_some() { "✅" } else { "⬜" });
-                    println!("  {} discord   — Discord bot",
-                        if config.channel.discord.is_some() { "✅" } else { "⬜" });
+                    println!(
+                        "  {} zalo      — Zalo Personal/OA",
+                        if config.channel.zalo.as_ref().is_some_and(|z| z.enabled) {
+                            "✅"
+                        } else {
+                            "⬜"
+                        }
+                    );
+                    println!(
+                        "  {} telegram  — Telegram bot",
+                        if config.channel.telegram.is_some() {
+                            "✅"
+                        } else {
+                            "⬜"
+                        }
+                    );
+                    println!(
+                        "  {} discord   — Discord bot",
+                        if config.channel.discord.is_some() {
+                            "✅"
+                        } else {
+                            "⬜"
+                        }
+                    );
                 }
             }
         }
@@ -312,13 +342,17 @@ async fn main() -> Result<()> {
 
                     // Stream download with progress
                     let client = reqwest::Client::new();
-                    let response = client.get(url)
+                    let response = client
+                        .get(url)
                         .send()
                         .await
                         .map_err(|e| anyhow::anyhow!("Download failed: {e}"))?;
 
                     let total_size = response.content_length().unwrap_or(0);
-                    println!("   Total size: {:.1} MB", total_size as f64 / 1024.0 / 1024.0);
+                    println!(
+                        "   Total size: {:.1} MB",
+                        total_size as f64 / 1024.0 / 1024.0
+                    );
 
                     let mut file = tokio::fs::File::create(&dest).await?;
                     let mut downloaded: u64 = 0;
@@ -335,7 +369,10 @@ async fn main() -> Result<()> {
                         if total_size > 0 {
                             let pct = (downloaded as f64 / total_size as f64 * 100.0) as u32;
                             let mb = downloaded as f64 / 1024.0 / 1024.0;
-                            print!("\r   ⬇️  {mb:.1} MB / {:.1} MB ({pct}%)", total_size as f64 / 1024.0 / 1024.0);
+                            print!(
+                                "\r   ⬇️  {mb:.1} MB / {:.1} MB ({pct}%)",
+                                total_size as f64 / 1024.0 / 1024.0
+                            );
                             use std::io::Write;
                             std::io::stdout().flush().ok();
                         }
@@ -359,8 +396,11 @@ async fn main() -> Result<()> {
                                     let size = std::fs::metadata(&path)
                                         .map(|m| m.len() / 1024 / 1024)
                                         .unwrap_or(0);
-                                    println!("  ✅ {} ({} MB)",
-                                        path.file_name().unwrap_or_default().to_string_lossy(), size);
+                                    println!(
+                                        "  ✅ {} ({} MB)",
+                                        path.file_name().unwrap_or_default().to_string_lossy(),
+                                        size
+                                    );
                                     found = true;
                                 }
                             }
@@ -383,12 +423,14 @@ async fn main() -> Result<()> {
 
                     // Try to find and load a model
                     let model_dir = bizclaw_core::BizClawConfig::home_dir().join("models");
-                    let model_path = std::fs::read_dir(&model_dir).ok()
-                        .and_then(|entries| {
-                            entries.filter_map(|e| e.ok())
-                                .find(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("gguf"))
-                                .map(|e| e.path())
-                        });
+                    let model_path = std::fs::read_dir(&model_dir).ok().and_then(|entries| {
+                        entries
+                            .filter_map(|e| e.ok())
+                            .find(|e| {
+                                e.path().extension().and_then(|ext| ext.to_str()) == Some("gguf")
+                            })
+                            .map(|e| e.path())
+                    });
 
                     match model_path {
                         Some(path) => {
@@ -416,33 +458,49 @@ async fn main() -> Result<()> {
             }
         }
 
-        Commands::Config { action } => {
-            match action {
-                ConfigAction::Show => {
-                    let content = toml::to_string_pretty(&config)?;
-                    println!("{content}");
-                }
-                ConfigAction::Reset => {
-                    let config = bizclaw_core::BizClawConfig::default();
-                    config.save()?;
-                    println!("✅ Configuration reset to defaults.");
-                }
-                ConfigAction::Set { key, value } => {
-                    println!("Setting {key} = {value}");
-                    println!("(Direct config editing — edit ~/.bizclaw/config.toml)");
-                }
+        Commands::Config { action } => match action {
+            ConfigAction::Show => {
+                let content = toml::to_string_pretty(&config)?;
+                println!("{content}");
             }
-        }
+            ConfigAction::Reset => {
+                let config = bizclaw_core::BizClawConfig::default();
+                config.save()?;
+                println!("✅ Configuration reset to defaults.");
+            }
+            ConfigAction::Set { key, value } => {
+                println!("Setting {key} = {value}");
+                println!("(Direct config editing — edit ~/.bizclaw/config.toml)");
+            }
+        },
 
         Commands::Info => {
             println!("🦀 BizClaw v{}", env!("CARGO_PKG_VERSION"));
-            println!("   Platform: {} / {}", std::env::consts::OS, std::env::consts::ARCH);
-            println!("   Config: {}", bizclaw_core::BizClawConfig::default_path().display());
+            println!(
+                "   Platform: {} / {}",
+                std::env::consts::OS,
+                std::env::consts::ARCH
+            );
+            println!(
+                "   Config: {}",
+                bizclaw_core::BizClawConfig::default_path().display()
+            );
             println!("   Provider: {}", config.default_provider);
             println!("   Model: {}", config.default_model);
-            println!("   Brain: {}", if config.brain.enabled { "enabled" } else { "disabled" });
+            println!(
+                "   Brain: {}",
+                if config.brain.enabled {
+                    "enabled"
+                } else {
+                    "disabled"
+                }
+            );
             if let Some(zalo) = &config.channel.zalo {
-                println!("   Zalo: {} ({})", if zalo.enabled { "enabled" } else { "disabled" }, zalo.mode);
+                println!(
+                    "   Zalo: {} ({})",
+                    if zalo.enabled { "enabled" } else { "disabled" },
+                    zalo.mode
+                );
             }
         }
 
@@ -482,8 +540,11 @@ async fn main() -> Result<()> {
 
                 if incoming.content == "/info" {
                     let conv = agent.conversation();
-                    println!("\n📊 Provider: {} | Messages: {} | System prompt: ✅\n",
-                        agent.provider_name(), conv.len());
+                    println!(
+                        "\n📊 Provider: {} | Messages: {} | System prompt: ✅\n",
+                        agent.provider_name(),
+                        conv.len()
+                    );
                     print!("You: ");
                     std::io::stdout().flush()?;
                     continue;
@@ -513,7 +574,10 @@ async fn main() -> Result<()> {
             let url = format!("http://{}:{}", gw_config.host, gw_config.port);
             println!("   🌐 Dashboard: {url}");
             println!("   📡 API:       {url}/api/v1/info");
-            println!("   🔌 WebSocket: ws://{}:{}/ws", gw_config.host, gw_config.port);
+            println!(
+                "   🔌 WebSocket: ws://{}:{}/ws",
+                gw_config.host, gw_config.port
+            );
 
             // ═══════════════════════════════════════════
             // Start configured channels in background
@@ -530,7 +594,7 @@ async fn main() -> Result<()> {
                             bot_token: tg_config.bot_token.clone(),
                             enabled: true,
                             poll_interval: 1,
-                        }
+                        },
                     );
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
@@ -548,7 +612,7 @@ async fn main() -> Result<()> {
                             bot_token: dc_config.bot_token.clone(),
                             enabled: true,
                             intents: (1 << 0) | (1 << 9) | (1 << 12) | (1 << 15),
-                        }
+                        },
                     );
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
@@ -570,7 +634,7 @@ async fn main() -> Result<()> {
                             email: email_cfg.email.clone(),
                             password: email_cfg.password.clone(),
                             ..Default::default()
-                        }
+                        },
                     );
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
@@ -584,7 +648,8 @@ async fn main() -> Result<()> {
                 if zalo_cfg.enabled {
                     let cookie_path = &zalo_cfg.personal.cookie_path;
                     let expanded_path = if cookie_path.starts_with("~/") {
-                        std::env::var("HOME").ok()
+                        std::env::var("HOME")
+                            .ok()
                             .map(|h| std::path::PathBuf::from(h).join(&cookie_path[2..]))
                             .unwrap_or_else(|| std::path::PathBuf::from(cookie_path))
                     } else {
@@ -593,8 +658,10 @@ async fn main() -> Result<()> {
 
                     if expanded_path.exists() {
                         println!("   💬 Zalo: starting ({} mode)...", zalo_cfg.mode);
-                        tracing::info!("Zalo channel starting with cookie from: {}",
-                            expanded_path.display());
+                        tracing::info!(
+                            "Zalo channel starting with cookie from: {}",
+                            expanded_path.display()
+                        );
                         // Note: Zalo uses WebSocket-based listening which is handled inside the
                         // ZaloChannel::connect(). For now, we log that it's ready.
                         // Full polling requires zpw_enk encryption which is complex.
@@ -632,7 +699,7 @@ async fn main() -> Result<()> {
 
 /// Interactive setup wizard.
 async fn run_init_wizard() -> Result<()> {
-    use std::io::{self, Write, BufRead};
+    use std::io::{self, BufRead, Write};
 
     println!("\n🦀 BizClaw — Setup Wizard\n");
     println!("This will create your configuration file.\n");
@@ -640,42 +707,110 @@ async fn run_init_wizard() -> Result<()> {
     let stdin = io::stdin();
     let mut input = String::new();
 
-    // 1. Provider
+    // 1. Provider selection
     println!("📡 Choose your AI provider:");
-    println!("  1. OpenAI (default)");
-    println!("  2. Anthropic Claude");
-    println!("  3. Ollama (local)");
-    println!("  4. Brain (built-in GGUF)");
+    println!("   1. OpenAI          (gpt-4o, gpt-4o-mini)");
+    println!("   2. Anthropic       (claude-sonnet-4, claude-3.5)");
+    println!("   3. Google Gemini   (gemini-2.5-pro, gemini-2.5-flash)");
+    println!("   4. DeepSeek        (deepseek-chat, deepseek-reasoner)");
+    println!("   5. Groq            (llama-3.3-70b, mixtral-8x7b)");
+    println!("   6. OpenRouter      (multi-provider gateway)");
+    println!("   7. Ollama          (local, http://localhost:11434)");
+    println!("   8. llama.cpp       (local, http://localhost:8080)");
+    println!("   9. Brain           (built-in GGUF engine)");
+    println!("  10. Custom          (any OpenAI-compatible endpoint)");
     print!("\n  Choice [1]: ");
     io::stdout().flush()?;
     input.clear();
     stdin.lock().read_line(&mut input)?;
 
-    let (provider, default_model) = match input.trim() {
-        "2" => ("anthropic", "claude-sonnet-4-20250514"),
-        "3" => ("ollama", "llama3.2"),
-        "4" => ("brain", "tinyllama-1.1b"),
-        _ => ("openai", "gpt-4o-mini"),
+    let (provider, default_model, default_endpoint) = match input.trim() {
+        "2" => ("anthropic", "claude-sonnet-4-20250514", ""),
+        "3" => ("gemini", "gemini-2.5-flash", ""),
+        "4" => ("deepseek", "deepseek-chat", ""),
+        "5" => ("groq", "llama-3.3-70b-versatile", ""),
+        "6" => ("openrouter", "openai/gpt-4o", ""),
+        "7" => ("ollama", "llama3.2", "http://localhost:11434/v1"),
+        "8" => ("llamacpp", "local-model", "http://localhost:8080/v1"),
+        "9" => ("brain", "tinyllama-1.1b", ""),
+        "10" => ("custom", "", ""),
+        _ => ("openai", "gpt-4o-mini", ""),
     };
 
-    // 2. API Key (if needed)
+    // 2. API Key (for cloud providers)
     let mut api_key = String::new();
-    if provider != "brain" && provider != "ollama" {
-        print!("\n🔑 Enter your {} API key (or press Enter to skip): ", provider);
+    let needs_key = matches!(
+        provider,
+        "openai" | "anthropic" | "gemini" | "deepseek" | "groq" | "openrouter"
+    );
+    if needs_key {
+        print!(
+            "\n🔑 Enter your {} API key (or press Enter to use env var): ",
+            provider
+        );
         io::stdout().flush()?;
         input.clear();
         stdin.lock().read_line(&mut input)?;
         api_key = input.trim().to_string();
     }
 
-    // 3. Bot name
+    // 3. Endpoint URL (for local/custom providers, or optional override for cloud)
+    let mut endpoint = default_endpoint.to_string();
+    let needs_endpoint = matches!(provider, "ollama" | "llamacpp" | "custom");
+    if needs_endpoint {
+        let prompt = if default_endpoint.is_empty() {
+            "\n🌐 Enter endpoint URL: ".to_string()
+        } else {
+            format!("\n🌐 Endpoint URL [{}]: ", default_endpoint)
+        };
+        print!("{}", prompt);
+        io::stdout().flush()?;
+        input.clear();
+        stdin.lock().read_line(&mut input)?;
+        if !input.trim().is_empty() {
+            endpoint = input.trim().to_string();
+        }
+    }
+
+    // 4. Custom provider may also need a key
+    if provider == "custom" && api_key.is_empty() {
+        print!("\n🔑 Enter API key for custom endpoint (or press Enter for none): ");
+        io::stdout().flush()?;
+        input.clear();
+        stdin.lock().read_line(&mut input)?;
+        api_key = input.trim().to_string();
+    }
+
+    // 5. Model override
+    let mut model = default_model.to_string();
+    if !default_model.is_empty() {
+        print!("\n🧠 Model [{}]: ", default_model);
+        io::stdout().flush()?;
+        input.clear();
+        stdin.lock().read_line(&mut input)?;
+        if !input.trim().is_empty() {
+            model = input.trim().to_string();
+        }
+    } else {
+        print!("\n🧠 Enter model name: ");
+        io::stdout().flush()?;
+        input.clear();
+        stdin.lock().read_line(&mut input)?;
+        model = input.trim().to_string();
+    }
+
+    // 6. Bot name
     print!("\n🤖 Bot name [BizClaw]: ");
     io::stdout().flush()?;
     input.clear();
     stdin.lock().read_line(&mut input)?;
-    let bot_name: String = if input.trim().is_empty() { "BizClaw".into() } else { input.trim().to_string() };
+    let bot_name: String = if input.trim().is_empty() {
+        "BizClaw".into()
+    } else {
+        input.trim().to_string()
+    };
 
-    // 4. Gateway
+    // 7. Gateway
     print!("\n🌐 Enable web dashboard? [Y/n]: ");
     io::stdout().flush()?;
     input.clear();
@@ -684,9 +819,16 @@ async fn run_init_wizard() -> Result<()> {
 
     // Build config
     let mut config = bizclaw_core::BizClawConfig::default();
+
+    // Set [LLM] section
+    config.llm.provider = provider.into();
+    config.llm.model = model.clone();
+    config.llm.api_key = api_key;
+    config.llm.endpoint = endpoint;
+
+    // Also set legacy top-level fields for backward compatibility
     config.default_provider = provider.into();
-    config.default_model = default_model.into();
-    config.api_key = api_key;
+    config.default_model = model.clone();
     config.identity.name = bot_name.into();
 
     // Save
@@ -699,9 +841,12 @@ async fn run_init_wizard() -> Result<()> {
     std::fs::create_dir_all(home.join("data"))?;
 
     println!("\n✅ Setup complete!");
-    println!("   Config: {}", bizclaw_core::BizClawConfig::default_path().display());
+    println!(
+        "   Config: {}",
+        bizclaw_core::BizClawConfig::default_path().display()
+    );
     println!("   Provider: {provider}");
-    println!("   Model: {default_model}");
+    println!("   Model: {model}");
 
     if provider == "brain" {
         println!("\n🧠 Download a model:");
@@ -720,11 +865,8 @@ async fn run_init_wizard() -> Result<()> {
 
 /// Run a channel listener loop — receives messages, routes through Agent, sends replies.
 /// Works for any channel that produces a Stream<Item = IncomingMessage>.
-async fn run_channel_loop<S>(
-    channel_name: &str,
-    mut stream: S,
-    config: bizclaw_core::BizClawConfig,
-) where
+async fn run_channel_loop<S>(channel_name: &str, mut stream: S, config: bizclaw_core::BizClawConfig)
+where
     S: futures::Stream<Item = bizclaw_core::types::IncomingMessage> + Unpin,
 {
     use futures::StreamExt;
@@ -734,7 +876,10 @@ async fn run_channel_loop<S>(
     // Create a dedicated Agent for this channel
     let mut agent = match bizclaw_agent::Agent::new(config.clone()) {
         Ok(a) => {
-            tracing::info!("✅ Agent for channel '{channel_name}' initialized (provider={})", a.provider_name());
+            tracing::info!(
+                "✅ Agent for channel '{channel_name}' initialized (provider={})",
+                a.provider_name()
+            );
             a
         }
         Err(e) => {
@@ -748,23 +893,32 @@ async fn run_channel_loop<S>(
     let send_client = reqwest::Client::new();
 
     while let Some(incoming) = stream.next().await {
-        tracing::info!("[{channel_name}] Message from {}: {}",
-            incoming.sender_name.as_deref().unwrap_or(&incoming.sender_id),
-            &incoming.content[..incoming.content.len().min(100)]);
+        tracing::info!(
+            "[{channel_name}] Message from {}: {}",
+            incoming
+                .sender_name
+                .as_deref()
+                .unwrap_or(&incoming.sender_id),
+            &incoming.content[..incoming.content.len().min(100)]
+        );
 
         // Process through Agent Engine (tools + memory + providers)
         match agent.process(&incoming.content).await {
             Ok(response) => {
-                tracing::info!("[{channel_name}] Response: {}...",
-                    &response[..response.len().min(80)]);
+                tracing::info!(
+                    "[{channel_name}] Response: {}...",
+                    &response[..response.len().min(80)]
+                );
 
                 // Send response back through the same channel
                 match channel_name {
                     "telegram" => {
                         // Use Telegram sendMessage API
                         if let Some(ref tg_cfg) = config.channel.telegram {
-                            let url = format!("https://api.telegram.org/bot{}/sendMessage",
-                                tg_cfg.bot_token);
+                            let url = format!(
+                                "https://api.telegram.org/bot{}/sendMessage",
+                                tg_cfg.bot_token
+                            );
                             let body = serde_json::json!({
                                 "chat_id": incoming.thread_id,
                                 "text": &response,
@@ -797,9 +951,11 @@ async fn run_channel_loop<S>(
                     "email" => {
                         // Reply via SMTP (if email channel has send capability)
                         if let Some(ref _email_cfg) = config.channel.email {
-                            tracing::info!("[email] Reply to {}: {}...",
+                            tracing::info!(
+                                "[email] Reply to {}: {}...",
                                 incoming.sender_id,
-                                &response[..response.len().min(60)]);
+                                &response[..response.len().min(60)]
+                            );
                             // Email replies are handled by the EmailChannel's send() method
                             // The incoming.sender_id contains the From address
                             // For now, log the reply — full SMTP send is in EmailChannel

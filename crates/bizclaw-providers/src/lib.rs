@@ -1,40 +1,56 @@
 //! # BizClaw Providers
 //!
-//! LLM provider implementations: OpenAI, Anthropic, Ollama, LlamaCpp, Brain, Gemini, DeepSeek, Groq.
+//! LLM provider implementations for BizClaw.
+//!
+//! All OpenAI-compatible providers (OpenAI, Anthropic, DeepSeek, Gemini, Groq,
+//! Ollama, LlamaCpp, OpenRouter) are handled by a single `OpenAiCompatibleProvider`.
+//! The `BrainProvider` handles local GGUF models separately.
 
-pub mod openai;
-pub mod anthropic;
-pub mod ollama;
-pub mod llamacpp;
 pub mod brain;
-pub mod custom;
-pub mod gemini;
-pub mod deepseek;
-pub mod groq;
+pub mod openai_compatible;
+pub mod provider_registry;
 
 use bizclaw_core::config::BizClawConfig;
+use bizclaw_core::error::{BizClawError, Result};
 use bizclaw_core::traits::Provider;
-use bizclaw_core::error::Result;
 
 /// Create a provider from configuration.
+///
+/// Resolution order for provider name:
+/// 1. `config.llm.provider` (from `[LLM]` section)
+/// 2. `config.default_provider` (legacy top-level field)
 pub fn create_provider(config: &BizClawConfig) -> Result<Box<dyn Provider>> {
-    match config.default_provider.as_str() {
-        "openai" | "openrouter" => Ok(Box::new(openai::OpenAiProvider::new(config)?)),
-        "anthropic" => Ok(Box::new(anthropic::AnthropicProvider::new(config)?)),
-        "ollama" => Ok(Box::new(ollama::OllamaProvider::new(config)?)),
-        "llamacpp" | "llama.cpp" => Ok(Box::new(llamacpp::LlamaCppProvider::new(config)?)),
+    // Prefer [LLM] section, fallback to legacy top-level field
+    let provider_name = if !config.llm.provider.is_empty() {
+        config.llm.provider.as_str()
+    } else {
+        config.default_provider.as_str()
+    };
+
+    match provider_name {
+        // Local GGUF engine — not OpenAI-compatible
         "brain" => Ok(Box::new(brain::BrainProvider::new(config)?)),
-        "gemini" | "google" => Ok(Box::new(gemini::GeminiProvider::new(config)?)),
-        "deepseek" => Ok(Box::new(deepseek::DeepSeekProvider::new(config)?)),
-        "groq" => Ok(Box::new(groq::GroqProvider::new(config)?)),
-        other if other.starts_with("custom:") => {
-            Ok(Box::new(custom::CustomProvider::new(config, other)?))
+
+        // Custom endpoint: "custom:https://my-server.com/v1"
+        other if other.starts_with("custom:") => Ok(Box::new(
+            openai_compatible::OpenAiCompatibleProvider::custom(other, config)?,
+        )),
+
+        // All known OpenAI-compatible providers
+        _ => {
+            let registry = provider_registry::get_provider_config(provider_name)
+                .ok_or_else(|| BizClawError::ProviderNotFound(provider_name.into()))?;
+            Ok(Box::new(
+                openai_compatible::OpenAiCompatibleProvider::from_registry(registry, config)?,
+            ))
         }
-        other => Err(bizclaw_core::error::BizClawError::ProviderNotFound(other.into())),
     }
 }
 
 /// List all available provider names.
 pub fn available_providers() -> Vec<&'static str> {
-    vec!["openai", "anthropic", "ollama", "llamacpp", "brain", "gemini", "deepseek", "groq", "openrouter", "custom"]
+    let mut names = provider_registry::all_provider_names();
+    names.push("brain");
+    names.push("custom");
+    names
 }

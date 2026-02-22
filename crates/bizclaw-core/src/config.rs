@@ -6,6 +6,38 @@ use std::path::{Path, PathBuf};
 use crate::error::Result;
 use crate::traits::identity::Identity;
 
+/// LLM provider configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmConfig {
+    /// Provider name (e.g., "openai", "anthropic", "gemini", "deepseek", "groq", "ollama", "llamacpp", "brain", "openrouter").
+    #[serde(default = "default_provider")]
+    pub provider: String,
+    /// Model identifier (e.g., "gpt-4o-mini", "claude-sonnet-4-20250514").
+    #[serde(default = "default_model")]
+    pub model: String,
+    /// API key for the provider.
+    #[serde(default)]
+    pub api_key: String,
+    /// Custom endpoint URL. Empty = use default endpoint for the provider.
+    #[serde(default)]
+    pub endpoint: String,
+    /// Generation temperature.
+    #[serde(default = "default_temperature")]
+    pub temperature: f32,
+}
+
+impl Default for LlmConfig {
+    fn default() -> Self {
+        Self {
+            provider: default_provider(),
+            model: default_model(),
+            api_key: String::new(),
+            endpoint: String::new(),
+            temperature: default_temperature(),
+        }
+    }
+}
+
 /// Root configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BizClawConfig {
@@ -17,6 +49,9 @@ pub struct BizClawConfig {
     pub default_model: String,
     #[serde(default = "default_temperature")]
     pub default_temperature: f32,
+    /// LLM provider configuration section.
+    #[serde(default, rename = "LLM")]
+    pub llm: LlmConfig,
     #[serde(default)]
     pub brain: BrainConfig,
     #[serde(default)]
@@ -40,10 +75,18 @@ pub struct BizClawConfig {
     pub mcp_servers: Vec<McpServerEntry>,
 }
 
-fn default_api_key() -> String { String::new() }
-fn default_provider() -> String { "openai".into() }
-fn default_model() -> String { "gpt-4o-mini".into() }
-fn default_temperature() -> f32 { 0.7 }
+fn default_api_key() -> String {
+    String::new()
+}
+fn default_provider() -> String {
+    "openai".into()
+}
+fn default_model() -> String {
+    "gpt-4o-mini".into()
+}
+fn default_temperature() -> f32 {
+    0.7
+}
 
 impl Default for BizClawConfig {
     fn default() -> Self {
@@ -52,6 +95,7 @@ impl Default for BizClawConfig {
             default_provider: default_provider(),
             default_model: default_model(),
             default_temperature: default_temperature(),
+            llm: LlmConfig::default(),
             brain: BrainConfig::default(),
             memory: MemoryConfig::default(),
             gateway: GatewayConfig::default(),
@@ -79,10 +123,12 @@ impl BizClawConfig {
 
     /// Load config from a specific path.
     pub fn load_from(path: &Path) -> Result<Self> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| crate::error::BizClawError::Config(format!("Failed to read config: {e}")))?;
-        let config: Self = toml::from_str(&content)
-            .map_err(|e| crate::error::BizClawError::Config(format!("Failed to parse config: {e}")))?;
+        let content = std::fs::read_to_string(path).map_err(|e| {
+            crate::error::BizClawError::Config(format!("Failed to read config: {e}"))
+        })?;
+        let config: Self = toml::from_str(&content).map_err(|e| {
+            crate::error::BizClawError::Config(format!("Failed to parse config: {e}"))
+        })?;
         Ok(config)
     }
 
@@ -92,8 +138,9 @@ impl BizClawConfig {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let content = toml::to_string_pretty(self)
-            .map_err(|e| crate::error::BizClawError::Config(format!("Failed to serialize config: {e}")))?;
+        let content = toml::to_string_pretty(self).map_err(|e| {
+            crate::error::BizClawError::Config(format!("Failed to serialize config: {e}"))
+        })?;
         std::fs::write(&path, content)?;
         Ok(())
     }
@@ -141,13 +188,27 @@ pub struct BrainConfig {
     pub fallback: Option<BrainFallback>,
 }
 
-fn bool_true() -> bool { true }
-fn default_model_path() -> String { "~/.bizclaw/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf".into() }
-fn default_threads() -> u32 { 4 }
-fn default_max_tokens() -> u32 { 256 }
-fn default_context_length() -> u32 { 2048 }
-fn default_cache_dir() -> String { "~/.bizclaw/cache".into() }
-fn default_top_p() -> f32 { 0.9 }
+fn bool_true() -> bool {
+    true
+}
+fn default_model_path() -> String {
+    "~/.bizclaw/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf".into()
+}
+fn default_threads() -> u32 {
+    4
+}
+fn default_max_tokens() -> u32 {
+    256
+}
+fn default_context_length() -> u32 {
+    2048
+}
+fn default_cache_dir() -> String {
+    "~/.bizclaw/cache".into()
+}
+fn default_top_p() -> f32 {
+    0.9
+}
 
 impl Default for BrainConfig {
     fn default() -> Self {
@@ -188,10 +249,18 @@ pub struct MemoryConfig {
     pub keyword_weight: f32,
 }
 
-fn default_memory_backend() -> String { "sqlite".into() }
-fn default_embedding_provider() -> String { "none".into() }
-fn default_vector_weight() -> f32 { 0.7 }
-fn default_keyword_weight() -> f32 { 0.3 }
+fn default_memory_backend() -> String {
+    "sqlite".into()
+}
+fn default_embedding_provider() -> String {
+    "none".into()
+}
+fn default_vector_weight() -> f32 {
+    0.7
+}
+fn default_keyword_weight() -> f32 {
+    0.3
+}
 
 impl Default for MemoryConfig {
     fn default() -> Self {
@@ -216,8 +285,12 @@ pub struct GatewayConfig {
     pub require_pairing: bool,
 }
 
-fn default_port() -> u16 { 3000 }
-fn default_host() -> String { "127.0.0.1".into() }
+fn default_port() -> u16 {
+    3000
+}
+fn default_host() -> String {
+    "127.0.0.1".into()
+}
 
 impl Default for GatewayConfig {
     fn default() -> Self {
@@ -242,14 +315,22 @@ pub struct AutonomyConfig {
     pub forbidden_paths: Vec<String>,
 }
 
-fn default_autonomy_level() -> String { "supervised".into() }
+fn default_autonomy_level() -> String {
+    "supervised".into()
+}
 fn default_allowed_commands() -> Vec<String> {
     vec!["git", "npm", "cargo", "ls", "cat", "grep"]
-        .into_iter().map(String::from).collect()
+        .into_iter()
+        .map(String::from)
+        .collect()
 }
 fn default_forbidden_paths() -> Vec<String> {
-    vec!["/etc", "/root", "/proc", "/sys", "~/.ssh", "~/.gnupg", "~/.aws"]
-        .into_iter().map(String::from).collect()
+    vec![
+        "/etc", "/root", "/proc", "/sys", "~/.ssh", "~/.gnupg", "~/.aws",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 
 impl Default for AutonomyConfig {
@@ -270,11 +351,15 @@ pub struct RuntimeConfig {
     pub kind: String,
 }
 
-fn default_runtime_kind() -> String { "native".into() }
+fn default_runtime_kind() -> String {
+    "native".into()
+}
 
 impl Default for RuntimeConfig {
     fn default() -> Self {
-        Self { kind: default_runtime_kind() }
+        Self {
+            kind: default_runtime_kind(),
+        }
     }
 }
 
@@ -285,11 +370,15 @@ pub struct TunnelConfig {
     pub provider: String,
 }
 
-fn default_tunnel_provider() -> String { "none".into() }
+fn default_tunnel_provider() -> String {
+    "none".into()
+}
 
 impl Default for TunnelConfig {
     fn default() -> Self {
-        Self { provider: default_tunnel_provider() }
+        Self {
+            provider: default_tunnel_provider(),
+        }
     }
 }
 
@@ -336,7 +425,9 @@ pub struct ZaloChannelConfig {
     pub allowlist: ZaloAllowlistConfig,
 }
 
-fn default_zalo_mode() -> String { "personal".into() }
+fn default_zalo_mode() -> String {
+    "personal".into()
+}
 
 impl Default for ZaloChannelConfig {
     fn default() -> Self {
@@ -368,8 +459,12 @@ pub struct ZaloPersonalConfig {
     pub proxy: String,
 }
 
-fn default_cookie_path() -> String { "~/.bizclaw/zalo/cookie.json".into() }
-fn default_reconnect_delay() -> u64 { 5000 }
+fn default_cookie_path() -> String {
+    "~/.bizclaw/zalo/cookie.json".into()
+}
+fn default_reconnect_delay() -> u64 {
+    5000
+}
 
 impl Default for ZaloPersonalConfig {
     fn default() -> Self {
@@ -395,9 +490,15 @@ pub struct ZaloRateLimitConfig {
     pub cooldown_on_error_ms: u64,
 }
 
-fn default_max_per_minute() -> u32 { 20 }
-fn default_max_per_hour() -> u32 { 200 }
-fn default_cooldown() -> u64 { 30000 }
+fn default_max_per_minute() -> u32 {
+    20
+}
+fn default_max_per_hour() -> u32 {
+    200
+}
+fn default_cooldown() -> u64 {
+    30000
+}
 
 impl Default for ZaloRateLimitConfig {
     fn default() -> Self {
@@ -463,8 +564,12 @@ pub struct EmailChannelConfig {
     pub password: String,
 }
 
-fn default_imap_port_cfg() -> u16 { 993 }
-fn default_smtp_port_cfg() -> u16 { 587 }
+fn default_imap_port_cfg() -> u16 {
+    993
+}
+fn default_smtp_port_cfg() -> u16 {
+    587
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WhatsAppChannelConfig {
@@ -498,7 +603,9 @@ pub struct McpServerEntry {
     pub enabled: bool,
 }
 
-fn default_mcp_enabled() -> bool { true }
+fn default_mcp_enabled() -> bool {
+    true
+}
 
 #[cfg(test)]
 mod tests {
