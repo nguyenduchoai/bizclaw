@@ -151,12 +151,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <a href="/providers" onclick="navigateTo(event,'providers')" id="nav-providers">🔌 <span data-i18n="nav.providers">Nhà cung cấp</span></a>
       <a href="/channels" onclick="navigateTo(event,'channels')" id="nav-channels">📱 <span data-i18n="nav.channels">Kênh liên lạc</span></a>
       <a href="/tools" onclick="navigateTo(event,'tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
-      <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 MCP Servers</a>
-      <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 Multi-Agent</a>
-      <a href="/knowledge" onclick="navigateTo(event,'knowledge')" id="nav-knowledge">📚 Knowledge</a>
+      <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 <span data-i18n="nav.mcp"></span>MCP Servers</span></a>
+      <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 <span data-i18n="nav.agents">Đa tác tử</span></a>
+      <a href="/knowledge" onclick="navigateTo(event,'knowledge')" id="nav-knowledge">📚 <span data-i18n="nav.knowledge">Kho tri thức</span></a>
       <div class="nav-sep"></div>
       <a href="/brain" onclick="navigateTo(event,'brain')" id="nav-brain">🧠 <span data-i18n="nav.brain">Brain Engine</span></a>
-      <a href="/configfile" onclick="navigateTo(event,'configfile')" id="nav-configfile">📄 config.toml</a>
+      <a href="/configfile" onclick="navigateTo(event,'configfile')" id="nav-configfile">📄 <span data-i18n="nav.config">Tệp cấu hình</span></a>
     </nav>
     <div class="sidebar-footer">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
@@ -174,7 +174,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <!-- Widget Row 1: Quick Stats -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
         <div class="card" style="text-align:center">
-          <div class="card-label">⏰ Clock</div>
+          <div class="card-label">⏰ <span data-i18n="dash.clock">Đồng hồ</span></div>
           <div class="card-value accent" id="w-clock" style="font-size:22px;font-family:var(--mono)">--:--</div>
           <div class="card-sub" id="w-date">—</div>
         </div>
@@ -199,23 +199,23 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <!-- System Info Widget -->
         <div class="card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div class="card-label" style="margin:0">🖥️ System</div>
-            <span class="badge badge-green" id="s-status">● Online</span>
+            <div class="card-label" style="margin:0">🖥️ <span data-i18n="dash.system">Hệ thống</span></div>
+            <span class="badge badge-green" id="s-status">● <span data-i18n="dash.online">Trực tuyến</span></span>
           </div>
           <div id="dash-system" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-            <div><span style="color:var(--text2)">OS:</span> <span id="sys-os">—</span></div>
-            <div><span style="color:var(--text2)">Arch:</span> <span id="sys-arch">—</span></div>
+            <div><span style="color:var(--text2)" data-i18n="sys.os">Hệ điều hành:</span> <span id="sys-os">—</span></div>
+            <div><span style="color:var(--text2)" data-i18n="sys.arch">Kiến trúc:</span> <span id="sys-arch">—</span></div>
             <div><span style="color:var(--text2)">SIMD:</span> <span id="brain-simd" style="color:var(--accent2)">—</span></div>
-            <div><span style="color:var(--text2)">Memory:</span> <span id="sys-mem">—</span></div>
+            <div><span style="color:var(--text2)" data-i18n="sys.memory">Bộ nhớ:</span> <span id="sys-mem">—</span></div>
           </div>
         </div>
         <!-- Quick Actions Widget -->
         <div class="card">
-          <div class="card-label" style="margin-bottom:10px">⚡ Quick Actions</div>
+          <div class="card-label" style="margin-bottom:10px">⚡ <span data-i18n="dash.quickactions">Thao tác nhanh</span></div>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
-            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'chat')">💬 Chat</button>
-            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'settings')">⚙️ Settings</button>
-            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'channels')">📱 Channels</button>
+            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'chat')">💬 <span data-i18n="nav.webchat">Trò chuyện</span></button>
+            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'settings')">⚙️ <span data-i18n="nav.settings">Cài đặt</span></button>
+            <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'channels')">📱 <span data-i18n="nav.channels">Kênh</span></button>
             <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'brain')">🧠 Brain</button>
             <button class="btn btn-outline btn-sm" onclick="navigateTo(null,'configfile')">📄 Config</button>
           </div>
@@ -245,27 +245,27 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ SETTINGS ═══ -->
     <div id="page-settings" style="display:none">
-      <div class="page-header"><div><h1>⚙️ Agent Settings</h1><div class="sub">Configure your AI agent — provider, model, identity, security</div></div>
-        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      <div class="page-header"><div><h1>⚙️ <span data-i18n="settings.title">Cài đặt Agent</span></h1><div class="sub" data-i18n="settings.subtitle">Cấu hình AI agent — nhà cung cấp, mô hình, danh tính, bảo mật</div></div>
+        <button class="btn btn-primary" onclick="saveSettings()" data-i18n="settings.save">💾 Lưu cài đặt</button>
       </div>
       <div class="form-section">
-        <h2>🤖 AI Provider</h2>
-        <div class="form-row"><span class="form-label">Provider</span><select id="set-provider" onchange="onProviderChange()">
+        <h2>🤖 <span data-i18n="set.provider_section">Nhà cung cấp AI</span></h2>
+        <div class="form-row"><span class="form-label" data-i18n="set.provider">Nhà cung cấp</span><select id="set-provider" onchange="onProviderChange()">
           <option value="openai">OpenAI</option><option value="anthropic">Anthropic</option>
           <option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option>
-          <option value="groq">Groq</option><option value="ollama">Ollama (local)</option>
-          <option value="llamacpp">llama.cpp</option><option value="brain">Brain Engine (offline)</option>
+          <option value="groq">Groq</option><option value="ollama">Ollama (nội bộ)</option>
+          <option value="llamacpp">llama.cpp</option><option value="brain">Brain Engine (ngoại tuyến)</option>
         </select></div>
         <!-- Cloud provider fields -->
         <div id="provider-cloud-fields">
-          <div class="form-row"><span class="form-label">Model</span><input id="set-model" placeholder="gpt-4o-mini"></div>
-          <div class="form-row"><span class="form-label">API Key</span><input id="set-apikey" type="password" placeholder="sk-..."></div>
+          <div class="form-row"><span class="form-label" data-i18n="set.model">Mô hình</span><input id="set-model" placeholder="gpt-4o-mini"></div>
+          <div class="form-row"><span class="form-label" data-i18n="set.apikey">Khóa API</span><input id="set-apikey" type="password" placeholder="sk-..."></div>
         </div>
         <!-- Ollama fields -->
         <div id="provider-ollama-fields" style="display:none">
-          <div class="form-row"><span class="form-label">Model</span>
+          <div class="form-row"><span class="form-label" data-i18n="set.model">Mô hình</span>
             <div style="display:flex;gap:8px;flex:1">
-              <select id="set-ollama-model" style="flex:1"><option value="">Loading models...</option></select>
+              <select id="set-ollama-model" style="flex:1"><option value="" data-i18n="set.loading_models">Đang tải mô hình...</option></select>
               <button class="btn btn-outline btn-sm" onclick="loadOllamaModels()" title="Refresh models">🔄</button>
             </div>
           </div>
@@ -273,17 +273,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <!-- Brain Engine fields -->
         <div id="provider-brain-fields" style="display:none">
-          <div class="form-row"><span class="form-label">Model Path</span>
+          <div class="form-row"><span class="form-label" data-i18n="set.model_path">Đường dẫn mô hình</span>
             <div style="display:flex;gap:8px;flex:1">
               <input id="set-brain-path" placeholder="~/.bizclaw/models/tinyllama.gguf" style="flex:1">
-              <button class="btn btn-outline btn-sm" onclick="scanBrainModels()" title="Scan for GGUF models">📂 Scan</button>
+              <button class="btn btn-outline btn-sm" onclick="scanBrainModels()" title="Quét tìm mô hình GGUF">📂 <span data-i18n="set.scan">Quét</span></button>
             </div>
           </div>
           <div id="brain-models-found" style="display:none;margin:-8px 0 8px 0">
             <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Found GGUF models — click to select:</div>
             <div id="brain-models-list" style="display:flex;flex-wrap:wrap;gap:4px"></div>
           </div>
-          <div class="form-row"><span class="form-label">Threads</span><input id="set-brain-threads" type="number" min="1" max="32" value="4" placeholder="4"></div>
+          <div class="form-row"><span class="form-label" data-i18n="set.threads">Luồng xử lý</span><input id="set-brain-threads" type="number" min="1" max="32" value="4" placeholder="4"></div>
           <div class="form-row" style="background:var(--accent-glow);border-color:var(--accent)"><span class="form-label" style="color:var(--accent2)">🧠 Brain</span><span style="font-size:12px;color:var(--text2)">GGUF models run 100% offline. Download: <code style="color:var(--cyan)">bizclaw brain download tinyllama-1.1b</code></span></div>
         </div>
         <!-- llama.cpp fields -->
@@ -291,35 +291,35 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="form-row"><span class="form-label">Server URL</span><input id="set-llamacpp-url" placeholder="http://localhost:8080"></div>
           <div class="form-row"><span class="form-label">Model</span><input id="set-llamacpp-model" placeholder="(auto-detected)"></div>
         </div>
-        <div class="form-row"><span class="form-label">Temperature</span><input id="set-temp" type="number" step="0.1" min="0" max="2" value="0.7"></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.temperature">Nhiệt độ</span><input id="set-temp" type="number" step="0.1" min="0" max="2" value="0.7"></div>
       </div>
       <div class="form-section">
-        <h2>🎭 Identity</h2>
-        <div class="form-row"><span class="form-label">Agent Name</span><input id="set-name" placeholder="BizClaw"></div>
-        <div class="form-row"><span class="form-label">Persona</span><input id="set-persona" placeholder="A helpful AI assistant"></div>
-        <div class="form-row"><span class="form-label">System Prompt</span><textarea id="set-sysprompt" placeholder="You are BizClaw, a fast and capable AI assistant."></textarea></div>
+        <h2>🎭 <span data-i18n="set.identity">Danh tính</span></h2>
+        <div class="form-row"><span class="form-label" data-i18n="set.agent_name">Tên Agent</span><input id="set-name" placeholder="BizClaw"></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.persona">Vai trò</span><input id="set-persona" placeholder="Trợ lý AI thông minh"></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.sysprompt">Lời nhắc hệ thống</span><textarea id="set-sysprompt" placeholder="Bạn là BizClaw, trợ lý AI nhanh và đáng tin cậy."></textarea></div>
       </div>
       <div class="form-section">
-        <h2>💾 Memory</h2>
-        <div class="form-row"><span class="form-label">Backend</span><select id="set-mem-backend"><option value="sqlite">SQLite</option><option value="postgres">PostgreSQL</option><option value="none">None (NoOp)</option></select></div>
-        <div class="form-row"><span class="form-label">Auto Save</span><select id="set-mem-autosave"><option value="true">Yes</option><option value="false">No</option></select></div>
+        <h2>💾 <span data-i18n="set.memory">Bộ nhớ</span></h2>
+        <div class="form-row"><span class="form-label" data-i18n="set.backend">Backend</span><select id="set-mem-backend"><option value="sqlite">SQLite</option><option value="postgres">PostgreSQL</option><option value="none">Không (NoOp)</option></select></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.autosave">Tự động lưu</span><select id="set-mem-autosave"><option value="true">Có</option><option value="false">Không</option></select></div>
       </div>
       <div class="form-section">
-        <h2>🔒 Security / Autonomy</h2>
-        <div class="form-row"><span class="form-label">Autonomy Level</span><select id="set-auto-level"><option value="readonly">Read Only</option><option value="supervised">Supervised</option><option value="full">Full</option></select></div>
-        <div class="form-row"><span class="form-label">Workspace Only</span><select id="set-auto-workspace"><option value="true">Yes</option><option value="false">No</option></select></div>
+        <h2>🔒 <span data-i18n="set.security">Bảo mật / Quyền tự chủ</span></h2>
+        <div class="form-row"><span class="form-label" data-i18n="set.autonomy">Mức tự chủ</span><select id="set-auto-level"><option value="readonly" data-i18n="set.readonly">Chỉ đọc</option><option value="supervised" data-i18n="set.supervised">Giám sát</option><option value="full" data-i18n="set.full">Toàn quyền</option></select></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.workspace_only">Chỉ Workspace</span><select id="set-auto-workspace"><option value="true">Có</option><option value="false">Không</option></select></div>
       </div>
     </div>
 
     <!-- ═══ PROVIDERS ═══ -->
     <div id="page-providers" style="display:none">
-      <div class="page-header"><h1>🔌 Providers</h1></div>
-      <div class="card"><table><thead><tr><th>Provider</th><th>Type</th><th>Status</th><th>Models</th></tr></thead><tbody id="providers-table"></tbody></table></div>
+      <div class="page-header"><h1>🔌 <span data-i18n="providers.title">Nhà cung cấp</span></h1></div>
+      <div class="card"><table><thead><tr><th data-i18n="set.provider">Nhà cung cấp</th><th data-i18n="th.type">Loại</th><th data-i18n="th.status">Trạng thái</th><th data-i18n="set.model">Mô hình</th></tr></thead><tbody id="providers-table"></tbody></table></div>
     </div>
 
     <!-- ═══ CHANNELS ═══ -->
     <div id="page-channels" style="display:none">
-      <div class="page-header"><div><h1>📱 Channel Configuration</h1><div class="sub">Connect your agent to messaging platforms</div></div></div>
+      <div class="page-header"><div><h1>📱 <span data-i18n="channels.title">Cấu hình kênh liên lạc</span></h1><div class="sub" data-i18n="channels.subtitle">Kết nối agent với các nền tảng nhắn tin</div></div></div>
       <div class="ch-grid" id="channels-grid"></div>
       <!-- Zalo QR Modal -->
       <div id="zalo-qr-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center">
@@ -335,47 +335,47 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ TOOLS ═══ -->
     <div id="page-tools" style="display:none">
-      <div class="page-header"><h1>🛠️ Tools</h1></div>
+      <div class="page-header"><h1>🛠️ <span data-i18n="tools.title">Công cụ</span></h1></div>
       <div class="stats">
-        <div class="card"><div class="card-label">Shell</div><div class="card-value green">● Active</div><div class="card-sub">Execute system commands (sandboxed)</div></div>
-        <div class="card"><div class="card-label">File</div><div class="card-value green">● Active</div><div class="card-sub">Read/write/list files</div></div>
-        <div class="card"><div class="card-label">Web Search</div><div class="card-value green">● Active</div><div class="card-sub">DuckDuckGo search</div></div>
-        <div class="card"><div class="card-label">Calendar</div><div class="card-value orange">● Available</div><div class="card-sub">Google Calendar integration</div></div>
-        <div class="card"><div class="card-label">Document Reader</div><div class="card-value green">● Active</div><div class="card-sub">PDF, DOCX, Excel, CSV extraction</div></div>
-        <div class="card"><div class="card-label">Group Summarizer</div><div class="card-value green">● Active</div><div class="card-sub">Zalo/Telegram group message summary</div></div>
+        <div class="card"><div class="card-label">Shell</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.shell_desc">Thực thi lệnh hệ thống (sandbox)</div></div>
+        <div class="card"><div class="card-label" data-i18n="tool.file">Tệp tin</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.file_desc">Đọc/ghi/liệt kê tệp tin</div></div>
+        <div class="card"><div class="card-label" data-i18n="tool.websearch">Tìm kiếm Web</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub">DuckDuckGo</div></div>
+        <div class="card"><div class="card-label" data-i18n="tool.calendar">Lịch</div><div class="card-value orange">● <span data-i18n="tool.available">Sẵn sàng</span></div><div class="card-sub" data-i18n="tool.calendar_desc">Tích hợp Google Calendar</div></div>
+        <div class="card"><div class="card-label" data-i18n="tool.docreader">Đọc tài liệu</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.docreader_desc">Trích xuất PDF, DOCX, Excel, CSV</div></div>
+        <div class="card"><div class="card-label" data-i18n="tool.summarizer">Tóm tắt nhóm</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.summarizer_desc">Tóm tắt tin nhắn nhóm Zalo/Telegram</div></div>
       </div>
     </div>
 
     <!-- ═══ MCP SERVERS ═══ -->
     <div id="page-mcp" style="display:none">
-      <div class="page-header"><div><h1>🔗 MCP Servers</h1><div class="sub">Model Context Protocol — extend your agent with external tools</div></div>
-        <button class="btn btn-primary" onclick="showMcpForm()">+ Add Server</button>
+      <div class="page-header"><div><h1>🔗 <span data-i18n="mcp.title">Máy chủ MCP</span></h1><div class="sub" data-i18n="mcp.subtitle">Model Context Protocol — mở rộng agent với công cụ bên ngoài</div></div>
+        <button class="btn btn-primary" onclick="showMcpForm()">+ <span data-i18n="mcp.add">Thêm máy chủ</span></button>
       </div>
       <div class="stats" id="mcp-stats">
-        <div class="card"><div class="card-label">Total Servers</div><div class="card-value accent" id="mcp-total">0</div></div>
-        <div class="card"><div class="card-label">Active</div><div class="card-value green" id="mcp-active">0</div></div>
-        <div class="card"><div class="card-label">Protocol</div><div class="card-value blue">MCP v2024-11-05</div></div>
+        <div class="card"><div class="card-label" data-i18n="mcp.total">Tổng máy chủ</div><div class="card-value accent" id="mcp-total">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="mcp.active">Đang hoạt động</div><div class="card-value green" id="mcp-active">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="mcp.protocol">Giao thức</div><div class="card-value blue">MCP v2024-11-05</div></div>
       </div>
       <div id="mcp-list" class="ch-grid" style="margin-top:16px"></div>
       <!-- Add MCP Server Form (hidden) -->
       <div id="mcp-add-form" class="card" style="display:none;margin-top:16px">
-        <h3>➕ Add MCP Server</h3>
-        <label>Name</label>
-        <input id="mcp-name" placeholder="e.g. filesystem, github, memory">
-        <label>Command</label>
-        <input id="mcp-command" placeholder="e.g. npx, uvx, node">
-        <label>Arguments (comma-separated)</label>
-        <input id="mcp-args" placeholder="e.g. -y,@modelcontextprotocol/server-filesystem,/home">
-        <label>Environment Variables (KEY=VALUE, one per line)</label>
+        <h3>➕ <span data-i18n="mcp.add_title">Thêm máy chủ MCP</span></h3>
+        <label data-i18n="form.name">Tên</label>
+        <input id="mcp-name" placeholder="vd: filesystem, github, memory">
+        <label data-i18n="form.command">Lệnh</label>
+        <input id="mcp-command" placeholder="vd: npx, uvx, node">
+        <label data-i18n="form.args">Tham số (phân cách bằng dấu phẩy)</label>
+        <input id="mcp-args" placeholder="vd: -y,@modelcontextprotocol/server-filesystem,/home">
+        <label data-i18n="form.env">Biến môi trường (KEY=VALUE, mỗi dòng một cặp)</label>
         <textarea id="mcp-env" rows="3" placeholder="GITHUB_TOKEN=ghp_xxx&#10;API_KEY=sk-xxx"></textarea>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-primary" onclick="addMcpServer()">💾 Save</button>
-          <button class="btn btn-outline" onclick="hideMcpForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="addMcpServer()">💾 <span data-i18n="form.save">Lưu</span></button>
+          <button class="btn btn-outline" onclick="hideMcpForm()" data-i18n="form.cancel">Hủy</button>
         </div>
       </div>
       <div class="card" style="margin-top:16px">
-        <h3>📖 Popular MCP Servers</h3>
-        <table><thead><tr><th>Name</th><th>Command</th><th>Description</th></tr></thead><tbody>
+        <h3>📖 <span data-i18n="mcp.popular">MCP phổ biến</span></h3>
+        <table><thead><tr><th data-i18n="form.name">Tên</th><th data-i18n="form.command">Lệnh</th><th data-i18n="form.description">Mô tả</th></tr></thead><tbody>
           <tr><td><strong>Filesystem</strong></td><td><code>npx -y @modelcontextprotocol/server-filesystem /path</code></td><td>Read/write files</td></tr>
           <tr><td><strong>GitHub</strong></td><td><code>npx -y @modelcontextprotocol/server-github</code></td><td>Issues, PRs, repos</td></tr>
           <tr><td><strong>Memory</strong></td><td><code>npx -y @modelcontextprotocol/server-memory</code></td><td>Persistent memory</td></tr>
@@ -389,15 +389,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ BRAIN ENGINE ═══ -->
     <div id="page-brain" style="display:none">
-      <div class="page-header"><h1>🧠 Brain Engine</h1></div>
+      <div class="page-header"><h1>🧠 <span data-i18n="brain.title">Brain Engine</span></h1></div>
       <div class="stats">
-        <div class="card"><div class="card-label">Engine</div><div class="card-value green">GGUF v3</div></div>
+        <div class="card"><div class="card-label" data-i18n="brain.engine">Động cơ</div><div class="card-value green">GGUF v3</div></div>
         <div class="card"><div class="card-label">SIMD</div><div class="card-value accent" id="brain-simd">—</div></div>
-        <div class="card"><div class="card-label">Quantization</div><div class="card-value blue">Q4_0 / Q8_0 / F16</div></div>
-        <div class="card"><div class="card-label">Features</div><div class="card-value cyan">Flash Attn + KV Cache</div></div>
+        <div class="card"><div class="card-label" data-i18n="brain.quant">Lượng tử hóa</div><div class="card-value blue">Q4_0 / Q8_0 / F16</div></div>
+        <div class="card"><div class="card-label" data-i18n="brain.features">Tính năng</div><div class="card-value cyan">Flash Attn + KV Cache</div></div>
       </div>
-      <div class="form-section"><h2>Available Models</h2>
-        <div class="card"><table><thead><tr><th>Model</th><th>Size</th><th>Download</th></tr></thead><tbody>
+      <div class="form-section"><h2 data-i18n="brain.models">Mô hình có sẵn</h2>
+        <div class="card"><table><thead><tr><th data-i18n="set.model">Mô hình</th><th data-i18n="brain.size">Kích thước</th><th data-i18n="brain.download">Tải về</th></tr></thead><tbody>
           <tr><td><strong>TinyLlama 1.1B</strong></td><td>~638 MB</td><td><code>bizclaw brain download tinyllama-1.1b</code></td></tr>
           <tr><td><strong>Phi-2</strong></td><td>~1.6 GB</td><td><code>bizclaw brain download phi-2</code></td></tr>
           <tr><td><strong>Llama 3.2 1B</strong></td><td>~750 MB</td><td><code>bizclaw brain download llama-3.2-1b</code></td></tr>
@@ -408,70 +408,70 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ MULTI-AGENT ═══ -->
     <div id="page-agents" style="display:none">
-      <div class="page-header"><div><h1>🤖 Multi-Agent Orchestrator</h1><div class="sub">Create and manage multiple AI agents with different roles</div></div>
-        <button class="btn btn-primary" onclick="showCreateAgentForm()">+ Create Agent</button>
+      <div class="page-header"><div><h1>🤖 <span data-i18n="agents.title">Đa tác tử AI</span></h1><div class="sub" data-i18n="agents.subtitle">Tạo và quản lý nhiều agent AI với vai trò khác nhau</div></div>
+        <button class="btn btn-primary" onclick="showCreateAgentForm()">+ <span data-i18n="agents.create">Tạo Agent</span></button>
       </div>
       <div class="stats">
-        <div class="card"><div class="card-label">Total Agents</div><div class="card-value accent" id="agents-total">0</div></div>
-        <div class="card"><div class="card-label">Default Agent</div><div class="card-value green" id="agents-default">—</div></div>
-        <div class="card"><div class="card-label">Messages</div><div class="card-value blue" id="agents-messages">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="agents.total">Tổng Agent</div><div class="card-value accent" id="agents-total">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="agents.default">Agent mặc định</div><div class="card-value green" id="agents-default">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="agents.messages">Tin nhắn</div><div class="card-value blue" id="agents-messages">0</div></div>
       </div>
       <!-- Create Agent Form -->
       <div id="agent-create-form" class="card" style="display:none;margin-top:16px">
-        <h3>➕ Create New Agent</h3>
-        <div class="form-row"><span class="form-label">Name</span><input id="new-agent-name" placeholder="researcher"></div>
-        <div class="form-row"><span class="form-label">Role</span><select id="new-agent-role">
-          <option value="assistant">Assistant</option><option value="researcher">Researcher</option>
-          <option value="coder">Coder</option><option value="writer">Writer</option>
-          <option value="analyst">Analyst</option><option value="translator">Translator</option>
+        <h3>➕ <span data-i18n="agents.create_new">Tạo Agent mới</span></h3>
+        <div class="form-row"><span class="form-label" data-i18n="form.name">Tên</span><input id="new-agent-name" placeholder="researcher"></div>
+        <div class="form-row"><span class="form-label" data-i18n="form.role">Vai trò</span><select id="new-agent-role">
+          <option value="assistant">Trợ lý</option><option value="researcher">Nhà nghiên cứu</option>
+          <option value="coder">Lập trình viên</option><option value="writer">Nhà văn</option>
+          <option value="analyst">Phân tích viên</option><option value="translator">Phiên dịch</option>
         </select></div>
-        <div class="form-row"><span class="form-label">Description</span><input id="new-agent-desc" placeholder="A helpful research agent"></div>
-        <div class="form-row"><span class="form-label">System Prompt</span><textarea id="new-agent-prompt" placeholder="You are a specialized research agent..."></textarea></div>
+        <div class="form-row"><span class="form-label" data-i18n="form.description">Mô tả</span><input id="new-agent-desc" placeholder="Agent nghiên cứu thông minh"></div>
+        <div class="form-row"><span class="form-label" data-i18n="set.sysprompt">Lời nhắc hệ thống</span><textarea id="new-agent-prompt" placeholder="Bạn là agent nghiên cứu chuyên sâu..."></textarea></div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-primary" onclick="createAgent()">🤖 Create</button>
-          <button class="btn btn-outline" onclick="document.getElementById('agent-create-form').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="createAgent()">🤖 <span data-i18n="agents.create">Tạo</span></button>
+          <button class="btn btn-outline" onclick="document.getElementById('agent-create-form').style.display='none'" data-i18n="form.cancel">Hủy</button>
         </div>
       </div>
       <div id="agents-list" class="ch-grid" style="margin-top:16px"></div>
       <!-- Broadcast -->
       <div class="card" style="margin-top:16px">
-        <h3>📢 Broadcast Message</h3>
-        <div class="form-row"><span class="form-label">Message</span><input id="broadcast-msg" placeholder="Send to all agents..."></div>
-        <button class="btn btn-primary btn-sm" onclick="broadcastMessage()">📢 Send to All</button>
+        <h3>📢 <span data-i18n="agents.broadcast">Phát tin nhắn</span></h3>
+        <div class="form-row"><span class="form-label" data-i18n="agents.msg">Tin nhắn</span><input id="broadcast-msg" placeholder="Gửi tới tất cả agent..."></div>
+        <button class="btn btn-primary btn-sm" onclick="broadcastMessage()">📢 <span data-i18n="agents.send_all">Gửi tất cả</span></button>
         <div id="broadcast-results" style="margin-top:12px"></div>
       </div>
     </div>
 
     <!-- ═══ KNOWLEDGE BASE ═══ -->
     <div id="page-knowledge" style="display:none">
-      <div class="page-header"><div><h1>📚 Knowledge Base</h1><div class="sub">Personal RAG — add documents for context-aware AI responses</div></div>
-        <button class="btn btn-primary" onclick="showAddDocForm()">+ Add Document</button>
+      <div class="page-header"><div><h1>📚 <span data-i18n="kb.title">Kho tri thức</span></h1><div class="sub" data-i18n="kb.subtitle">RAG cá nhân — thêm tài liệu để AI trả lời chính xác hơn</div></div>
+        <button class="btn btn-primary" onclick="showAddDocForm()">+ <span data-i18n="kb.add_doc">Thêm tài liệu</span></button>
       </div>
       <div class="stats">
-        <div class="card"><div class="card-label">Documents</div><div class="card-value accent" id="kb-docs">0</div></div>
-        <div class="card"><div class="card-label">Chunks</div><div class="card-value blue" id="kb-chunks">0</div></div>
-        <div class="card"><div class="card-label">Search Engine</div><div class="card-value green">FTS5</div></div>
+        <div class="card"><div class="card-label" data-i18n="kb.documents">Tài liệu</div><div class="card-value accent" id="kb-docs">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="kb.chunks">Đoạn văn</div><div class="card-value blue" id="kb-chunks">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="kb.search_engine">Công cụ tìm kiếm</div><div class="card-value green">FTS5</div></div>
       </div>
       <!-- Search -->
       <div class="card" style="margin-top:16px">
-        <h3>🔍 Search Knowledge</h3>
-        <div style="display:flex;gap:8px"><input id="kb-search-input" placeholder="Search your documents..." style="flex:1" onkeydown="if(event.key==='Enter')searchKnowledge()"><button class="btn btn-primary btn-sm" onclick="searchKnowledge()">Search</button></div>
+        <h3>🔍 <span data-i18n="kb.search">Tìm kiếm tri thức</span></h3>
+        <div style="display:flex;gap:8px"><input id="kb-search-input" placeholder="Tìm trong tài liệu..." style="flex:1" onkeydown="if(event.key==='Enter')searchKnowledge()"><button class="btn btn-primary btn-sm" onclick="searchKnowledge()" data-i18n="kb.search_btn">Tìm kiếm</button></div>
         <div id="kb-search-results" style="margin-top:12px"></div>
       </div>
       <!-- Add Document Form -->
       <div id="kb-add-form" class="card" style="display:none;margin-top:16px">
-        <h3>➕ Add Document</h3>
-        <div class="form-row"><span class="form-label">Name</span><input id="kb-doc-name" placeholder="meeting_notes.txt"></div>
-        <div class="form-row"><span class="form-label">Source</span><input id="kb-doc-source" placeholder="manual" value="dashboard"></div>
-        <div class="form-row"><span class="form-label">Content</span><textarea id="kb-doc-content" rows="6" placeholder="Paste document content here..."></textarea></div>
+        <h3>➕ <span data-i18n="kb.add_title">Thêm tài liệu</span></h3>
+        <div class="form-row"><span class="form-label" data-i18n="form.name">Tên</span><input id="kb-doc-name" placeholder="ghi_chu_cuoc_hop.txt"></div>
+        <div class="form-row"><span class="form-label" data-i18n="kb.source">Nguồn</span><input id="kb-doc-source" placeholder="thủ công" value="dashboard"></div>
+        <div class="form-row"><span class="form-label" data-i18n="kb.content">Nội dung</span><textarea id="kb-doc-content" rows="6" placeholder="Dán nội dung tài liệu vào đây..."></textarea></div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-primary" onclick="addDocument()">💾 Save</button>
-          <button class="btn btn-outline" onclick="document.getElementById('kb-add-form').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="addDocument()">💾 <span data-i18n="form.save">Lưu</span></button>
+          <button class="btn btn-outline" onclick="document.getElementById('kb-add-form').style.display='none'" data-i18n="form.cancel">Hủy</button>
         </div>
       </div>
       <!-- Document List -->
       <div class="card" style="margin-top:16px">
-        <h3>📄 Documents</h3>
+        <h3>📄 <span data-i18n="kb.doc_list">Danh sách tài liệu</span></h3>
         <div id="kb-doc-list"></div>
       </div>
     </div>
@@ -1407,46 +1407,148 @@ function toast(msg) {
 let currentLang = localStorage.getItem('bizclaw_lang') || 'vi';
 const I18N = {
   vi: {
+    // Navigation
     'nav.dashboard':'Bảng điều khiển','nav.webchat':'Trò chuyện','nav.settings':'Cài đặt',
     'nav.providers':'Nhà cung cấp','nav.channels':'Kênh liên lạc','nav.tools':'Công cụ',
-    'nav.brain':'Brain Engine',
+    'nav.brain':'Brain Engine','nav.mcp':'Máy chủ MCP','nav.agents':'Đa tác tử',
+    'nav.knowledge':'Kho tri thức','nav.config':'Tệp cấu hình',
+    // Dashboard
     'dash.title':'Bảng điều khiển','dash.subtitle':'Trung tâm quản lý Agent Gateway',
     'dash.status':'Trạng thái','dash.version':'Phiên bản','dash.provider':'Nhà cung cấp',
     'dash.model':'Mô hình AI','dash.uptime':'Thời gian hoạt động','dash.platform':'Nền tảng',
-    'dash.channels':'Kênh đang hoạt động',
+    'dash.channels':'Kênh đang hoạt động','dash.clock':'Đồng hồ','dash.system':'Hệ thống',
+    'dash.online':'Trực tuyến','dash.quickactions':'Thao tác nhanh',
+    'sys.os':'Hệ điều hành:','sys.arch':'Kiến trúc:','sys.memory':'Bộ nhớ:',
+    // Table headers
     'th.channel':'Kênh','th.type':'Loại','th.status':'Trạng thái','th.configured':'Đã cấu hình',
+    // Chat
     'chat.title':'Trò chuyện','chat.welcome':'Đã kết nối BizClaw. Nhập tin nhắn để bắt đầu trò chuyện.',
     'chat.thinking':'BizClaw đang suy nghĩ','chat.placeholder':'Nhập tin nhắn...','chat.send':'Gửi ↑',
     'chat.history_cleared':'💬 Đã xóa lịch sử trò chuyện',
     'chat.help':'Lệnh có sẵn:\n/status — Xem trạng thái agent\n/reset — Xóa lịch sử chat\n/help — Hiện trợ giúp',
+    // Status
     'status.connected':'Đã kết nối','status.disconnected':'Đã ngắt kết nối',
+    // Settings
     'settings.title':'Cài đặt Agent','settings.subtitle':'Cấu hình AI agent — nhà cung cấp, mô hình, danh tính, bảo mật',
     'settings.save':'💾 Lưu cài đặt',
-    'brain.title':'Brain Engine','tools.title':'Công cụ','providers.title':'Nhà cung cấp',
+    'set.provider_section':'Nhà cung cấp AI','set.provider':'Nhà cung cấp','set.model':'Mô hình',
+    'set.apikey':'Khóa API','set.loading_models':'Đang tải mô hình...','set.model_path':'Đường dẫn mô hình',
+    'set.scan':'Quét','set.threads':'Luồng xử lý','set.temperature':'Nhiệt độ',
+    'set.identity':'Danh tính','set.agent_name':'Tên Agent','set.persona':'Vai trò',
+    'set.sysprompt':'Lời nhắc hệ thống','set.memory':'Bộ nhớ','set.backend':'Backend',
+    'set.autosave':'Tự động lưu','set.security':'Bảo mật / Quyền tự chủ',
+    'set.autonomy':'Mức tự chủ','set.readonly':'Chỉ đọc','set.supervised':'Giám sát',
+    'set.full':'Toàn quyền','set.workspace_only':'Chỉ Workspace',
+    // Providers
+    'providers.title':'Nhà cung cấp',
+    // Channels
     'channels.title':'Cấu hình kênh liên lạc','channels.subtitle':'Kết nối agent với các nền tảng nhắn tin',
+    // Tools
+    'tools.title':'Công cụ','tool.active':'Hoạt động','tool.available':'Sẵn sàng',
+    'tool.file':'Tệp tin','tool.websearch':'Tìm kiếm Web','tool.calendar':'Lịch',
+    'tool.docreader':'Đọc tài liệu','tool.summarizer':'Tóm tắt nhóm',
+    'tool.shell_desc':'Thực thi lệnh hệ thống (sandbox)','tool.file_desc':'Đọc/ghi/liệt kê tệp tin',
+    'tool.calendar_desc':'Tích hợp Google Calendar','tool.docreader_desc':'Trích xuất PDF, DOCX, Excel, CSV',
+    'tool.summarizer_desc':'Tóm tắt tin nhắn nhóm Zalo/Telegram',
+    // MCP
+    'mcp.title':'Máy chủ MCP','mcp.subtitle':'Model Context Protocol — mở rộng agent với công cụ bên ngoài',
+    'mcp.add':'Thêm máy chủ','mcp.total':'Tổng máy chủ','mcp.active':'Đang hoạt động',
+    'mcp.protocol':'Giao thức','mcp.add_title':'Thêm máy chủ MCP','mcp.popular':'MCP phổ biến',
+    // Multi-Agent
+    'agents.title':'Đa tác tử AI','agents.subtitle':'Tạo và quản lý nhiều agent AI với vai trò khác nhau',
+    'agents.create':'Tạo Agent','agents.total':'Tổng Agent','agents.default':'Agent mặc định',
+    'agents.messages':'Tin nhắn','agents.create_new':'Tạo Agent mới','agents.broadcast':'Phát tin nhắn',
+    'agents.msg':'Tin nhắn','agents.send_all':'Gửi tất cả',
+    // Knowledge Base
+    'kb.title':'Kho tri thức','kb.subtitle':'RAG cá nhân — thêm tài liệu để AI trả lời chính xác hơn',
+    'kb.add_doc':'Thêm tài liệu','kb.documents':'Tài liệu','kb.chunks':'Đoạn văn',
+    'kb.search_engine':'Công cụ tìm kiếm','kb.search':'Tìm kiếm tri thức','kb.search_btn':'Tìm kiếm',
+    'kb.add_title':'Thêm tài liệu','kb.source':'Nguồn','kb.content':'Nội dung',
+    'kb.doc_list':'Danh sách tài liệu',
+    // Brain Engine
+    'brain.title':'Brain Engine','brain.engine':'Động cơ','brain.quant':'Lượng tử hóa',
+    'brain.features':'Tính năng','brain.models':'Mô hình có sẵn','brain.size':'Kích thước',
+    'brain.download':'Tải về',
+    // Forms
+    'form.name':'Tên','form.command':'Lệnh','form.args':'Tham số (phân cách bằng dấu phẩy)',
+    'form.env':'Biến môi trường (KEY=VALUE, mỗi dòng một cặp)','form.save':'Lưu','form.cancel':'Hủy',
+    'form.role':'Vai trò','form.description':'Mô tả',
+    // Config page
     'config.title':'config.toml',
+    // Pairing
     'pairing.title':'BizClaw Agent','pairing.desc':'Nhập mã Pairing Code để truy cập Dashboard',
     'pairing.confirm':'🔓 Xác nhận','pairing.error':'Vui lòng nhập mã pairing',
   },
   en: {
+    // Navigation
     'nav.dashboard':'Dashboard','nav.webchat':'WebChat','nav.settings':'Settings',
     'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools',
-    'nav.brain':'Brain Engine',
+    'nav.brain':'Brain Engine','nav.mcp':'MCP Servers','nav.agents':'Multi-Agent',
+    'nav.knowledge':'Knowledge','nav.config':'Config File',
+    // Dashboard
     'dash.title':'Dashboard','dash.subtitle':'Agent Gateway Control Panel',
     'dash.status':'Status','dash.version':'Version','dash.provider':'Provider',
     'dash.model':'AI Model','dash.uptime':'Uptime','dash.platform':'Platform',
-    'dash.channels':'Active Channels',
+    'dash.channels':'Active Channels','dash.clock':'Clock','dash.system':'System',
+    'dash.online':'Online','dash.quickactions':'Quick Actions',
+    'sys.os':'OS:','sys.arch':'Arch:','sys.memory':'Memory:',
+    // Table headers
     'th.channel':'Channel','th.type':'Type','th.status':'Status','th.configured':'Configured',
+    // Chat
     'chat.title':'WebChat','chat.welcome':'Connected to BizClaw. Type a message to start chatting.',
     'chat.thinking':'BizClaw is thinking','chat.placeholder':'Type your message...','chat.send':'Send ↑',
     'chat.history_cleared':'💬 Chat history cleared',
     'chat.help':'Available commands:\n/status — Show agent status\n/reset — Clear chat history\n/help — Show this help',
+    // Status
     'status.connected':'Connected','status.disconnected':'Disconnected',
+    // Settings
     'settings.title':'Agent Settings','settings.subtitle':'Configure your AI agent — provider, model, identity, security',
     'settings.save':'💾 Save Settings',
-    'brain.title':'Brain Engine','tools.title':'Tools','providers.title':'Providers',
+    'set.provider_section':'AI Provider','set.provider':'Provider','set.model':'Model',
+    'set.apikey':'API Key','set.loading_models':'Loading models...','set.model_path':'Model Path',
+    'set.scan':'Scan','set.threads':'Threads','set.temperature':'Temperature',
+    'set.identity':'Identity','set.agent_name':'Agent Name','set.persona':'Persona',
+    'set.sysprompt':'System Prompt','set.memory':'Memory','set.backend':'Backend',
+    'set.autosave':'Auto Save','set.security':'Security / Autonomy',
+    'set.autonomy':'Autonomy Level','set.readonly':'Read Only','set.supervised':'Supervised',
+    'set.full':'Full','set.workspace_only':'Workspace Only',
+    // Providers
+    'providers.title':'Providers',
+    // Channels
     'channels.title':'Channel Configuration','channels.subtitle':'Connect your agent to messaging platforms',
+    // Tools
+    'tools.title':'Tools','tool.active':'Active','tool.available':'Available',
+    'tool.file':'File','tool.websearch':'Web Search','tool.calendar':'Calendar',
+    'tool.docreader':'Document Reader','tool.summarizer':'Group Summarizer',
+    'tool.shell_desc':'Execute system commands (sandboxed)','tool.file_desc':'Read/write/list files',
+    'tool.calendar_desc':'Google Calendar integration','tool.docreader_desc':'PDF, DOCX, Excel, CSV extraction',
+    'tool.summarizer_desc':'Zalo/Telegram group message summary',
+    // MCP
+    'mcp.title':'MCP Servers','mcp.subtitle':'Model Context Protocol — extend your agent with external tools',
+    'mcp.add':'Add Server','mcp.total':'Total Servers','mcp.active':'Active',
+    'mcp.protocol':'Protocol','mcp.add_title':'Add MCP Server','mcp.popular':'Popular MCP Servers',
+    // Multi-Agent
+    'agents.title':'Multi-Agent AI','agents.subtitle':'Create and manage multiple AI agents with different roles',
+    'agents.create':'Create Agent','agents.total':'Total Agents','agents.default':'Default Agent',
+    'agents.messages':'Messages','agents.create_new':'Create New Agent','agents.broadcast':'Broadcast Message',
+    'agents.msg':'Message','agents.send_all':'Send to All',
+    // Knowledge Base
+    'kb.title':'Knowledge Base','kb.subtitle':'Personal RAG — add documents for context-aware AI responses',
+    'kb.add_doc':'Add Document','kb.documents':'Documents','kb.chunks':'Chunks',
+    'kb.search_engine':'Search Engine','kb.search':'Search Knowledge','kb.search_btn':'Search',
+    'kb.add_title':'Add Document','kb.source':'Source','kb.content':'Content',
+    'kb.doc_list':'Document List',
+    // Brain Engine
+    'brain.title':'Brain Engine','brain.engine':'Engine','brain.quant':'Quantization',
+    'brain.features':'Features','brain.models':'Available Models','brain.size':'Size',
+    'brain.download':'Download',
+    // Forms
+    'form.name':'Name','form.command':'Command','form.args':'Arguments (comma-separated)',
+    'form.env':'Environment Variables (KEY=VALUE, one per line)','form.save':'Save','form.cancel':'Cancel',
+    'form.role':'Role','form.description':'Description',
+    // Config page
     'config.title':'config.toml',
+    // Pairing
     'pairing.title':'BizClaw Agent','pairing.desc':'Enter Pairing Code to access Dashboard',
     'pairing.confirm':'🔓 Confirm','pairing.error':'Please enter pairing code',
   }
