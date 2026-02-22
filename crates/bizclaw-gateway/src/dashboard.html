@@ -151,7 +151,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <a href="/providers" onclick="navigateTo(event,'providers')" id="nav-providers">🔌 <span data-i18n="nav.providers">Nhà cung cấp</span></a>
       <a href="/channels" onclick="navigateTo(event,'channels')" id="nav-channels">📱 <span data-i18n="nav.channels">Kênh liên lạc</span></a>
       <a href="/tools" onclick="navigateTo(event,'tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
-      <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 <span data-i18n="nav.mcp"></span>MCP Servers</span></a>
+      <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 <span data-i18n="nav.mcp">Máy chủ MCP</span></a>
       <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 <span data-i18n="nav.agents">Đa tác tử</span></a>
       <a href="/knowledge" onclick="navigateTo(event,'knowledge')" id="nav-knowledge">📚 <span data-i18n="nav.knowledge">Kho tri thức</span></a>
       <div class="nav-sep"></div>
@@ -335,14 +335,23 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ TOOLS ═══ -->
     <div id="page-tools" style="display:none">
-      <div class="page-header"><h1>🛠️ <span data-i18n="tools.title">Công cụ</span></h1></div>
-      <div class="stats">
-        <div class="card"><div class="card-label">Shell</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.shell_desc">Thực thi lệnh hệ thống (sandbox)</div></div>
-        <div class="card"><div class="card-label" data-i18n="tool.file">Tệp tin</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.file_desc">Đọc/ghi/liệt kê tệp tin</div></div>
-        <div class="card"><div class="card-label" data-i18n="tool.websearch">Tìm kiếm Web</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub">DuckDuckGo</div></div>
-        <div class="card"><div class="card-label" data-i18n="tool.calendar">Lịch</div><div class="card-value orange">● <span data-i18n="tool.available">Sẵn sàng</span></div><div class="card-sub" data-i18n="tool.calendar_desc">Tích hợp Google Calendar</div></div>
-        <div class="card"><div class="card-label" data-i18n="tool.docreader">Đọc tài liệu</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.docreader_desc">Trích xuất PDF, DOCX, Excel, CSV</div></div>
-        <div class="card"><div class="card-label" data-i18n="tool.summarizer">Tóm tắt nhóm</div><div class="card-value green">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.summarizer_desc">Tóm tắt tin nhắn nhóm Zalo/Telegram</div></div>
+      <div class="page-header"><div><h1>🛠️ <span data-i18n="tools.title">Công cụ</span></h1><div class="sub" data-i18n="tools.subtitle">15 công cụ tích hợp + công cụ MCP bên ngoài</div></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+        <div class="card"><div class="card-label">🖥️ Shell</div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.shell_desc">Thực thi lệnh hệ thống (sandbox)</div></div>
+        <div class="card"><div class="card-label">📄 <span data-i18n="tool.file">Tệp tin</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.file_desc">Đọc/ghi/liệt kê tệp tin</div></div>
+        <div class="card"><div class="card-label">✏️ <span data-i18n="tool.editfile">Sửa tệp</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.editfile_desc">Thay thế chính xác nội dung trong tệp</div></div>
+        <div class="card"><div class="card-label">🔍 Glob</div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.glob_desc">Tìm tệp theo mẫu (*.rs, **/*.toml)</div></div>
+        <div class="card"><div class="card-label">🔎 Grep</div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.grep_desc">Tìm nội dung trong tệp bằng regex</div></div>
+        <div class="card"><div class="card-label">🌐 <span data-i18n="tool.websearch">Tìm kiếm Web</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub">DuckDuckGo (không cần API key)</div></div>
+        <div class="card"><div class="card-label">📡 <span data-i18n="tool.httpreq">HTTP Request</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.httpreq_desc">Gọi API bên ngoài (GET/POST/PUT/DELETE)</div></div>
+        <div class="card"><div class="card-label">⚙️ <span data-i18n="tool.configmgr">Quản lý cấu hình</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.configmgr_desc">Đọc/ghi config.toml lúc runtime</div></div>
+        <div class="card"><div class="card-label">🧠 <span data-i18n="tool.memsearch">Tìm trí nhớ</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.memsearch_desc">Tìm hội thoại cũ bằng FTS5</div></div>
+        <div class="card"><div class="card-label">🚀 <span data-i18n="tool.execcode">Chạy mã</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.execcode_desc">Chạy code Python, JS, Go, Rust, C...</div></div>
+        <div class="card"><div class="card-label">📋 <span data-i18n="tool.plan">Kế hoạch</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.plan_desc">Phân rã tác vụ với phụ thuộc và độ phức tạp</div></div>
+        <div class="card"><div class="card-label">📊 <span data-i18n="tool.sessionctx">Ngữ cảnh phiên</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.sessionctx_desc">Thông tin phiên: provider, token, tools</div></div>
+        <div class="card"><div class="card-label">📅 <span data-i18n="tool.calendar">Lịch</span></div><div class="card-value orange" style="font-size:16px">● <span data-i18n="tool.available">Sẵn sàng</span></div><div class="card-sub" data-i18n="tool.calendar_desc">Tích hợp Google Calendar</div></div>
+        <div class="card"><div class="card-label">📖 <span data-i18n="tool.docreader">Đọc tài liệu</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.docreader_desc">Trích xuất PDF, DOCX, Excel, CSV</div></div>
+        <div class="card"><div class="card-label">💬 <span data-i18n="tool.summarizer">Tóm tắt nhóm</span></div><div class="card-value green" style="font-size:16px">● <span data-i18n="tool.active">Hoạt động</span></div><div class="card-sub" data-i18n="tool.summarizer_desc">Tóm tắt tin nhắn nhóm Zalo/Telegram</div></div>
       </div>
     </div>
 
@@ -1450,12 +1459,24 @@ const I18N = {
     // Channels
     'channels.title':'Cấu hình kênh liên lạc','channels.subtitle':'Kết nối agent với các nền tảng nhắn tin',
     // Tools
-    'tools.title':'Công cụ','tool.active':'Hoạt động','tool.available':'Sẵn sàng',
-    'tool.file':'Tệp tin','tool.websearch':'Tìm kiếm Web','tool.calendar':'Lịch',
-    'tool.docreader':'Đọc tài liệu','tool.summarizer':'Tóm tắt nhóm',
+    'tools.title':'Công cụ','tools.subtitle':'12 công cụ tích hợp + công cụ MCP bên ngoài',
+    'tool.active':'Hoạt động','tool.available':'Sẵn sàng',
+    'tool.file':'Tệp tin','tool.editfile':'Sửa tệp','tool.websearch':'Tìm kiếm Web',
+    'tool.calendar':'Lịch','tool.docreader':'Đọc tài liệu','tool.summarizer':'Tóm tắt nhóm',
+    'tool.httpreq':'HTTP Request','tool.configmgr':'Quản lý cấu hình','tool.memsearch':'Tìm trí nhớ',
     'tool.shell_desc':'Thực thi lệnh hệ thống (sandbox)','tool.file_desc':'Đọc/ghi/liệt kê tệp tin',
+    'tool.editfile_desc':'Thay thế chính xác nội dung trong tệp',
+    'tool.glob_desc':'Tìm tệp theo mẫu (*.rs, **/*.toml)',
+    'tool.grep_desc':'Tìm nội dung trong tệp bằng regex',
+    'tool.httpreq_desc':'Gọi API bên ngoài (GET/POST/PUT/DELETE)',
+    'tool.configmgr_desc':'Đọc/ghi config.toml lúc runtime',
+    'tool.memsearch_desc':'Tìm hội thoại cũ bằng FTS5',
+    'tool.execcode':'Chạy mã','tool.execcode_desc':'Chạy code Python, JS, Go, Rust, C...',
+    'tool.plan':'Kế hoạch','tool.plan_desc':'Phân rã tác vụ với phụ thuộc và độ phức tạp',
+    'tool.sessionctx':'Ngữ cảnh phiên','tool.sessionctx_desc':'Thông tin phiên: provider, token, tools',
     'tool.calendar_desc':'Tích hợp Google Calendar','tool.docreader_desc':'Trích xuất PDF, DOCX, Excel, CSV',
     'tool.summarizer_desc':'Tóm tắt tin nhắn nhóm Zalo/Telegram',
+    'tools.subtitle':'15 công cụ tích hợp + công cụ MCP bên ngoài',
     // MCP
     'mcp.title':'Máy chủ MCP','mcp.subtitle':'Model Context Protocol — mở rộng agent với công cụ bên ngoài',
     'mcp.add':'Thêm máy chủ','mcp.total':'Tổng máy chủ','mcp.active':'Đang hoạt động',
@@ -1523,12 +1544,24 @@ const I18N = {
     // Channels
     'channels.title':'Channel Configuration','channels.subtitle':'Connect your agent to messaging platforms',
     // Tools
-    'tools.title':'Tools','tool.active':'Active','tool.available':'Available',
-    'tool.file':'File','tool.websearch':'Web Search','tool.calendar':'Calendar',
-    'tool.docreader':'Document Reader','tool.summarizer':'Group Summarizer',
+    'tools.title':'Tools','tools.subtitle':'12 built-in tools + external MCP tools',
+    'tool.active':'Active','tool.available':'Available',
+    'tool.file':'File','tool.editfile':'Edit File','tool.websearch':'Web Search',
+    'tool.calendar':'Calendar','tool.docreader':'Document Reader','tool.summarizer':'Group Summarizer',
+    'tool.httpreq':'HTTP Request','tool.configmgr':'Config Manager','tool.memsearch':'Memory Search',
     'tool.shell_desc':'Execute system commands (sandboxed)','tool.file_desc':'Read/write/list files',
+    'tool.editfile_desc':'Precise text replacements in files',
+    'tool.glob_desc':'Find files by pattern (*.rs, **/*.toml)',
+    'tool.grep_desc':'Search file contents with regex',
+    'tool.httpreq_desc':'Call external APIs (GET/POST/PUT/DELETE)',
+    'tool.configmgr_desc':'Read/write config.toml at runtime',
+    'tool.memsearch_desc':'Search past conversations via FTS5',
+    'tool.execcode':'Execute Code','tool.execcode_desc':'Run Python, JS, Go, Rust, C code...',
+    'tool.plan':'Plan Mode','tool.plan_desc':'Task decomposition with dependencies & complexity',
+    'tool.sessionctx':'Session Context','tool.sessionctx_desc':'Session info: provider, tokens, tools',
     'tool.calendar_desc':'Google Calendar integration','tool.docreader_desc':'PDF, DOCX, Excel, CSV extraction',
     'tool.summarizer_desc':'Zalo/Telegram group message summary',
+    'tools.subtitle':'15 built-in tools + external MCP tools',
     // MCP
     'mcp.title':'MCP Servers','mcp.subtitle':'Model Context Protocol — extend your agent with external tools',
     'mcp.add':'Add Server','mcp.total':'Total Servers','mcp.active':'Active',

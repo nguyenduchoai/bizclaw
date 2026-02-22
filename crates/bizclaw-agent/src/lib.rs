@@ -1,7 +1,7 @@
 //! # BizClaw Agent
 //! The core agent engine — orchestrates providers, channels, memory, and tools.
 //! 
-//! ## Features (ported from OpenCrabs patterns):
+//! ## Features (BizClaw agent features):
 //! - **Multi-round tool calling**: Up to 3 rounds of tool → LLM → tool loops
 //! - **Memory retrieval (RAG)**: FTS5-powered search of past conversations
 //! - **Knowledge base integration**: Auto-search uploaded documents for context
@@ -91,6 +91,8 @@ pub struct Agent {
     knowledge: Option<std::sync::Arc<tokio::sync::Mutex<Option<bizclaw_knowledge::KnowledgeStore>>>>,
     /// Context statistics from last process() call
     last_stats: ContextStats,
+    /// 3-Tier Memory: daily log manager for persisting compaction summaries
+    daily_log: bizclaw_memory::brain::DailyLogManager,
 }
 
 impl Agent {
@@ -101,10 +103,23 @@ impl Agent {
         let tools = bizclaw_tools::ToolRegistry::with_defaults();
         let security = bizclaw_security::DefaultSecurityPolicy::new(config.autonomy.clone());
 
-        let prompt_cache = PromptCache::new(&config.identity.system_prompt, &tools);
+        // 3-Tier Memory: assemble brain context from workspace files
+        let brain_ws = bizclaw_memory::brain::BrainWorkspace::default();
+        let _ = brain_ws.initialize(); // seed default files if missing
+        let brain_context = brain_ws.assemble_brain();
+        let daily_log = bizclaw_memory::brain::DailyLogManager::default();
+
+        // Build system prompt: user config + brain workspace
+        let system_prompt = if brain_context.trim().is_empty() {
+            config.identity.system_prompt.clone()
+        } else {
+            format!("{}\n\n{}", config.identity.system_prompt, brain_context)
+        };
+
+        let prompt_cache = PromptCache::new(&system_prompt, &tools);
 
         let mut conversation = vec![];
-        conversation.push(Message::system(&config.identity.system_prompt));
+        conversation.push(Message::system(&system_prompt));
 
         Ok(Self {
             config,
@@ -125,6 +140,7 @@ impl Agent {
                 compacted: false,
                 session_id: "default".to_string(),
             },
+            daily_log,
         })
     }
 
@@ -159,10 +175,22 @@ impl Agent {
             }
         }
 
-        let prompt_cache = PromptCache::new(&config.identity.system_prompt, &tools);
+        // 3-Tier Memory: assemble brain context from workspace files
+        let brain_ws = bizclaw_memory::brain::BrainWorkspace::default();
+        let _ = brain_ws.initialize();
+        let brain_context = brain_ws.assemble_brain();
+        let daily_log = bizclaw_memory::brain::DailyLogManager::default();
+
+        let system_prompt = if brain_context.trim().is_empty() {
+            config.identity.system_prompt.clone()
+        } else {
+            format!("{}\n\n{}", config.identity.system_prompt, brain_context)
+        };
+
+        let prompt_cache = PromptCache::new(&system_prompt, &tools);
 
         let mut conversation = vec![];
-        conversation.push(Message::system(&config.identity.system_prompt));
+        conversation.push(Message::system(&system_prompt));
 
         Ok(Self {
             config,
@@ -174,6 +202,7 @@ impl Agent {
             prompt_cache,
             session_id: "default".to_string(),
             knowledge: None,
+            daily_log,
             last_stats: ContextStats {
                 message_count: 1,
                 estimated_tokens: 0,
@@ -531,6 +560,11 @@ impl Agent {
         self.conversation.extend(recent);
 
         tracing::info!("📦 Compacted {} → {} messages", old_count + 10, self.conversation.len());
+
+        // 3-Tier Memory: persist compaction summary to daily log
+        if let Err(e) = self.daily_log.save_compaction(&summary) {
+            tracing::warn!("Failed to save compaction to daily log: {e}");
+        }
     }
 
     /// Estimate token count (rough heuristic: 1 token ≈ 4 chars for English, 2 chars for CJK).

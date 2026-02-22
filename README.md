@@ -6,11 +6,11 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-71%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)]()
 [![Crates](https://img.shields.io/badge/crates-14-success)]()
-[![LOC](https://img.shields.io/badge/lines-17553-informational)]()
+[![LOC](https://img.shields.io/badge/lines-19958-informational)]()
 
-<!-- AUTO-GENERATED STATS — updated 2026-02-22 @ 60c9626 -->
+<!-- AUTO-GENERATED STATS — updated 2026-02-22 @ 2f77b17 -->
 
 ---
 
@@ -31,7 +31,7 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 | **💬 17 Channels** | CLI, Zalo Personal, Telegram, Discord, Email (IMAP/SMTP), Webhook |
 | **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log |
 | **🌐 Web Dashboard** | Chat UI (VI/EN), WebSocket real-time, LobsterBoard-inspired widgets |
-| **🛠️ 6 Tools** | Shell, File, Web Search, Group Summarizer, Calendar, Document Reader |
+| **🛠️ 15 Tools** | Shell, File, Web Search, Group Summarizer, Calendar, Document Reader |
 | **🔗 MCP** | Model Context Protocol client — kết nối MCP servers bên ngoài |
 | **🔒 Security** | Command allowlist, AES-256, HMAC-SHA256, JWT + bcrypt |
 | **💾 Memory** | SQLite + RAG-style retrieval, keyword search, relevance scoring |
@@ -127,10 +127,10 @@ ollama pull llama3.2      # ~3.8GB
 |-------|--------|--------|
 | `bizclaw-core` | Traits, types, config, errors | ✅ |
 | `bizclaw-brain` | GGUF inference + SIMD | ✅ |
-| `bizclaw-providers` | 9 LLM providers | ✅ |
+| `bizclaw-providers` | 10 LLM providers | ✅ |
 | `bizclaw-channels` | 17 channels | ✅ |
 | `bizclaw-memory` | SQLite + RAG retrieval | ✅ |
-| `bizclaw-tools` | 6 native tools | ✅ |
+| `bizclaw-tools` | 15 native tools | ✅ |
 | `bizclaw-mcp` | MCP client (JSON-RPC) | ✅ |
 | `bizclaw-security` | AES-256, Sandbox | ✅ |
 | `bizclaw-agent` | Agent loop + tool calling | ✅ |
@@ -144,11 +144,11 @@ ollama pull llama3.2      # ~3.8GB
 |--------|-------|
 | **Language** | 100% Rust |
 | **Crates** | 14 |
-| **Lines of Code** | ~17553 |
-| **Tests** | 71 passing |
+| **Lines of Code** | ~19958 |
+| **Tests** | 76 passing |
 | **Providers** | 10 |
 | **Channels** | 17 |
-| **Tools** | 6 + MCP |
+| **Tools** | 15 + MCP |
 | **Binary Size** | bizclaw 11M, platform 7.1M |
 | **Last Updated** | 2026-02-22 |
 
@@ -164,7 +164,7 @@ ollama pull llama3.2      # ~3.8GB
 - **🔗 MCP Support** — Connect any MCP server for unlimited tools
 - **🏢 Multi-Tenant Platform** — Admin dashboard, JWT auth, tenant lifecycle
 - **🌐 Web Dashboard** — Bilingual (VI/EN), real-time WebSocket chat
-- **🛠️ 6 Tools** — Shell, File, Web Search, Calendar, Summarizer, DocReader
+- **🛠️ 15 Tools** — Shell, File, Web Search, Calendar, Summarizer, DocReader
 - **🔒 Security** — AES-256, Command allowlists, sandbox, HMAC-SHA256
 - **💾 RAG Memory** — SQLite with keyword search and relevance scoring
 
@@ -185,4 +185,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**BizClaw** v0.1.0 — *AI nhanh, mọi nơi. / Fast AI, everywhere.*
+**BizClaw** v0.2.0 — *AI nhanh, mọi nơi. / Fast AI, everywhere.*

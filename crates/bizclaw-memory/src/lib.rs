@@ -1,9 +1,10 @@
 //! # BizClaw Memory
-//! Memory and persistence backends.
+//! Memory and persistence backends with 3-tier brain architecture
 
 pub mod sqlite;
 pub mod noop;
 pub mod vector;
+pub mod brain;
 
 use bizclaw_core::config::MemoryConfig;
 use bizclaw_core::traits::MemoryBackend;
