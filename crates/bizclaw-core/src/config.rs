@@ -35,6 +35,9 @@ pub struct BizClawConfig {
     pub identity: Identity,
     #[serde(default)]
     pub channel: ChannelConfig,
+    /// MCP server configurations.
+    #[serde(default)]
+    pub mcp_servers: Vec<McpServerEntry>,
 }
 
 fn default_api_key() -> String { String::new() }
@@ -58,6 +61,7 @@ impl Default for BizClawConfig {
             secrets: SecretsConfig::default(),
             identity: Identity::default(),
             channel: ChannelConfig::default(),
+            mcp_servers: vec![],
         }
     }
 }
@@ -475,6 +479,26 @@ pub struct WhatsAppChannelConfig {
     #[serde(default)]
     pub business_id: String,
 }
+
+/// MCP server entry — one per [[mcp_servers]] in config.toml.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpServerEntry {
+    /// Display name for this server.
+    pub name: String,
+    /// Command to start the MCP server process.
+    pub command: String,
+    /// Arguments to the command.
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// Environment variables to set.
+    #[serde(default)]
+    pub env: std::collections::HashMap<String, String>,
+    /// Whether this server is enabled.
+    #[serde(default = "default_mcp_enabled")]
+    pub enabled: bool,
+}
+
+fn default_mcp_enabled() -> bool { true }
 
 #[cfg(test)]
 mod tests {

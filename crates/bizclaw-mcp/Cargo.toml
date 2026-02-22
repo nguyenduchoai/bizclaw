@@ -1,0 +1,15 @@
+[package]
+name = "bizclaw-mcp"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "MCP (Model Context Protocol) client for BizClaw — connect external tool servers"
+
+[dependencies]
+bizclaw-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+tracing.workspace = true

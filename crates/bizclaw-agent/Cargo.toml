@@ -12,6 +12,7 @@ bizclaw-channels.workspace = true
 bizclaw-memory.workspace = true
 bizclaw-tools.workspace = true
 bizclaw-security.workspace = true
+bizclaw-mcp.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

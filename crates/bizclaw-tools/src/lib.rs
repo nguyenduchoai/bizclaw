@@ -48,6 +48,14 @@ impl ToolRegistry {
         reg.register(Box::new(document_reader::DocumentReaderTool::new()));
         reg
     }
+
+    /// Register multiple tools at once (e.g., from MCP bridge).
+    pub fn register_many(&mut self, tools: Vec<Box<dyn Tool>>) {
+        for tool in tools {
+            tracing::debug!("📦 Registered tool: {}", tool.name());
+            self.tools.push(tool);
+        }
+    }
 }
 
 impl Default for ToolRegistry {

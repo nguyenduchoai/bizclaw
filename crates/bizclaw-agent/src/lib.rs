@@ -59,12 +59,60 @@ pub struct Agent {
 }
 
 impl Agent {
-    /// Create a new agent from configuration.
+    /// Create a new agent from configuration (sync, no MCP).
     pub fn new(config: BizClawConfig) -> Result<Self> {
         let provider = bizclaw_providers::create_provider(&config)?;
         let memory = bizclaw_memory::create_memory(&config.memory)?;
         let tools = bizclaw_tools::ToolRegistry::with_defaults();
         let security = bizclaw_security::DefaultSecurityPolicy::new(config.autonomy.clone());
+
+        let prompt_cache = PromptCache::new(&config.identity.system_prompt, &tools);
+
+        let mut conversation = vec![];
+        conversation.push(Message::system(&config.identity.system_prompt));
+
+        Ok(Self {
+            config,
+            provider,
+            memory,
+            tools,
+            security,
+            conversation,
+            prompt_cache,
+        })
+    }
+
+    /// Create a new agent with MCP server support (async).
+    /// Connects to all configured MCP servers and registers their tools.
+    pub async fn new_with_mcp(config: BizClawConfig) -> Result<Self> {
+        let provider = bizclaw_providers::create_provider(&config)?;
+        let memory = bizclaw_memory::create_memory(&config.memory)?;
+        let mut tools = bizclaw_tools::ToolRegistry::with_defaults();
+        let security = bizclaw_security::DefaultSecurityPolicy::new(config.autonomy.clone());
+
+        // Connect MCP servers and register their tools
+        if !config.mcp_servers.is_empty() {
+            tracing::info!("🔗 Connecting {} MCP server(s)...", config.mcp_servers.len());
+            let mcp_configs: Vec<bizclaw_mcp::McpServerConfig> = config.mcp_servers.iter().map(|e| {
+                bizclaw_mcp::McpServerConfig {
+                    name: e.name.clone(),
+                    command: e.command.clone(),
+                    args: e.args.clone(),
+                    env: e.env.clone(),
+                    enabled: e.enabled,
+                }
+            }).collect();
+
+            let results = bizclaw_mcp::bridge::connect_mcp_servers(&mcp_configs).await;
+            let mut total_mcp_tools = 0;
+            for (_client, bridges) in results {
+                total_mcp_tools += bridges.len();
+                tools.register_many(bridges);
+            }
+            if total_mcp_tools > 0 {
+                tracing::info!("✅ {} MCP tool(s) registered", total_mcp_tools);
+            }
+        }
 
         let prompt_cache = PromptCache::new(&config.identity.system_prompt, &tools);
 
@@ -331,6 +379,11 @@ impl Agent {
     /// Get provider name.
     pub fn provider_name(&self) -> &str {
         self.provider.name()
+    }
+
+    /// Get total tool count (native + MCP).
+    pub fn tool_count(&self) -> usize {
+        self.tools.list().len()
     }
 
     /// Get conversation history.

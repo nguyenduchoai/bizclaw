@@ -7,6 +7,7 @@ members = [
     "crates/bizclaw-channels",
     "crates/bizclaw-memory",
     "crates/bizclaw-tools",
+    "crates/bizclaw-mcp",
     "crates/bizclaw-security",
     "crates/bizclaw-runtime",
     "crates/bizclaw-gateway",
@@ -90,6 +91,7 @@ bizclaw-security = { path = "crates/bizclaw-security" }
 bizclaw-runtime = { path = "crates/bizclaw-runtime" }
 bizclaw-gateway = { path = "crates/bizclaw-gateway" }
 bizclaw-agent = { path = "crates/bizclaw-agent" }
+bizclaw-mcp = { path = "crates/bizclaw-mcp" }
 
 [package]
 name = "bizclaw"
@@ -109,6 +111,7 @@ bizclaw-memory.workspace = true
 bizclaw-tools.workspace = true
 bizclaw-security.workspace = true
 bizclaw-agent.workspace = true
+bizclaw-mcp.workspace = true
 bizclaw-gateway.workspace = true
 bizclaw-platform = { path = "crates/bizclaw-platform" }
 tokio.workspace = true

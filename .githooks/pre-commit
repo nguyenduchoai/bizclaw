@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+## BizClaw pre-commit hook — auto-generate README with latest stats
+set -euo pipefail
+
+SCRIPT="$(git rev-parse --show-toplevel)/scripts/gen-readme.sh"
+if [ -x "$SCRIPT" ]; then
+  echo "📝 Auto-generating README.md..."
+  bash "$SCRIPT"
+  git add README.md
+fi
