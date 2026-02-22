@@ -84,7 +84,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <div class="logo"><h2>BizClaw</h2><p>Admin Platform</p></div>
   <a class="active" onclick="showPage('dashboard')" href="#"><span>📊</span> <span>Dashboard</span></a>
   <a onclick="showPage('tenants')" href="#"><span>🏢</span> <span>Tenants</span></a>
-  <a onclick="showPage('ollama')" href="#"><span>🧠</span> <span>Brain/Ollama</span></a>
   <a onclick="showPage('users')" href="#"><span>👥</span> <span>Users</span></a>
   <a onclick="showPage('audit')" href="#"><span>📋</span> <span>Audit Log</span></a>
   <div class="bottom"><a href="#" onclick="logout()">⏏ Logout</a></div>
@@ -114,7 +113,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   </div>
   <!-- Tenants -->
   <div id="page-tenants" class="hidden">
-    <h1>🏢 Tenants <button class="btn btn-primary" onclick="showCreateModal()" style="margin-left:auto">+ New Tenant</button></h1>
+    <h1>🏢 Tenants <button class="btn btn-outline" onclick="showPage('ollama')" style="margin-left:8px;font-size:12px">🧠 Models (Shared)</button> <button class="btn btn-primary" onclick="showCreateModal()" style="margin-left:auto">+ New Tenant</button></h1>
     <div id="tenants-list"></div>
   </div>
   <!-- Users -->
@@ -261,9 +260,13 @@ function checkAuth(){
 // ── Navigation ──────────────────────────────────────────
 function showPage(p){
   document.querySelectorAll('.main>div').forEach(d=>d.classList.add('hidden'));
-  document.getElementById('page-'+p).classList.remove('hidden');
+  const page = document.getElementById('page-'+p);
+  if(page) page.classList.remove('hidden');
   document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
-  event.target.closest('a').classList.add('active');
+  if(typeof event !== 'undefined' && event && event.target){
+    const link = event.target.closest('a');
+    if(link && link.closest('.sidebar')) link.classList.add('active');
+  }
   currentPage=p;loadPage();
 }
 function loadPage(){
@@ -314,7 +317,7 @@ async function loadTenants(){
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-purple btn-sm" onclick="openChannels('${t.id}','${t.name}')">⚙️ Channels</button>
+          <button class="btn btn-primary btn-sm" onclick="openTenantDetail('${t.id}','${t.name}')" title="Detail & Channels">⚙️ Detail</button>
           ${t.status!=='running'
             ?`<button class="btn btn-primary btn-sm" onclick="tenantAction('${t.id}','start')">▶ Start</button>`
             :`<button class="btn btn-outline btn-sm" onclick="tenantAction('${t.id}','stop')">⏹ Stop</button>`}
@@ -353,6 +356,11 @@ async function tenantAction(id,action){
   await authFetch(url,{method});toast(`Tenant ${action}ed`);loadPage();
 }
 function logout(){localStorage.removeItem('bizclaw_admin_token');authToken='';showLogin();}
+
+// ── Tenant Detail (opens channels for now) ──────────
+function openTenantDetail(id, name) {
+  openChannels(id, name);
+}
 
 // ══════════════════════════════════════════════════
 // ── CHANNEL CONFIGURATION ──────────────────────
