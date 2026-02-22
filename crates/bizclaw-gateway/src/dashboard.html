@@ -144,51 +144,55 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <aside class="sidebar">
     <div class="logo"><span class="icon">⚡</span><span class="text">BizClaw</span></div>
     <nav class="nav">
-      <a onclick="showPage('dashboard')" class="active" id="nav-dashboard">📊 Dashboard</a>
-      <a onclick="showPage('chat')" id="nav-chat">💬 WebChat</a>
+      <a onclick="showPage('dashboard')" class="active" id="nav-dashboard">📊 <span data-i18n="nav.dashboard">Bảng điều khiển</span></a>
+      <a onclick="showPage('chat')" id="nav-chat">💬 <span data-i18n="nav.webchat">Trò chuyện</span></a>
       <div class="nav-sep"></div>
-      <a onclick="showPage('settings')" id="nav-settings">⚙️ Settings</a>
-      <a onclick="showPage('providers')" id="nav-providers">🔌 Providers</a>
-      <a onclick="showPage('channels')" id="nav-channels">📱 Channels</a>
-      <a onclick="showPage('tools')" id="nav-tools">🛠️ Tools</a>
+      <a onclick="showPage('settings')" id="nav-settings">⚙️ <span data-i18n="nav.settings">Cài đặt</span></a>
+      <a onclick="showPage('providers')" id="nav-providers">🔌 <span data-i18n="nav.providers">Nhà cung cấp</span></a>
+      <a onclick="showPage('channels')" id="nav-channels">📱 <span data-i18n="nav.channels">Kênh liên lạc</span></a>
+      <a onclick="showPage('tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
       <div class="nav-sep"></div>
-      <a onclick="showPage('brain')" id="nav-brain">🧠 Brain Engine</a>
+      <a onclick="showPage('brain')" id="nav-brain">🧠 <span data-i18n="nav.brain">Brain Engine</span></a>
       <a onclick="showPage('configfile')" id="nav-configfile">📄 config.toml</a>
     </nav>
     <div class="sidebar-footer">
-      <div id="ws-status">⬜ Disconnected</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <button onclick="setLang('vi')" id="btn-vi" style="padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer">VI</button>
+        <button onclick="setLang('en')" id="btn-en" style="padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer">EN</button>
+      </div>
+      <div id="ws-status">⬜ <span data-i18n="status.disconnected">Đã ngắt kết nối</span></div>
       <div style="margin-top:4px" id="agent-name">BizClaw Agent</div>
     </div>
   </aside>
   <main class="main">
     <!-- ═══ DASHBOARD ═══ -->
     <div id="page-dashboard">
-      <div class="page-header"><div><h1>Dashboard</h1><div class="sub">Agent Gateway Control Panel</div></div></div>
+      <div class="page-header"><div><h1 data-i18n="dash.title">Bảng điều khiển</h1><div class="sub" data-i18n="dash.subtitle">Trung tâm quản lý Agent Gateway</div></div></div>
       <div class="stats">
-        <div class="card"><div class="card-label">Status</div><div class="card-value green" id="s-status">● Online</div></div>
-        <div class="card"><div class="card-label">Version</div><div class="card-value accent" id="s-version">—</div></div>
-        <div class="card"><div class="card-label">Provider</div><div class="card-value blue" id="s-provider">—</div></div>
-        <div class="card"><div class="card-label">Model</div><div class="card-value cyan" id="s-model">—</div></div>
-        <div class="card"><div class="card-label">Uptime</div><div class="card-value" id="s-uptime">—</div></div>
-        <div class="card"><div class="card-label">Platform</div><div class="card-value" id="s-platform" style="font-size:16px">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.status">Trạng thái</div><div class="card-value green" id="s-status">● Online</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.version">Phiên bản</div><div class="card-value accent" id="s-version">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.provider">Nhà cung cấp</div><div class="card-value blue" id="s-provider">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.model">Mô hình AI</div><div class="card-value cyan" id="s-model">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.uptime">Thời gian hoạt động</div><div class="card-value" id="s-uptime">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="dash.platform">Nền tảng</div><div class="card-value" id="s-platform" style="font-size:16px">—</div></div>
       </div>
       <div class="form-section">
-        <h2>📡 Active Channels</h2>
-        <div class="card"><table><thead><tr><th>Channel</th><th>Type</th><th>Status</th><th>Configured</th></tr></thead><tbody id="dash-channels"></tbody></table></div>
+        <h2>📡 <span data-i18n="dash.channels">Kênh đang hoạt động</span></h2>
+        <div class="card"><table><thead><tr><th data-i18n="th.channel">Kênh</th><th data-i18n="th.type">Loại</th><th data-i18n="th.status">Trạng thái</th><th data-i18n="th.configured">Đã cấu hình</th></tr></thead><tbody id="dash-channels"></tbody></table></div>
       </div>
     </div>
 
     <!-- ═══ WEBCHAT ═══ -->
     <div id="page-chat" style="display:none">
-      <div class="page-header"><h1>💬 WebChat</h1></div>
+      <div class="page-header"><h1>💬 <span data-i18n="chat.title">Trò chuyện</span></h1></div>
       <div class="chat-wrap">
         <div class="chat-messages" id="chat-messages">
-          <div class="msg msg-system">Connected to BizClaw. Type a message to start chatting.</div>
+          <div class="msg msg-system" data-i18n="chat.welcome">Đã kết nối BizClaw. Nhập tin nhắn để bắt đầu trò chuyện.</div>
         </div>
-        <div class="typing" id="chat-typing" style="display:none">BizClaw is thinking<span class="pulse">...</span></div>
+        <div class="typing" id="chat-typing" style="display:none"><span data-i18n="chat.thinking">BizClaw đang suy nghĩ</span><span class="pulse">...</span></div>
         <div class="chat-input-wrap">
-          <input type="text" id="chat-input" placeholder="Type your message..." onkeydown="if(event.key==='Enter')sendChat()">
-          <button onclick="sendChat()">Send ↑</button>
+          <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." data-i18n-placeholder="chat.placeholder" onkeydown="if(event.key==='Enter')sendChat()">
+          <button onclick="sendChat()" data-i18n="chat.send">Gửi ↑</button>
         </div>
       </div>
     </div>
@@ -557,10 +561,26 @@ async function loadConfigToml() {
 // ═══ WEBSOCKET CHAT ═══
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(proto + '//' + location.host + '/ws');
-  ws.onopen = () => { document.getElementById('ws-status').innerHTML = '🟢 Connected'; };
-  ws.onclose = () => { document.getElementById('ws-status').innerHTML = '🔴 Disconnected'; setTimeout(connectWS, 3000); };
-  ws.onmessage = (e) => handleWS(JSON.parse(e.data));
+  // Include pairing code in query param (WS doesn't support custom headers)
+  const codeParam = pairingCode ? '?code=' + encodeURIComponent(pairingCode) : '';
+  ws = new WebSocket(proto + '//' + location.host + '/ws' + codeParam);
+  ws.onopen = () => {
+    document.getElementById('ws-status').innerHTML = '🟢 ' + t('status.connected');
+    // Send ping every 25s to keep alive
+    if(window._wsPing) clearInterval(window._wsPing);
+    window._wsPing = setInterval(() => { if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'ping'})); }, 25000);
+  };
+  ws.onclose = (ev) => {
+    document.getElementById('ws-status').innerHTML = '🔴 ' + t('status.disconnected');
+    if(window._wsPing) clearInterval(window._wsPing);
+    setTimeout(connectWS, 3000);
+  };
+  ws.onerror = (ev) => {
+    console.error('WS error:', ev);
+  };
+  ws.onmessage = (e) => {
+    try { handleWS(JSON.parse(e.data)); } catch(err) { console.error('WS parse error:', err, e.data); }
+  };
 }
 
 function handleWS(msg) {
@@ -606,12 +626,12 @@ function sendChat() {
     return;
   }
   if (text === '/reset') {
-    document.getElementById('chat-messages').innerHTML = '<div class="msg msg-system">💬 Chat history cleared</div>';
+    document.getElementById('chat-messages').innerHTML = '<div class="msg msg-system">' + t('chat.history_cleared') + '</div>';
     return;
   }
   if (text === '/help') {
     addMsg('/help', 'user');
-    addMsg('Available commands:\n/status — Show agent status\n/reset — Clear chat history\n/help — Show this help', 'system');
+    addMsg(t('chat.help'), 'system');
     return;
   }
 
@@ -644,8 +664,80 @@ function toast(msg) {
   setTimeout(() => t.remove(), 3000);
 }
 
+// ═══ i18n ═══
+let currentLang = localStorage.getItem('bizclaw_lang') || 'vi';
+const I18N = {
+  vi: {
+    'nav.dashboard':'Bảng điều khiển','nav.webchat':'Trò chuyện','nav.settings':'Cài đặt',
+    'nav.providers':'Nhà cung cấp','nav.channels':'Kênh liên lạc','nav.tools':'Công cụ',
+    'nav.brain':'Brain Engine',
+    'dash.title':'Bảng điều khiển','dash.subtitle':'Trung tâm quản lý Agent Gateway',
+    'dash.status':'Trạng thái','dash.version':'Phiên bản','dash.provider':'Nhà cung cấp',
+    'dash.model':'Mô hình AI','dash.uptime':'Thời gian hoạt động','dash.platform':'Nền tảng',
+    'dash.channels':'Kênh đang hoạt động',
+    'th.channel':'Kênh','th.type':'Loại','th.status':'Trạng thái','th.configured':'Đã cấu hình',
+    'chat.title':'Trò chuyện','chat.welcome':'Đã kết nối BizClaw. Nhập tin nhắn để bắt đầu trò chuyện.',
+    'chat.thinking':'BizClaw đang suy nghĩ','chat.placeholder':'Nhập tin nhắn...','chat.send':'Gửi ↑',
+    'chat.history_cleared':'💬 Đã xóa lịch sử trò chuyện',
+    'chat.help':'Lệnh có sẵn:\n/status — Xem trạng thái agent\n/reset — Xóa lịch sử chat\n/help — Hiện trợ giúp',
+    'status.connected':'Đã kết nối','status.disconnected':'Đã ngắt kết nối',
+    'settings.title':'Cài đặt Agent','settings.subtitle':'Cấu hình AI agent — nhà cung cấp, mô hình, danh tính, bảo mật',
+    'settings.save':'💾 Lưu cài đặt',
+    'brain.title':'Brain Engine','tools.title':'Công cụ','providers.title':'Nhà cung cấp',
+    'channels.title':'Cấu hình kênh liên lạc','channels.subtitle':'Kết nối agent với các nền tảng nhắn tin',
+    'config.title':'config.toml',
+    'pairing.title':'BizClaw Agent','pairing.desc':'Nhập mã Pairing Code để truy cập Dashboard',
+    'pairing.confirm':'🔓 Xác nhận','pairing.error':'Vui lòng nhập mã pairing',
+  },
+  en: {
+    'nav.dashboard':'Dashboard','nav.webchat':'WebChat','nav.settings':'Settings',
+    'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools',
+    'nav.brain':'Brain Engine',
+    'dash.title':'Dashboard','dash.subtitle':'Agent Gateway Control Panel',
+    'dash.status':'Status','dash.version':'Version','dash.provider':'Provider',
+    'dash.model':'AI Model','dash.uptime':'Uptime','dash.platform':'Platform',
+    'dash.channels':'Active Channels',
+    'th.channel':'Channel','th.type':'Type','th.status':'Status','th.configured':'Configured',
+    'chat.title':'WebChat','chat.welcome':'Connected to BizClaw. Type a message to start chatting.',
+    'chat.thinking':'BizClaw is thinking','chat.placeholder':'Type your message...','chat.send':'Send ↑',
+    'chat.history_cleared':'💬 Chat history cleared',
+    'chat.help':'Available commands:\n/status — Show agent status\n/reset — Clear chat history\n/help — Show this help',
+    'status.connected':'Connected','status.disconnected':'Disconnected',
+    'settings.title':'Agent Settings','settings.subtitle':'Configure your AI agent — provider, model, identity, security',
+    'settings.save':'💾 Save Settings',
+    'brain.title':'Brain Engine','tools.title':'Tools','providers.title':'Providers',
+    'channels.title':'Channel Configuration','channels.subtitle':'Connect your agent to messaging platforms',
+    'config.title':'config.toml',
+    'pairing.title':'BizClaw Agent','pairing.desc':'Enter Pairing Code to access Dashboard',
+    'pairing.confirm':'🔓 Confirm','pairing.error':'Please enter pairing code',
+  }
+};
+function t(key){ return (I18N[currentLang]||I18N.vi)[key] || (I18N.vi[key]) || key; }
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('bizclaw_lang', lang);
+  document.getElementById('btn-vi').style.background = lang==='vi' ? 'var(--accent)' : 'transparent';
+  document.getElementById('btn-vi').style.color = lang==='vi' ? '#fff' : 'var(--text2)';
+  document.getElementById('btn-en').style.background = lang==='en' ? 'var(--accent)' : 'transparent';
+  document.getElementById('btn-en').style.color = lang==='en' ? '#fff' : 'var(--text2)';
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  // Update WS status
+  if(ws && ws.readyState === 1) {
+    document.getElementById('ws-status').innerHTML = '🟢 ' + t('status.connected');
+  } else {
+    document.getElementById('ws-status').innerHTML = '🔴 ' + t('status.disconnected');
+  }
+}
+
 // ═══ INIT ═══
 async function initApp(){
+  setLang(currentLang);
   await loadConfig();
   loadDashboard();
   loadProviders();
