@@ -6,13 +6,13 @@
 <title>BizClaw — Admin Platform</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--card:#21262d}
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--card:#21262d;--purple:#bc8cff;--cyan:#56d4dd;--orange:#f0883e}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
 .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
 .sidebar .logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:10px}
 .sidebar .logo h2{font-size:18px;color:var(--accent)}
 .sidebar .logo p{font-size:12px;color:var(--muted)}
-.sidebar a{display:flex;align-items:center;padding:10px 20px;color:var(--muted);text-decoration:none;font-size:14px;gap:8px;transition:all .15s}
+.sidebar a{display:flex;align-items:center;padding:10px 20px;color:var(--muted);text-decoration:none;font-size:14px;gap:8px;transition:all .15s;cursor:pointer}
 .sidebar a:hover,.sidebar a.active{background:var(--card);color:var(--text)}
 .sidebar .bottom{margin-top:auto;padding:10px 20px;border-top:1px solid var(--border)}
 .sidebar .bottom a{padding:5px 0;font-size:13px}
@@ -26,13 +26,14 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
 .card h3{font-size:14px;margin-bottom:12px;display:flex;justify-content:space-between}
-.card h3 a{color:var(--accent);font-size:12px;text-decoration:none}
+.card h3 a{color:var(--accent);font-size:12px;text-decoration:none;cursor:pointer}
 .tenant-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
 .tenant-row:last-child{border:none}
 .tenant-name{color:var(--accent);font-weight:500;cursor:pointer}
 .tenant-slug{color:var(--muted);font-size:12px}
 .badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
 .badge.running{background:#1a3a2a;color:var(--green)}.badge.stopped{background:#2a2a2a;color:var(--muted)}.badge.error{background:#3a1a1a;color:var(--red)}
+.badge.connected{background:#1a3a2a;color:var(--green)}.badge.disconnected{background:#2a2a2a;color:var(--muted)}
 .event{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
 .event:last-child{border:none}
 .event .type{font-weight:500}.event .meta{color:var(--muted);font-size:11px}
@@ -40,13 +41,42 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
 .btn-primary{background:var(--accent);color:#fff}.btn-danger{background:var(--red);color:#fff}
 .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}.btn-purple{background:var(--purple);color:#000}
+.btn-sm{padding:5px 10px;font-size:11px}
 .hidden{display:none!important}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:30px;min-width:400px}
-.modal h2{margin-bottom:15px}.modal label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;margin-top:10px}
-.modal input,.modal select{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:30px;min-width:400px;max-width:720px;max-height:85vh;overflow-y:auto}
+.modal h2{margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.modal label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;margin-top:10px}
+.modal input,.modal select,.modal textarea{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;font-family:inherit}
+.modal textarea{resize:vertical;min-height:60px;font-family:'Menlo','Courier New',monospace;font-size:12px}
 .modal .actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
-@media(max-width:768px){.sidebar{width:60px}.sidebar a span,.sidebar .logo p{display:none}.grid{grid-template-columns:1fr}}
+/* Channel config cards */
+.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.ch-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:15px;transition:border-color .2s}
+.ch-card:hover{border-color:var(--accent)}
+.ch-card .ch-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ch-card .ch-icon{font-size:22px}
+.ch-card .ch-name{font-weight:600;font-size:14px}
+.ch-card .ch-status{font-size:11px;padding:2px 8px;border-radius:8px}
+.ch-card .ch-fields{font-size:12px;color:var(--muted)}
+.ch-card input,.ch-card textarea{margin-top:6px;width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;font-family:inherit}
+.ch-card textarea{font-family:'Menlo','Courier New',monospace;min-height:50px;resize:vertical}
+.ch-card .ch-actions{display:flex;gap:6px;margin-top:8px}
+.toggle{position:relative;display:inline-block;width:38px;height:20px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:20px;transition:.3s}
+.toggle .slider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:var(--text);border-radius:50%;transition:.3s}
+.toggle input:checked+.slider{background:var(--green)}
+.toggle input:checked+.slider:before{transform:translateX(18px)}
+.qr-container{text-align:center;padding:15px}
+.qr-container img{max-width:200px;border-radius:8px;border:2px solid var(--accent)}
+.qr-container p{font-size:12px;color:var(--muted);margin-top:8px}
+.toast{position:fixed;top:20px;right:20px;background:var(--green);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:200;animation:fadeIn .3s,fadeOut .3s 2.5s}
+.toast.error{background:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@media(max-width:768px){.sidebar{width:60px}.sidebar a span,.sidebar .logo p{display:none}.grid{grid-template-columns:1fr}.ch-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -84,6 +114,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div id="audit-full"></div>
   </div>
 </main>
+
+<!-- Create Tenant Modal -->
 <div id="modal-create" class="modal-overlay hidden">
   <div class="modal">
     <h2>Create Tenant</h2>
@@ -95,16 +127,73 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <label>Plan</label>
     <select id="f-plan"><option>free</option><option>pro</option><option>business</option></select>
     <div class="actions">
-      <button class="btn btn-outline" onclick="hideModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="hideModal('modal-create')">Cancel</button>
       <button class="btn btn-primary" onclick="createTenant()">Create</button>
     </div>
   </div>
 </div>
+
+<!-- Channel Configuration Modal -->
+<div id="modal-channels" class="modal-overlay hidden">
+  <div class="modal" style="min-width:680px">
+    <h2>⚙️ Channel Configuration — <span id="ch-tenant-name"></span></h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:15px">Cấu hình kênh giao tiếp cho Agent. Bật/tắt và nhập thông tin xác thực cho từng kênh.</p>
+    <div class="ch-grid" id="ch-grid"></div>
+    <div class="actions" style="margin-top:20px">
+      <button class="btn btn-outline" onclick="hideModal('modal-channels')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Zalo QR Modal -->
+<div id="modal-zalo-qr" class="modal-overlay hidden">
+  <div class="modal" style="text-align:center;min-width:350px">
+    <h2>📱 Quét QR Zalo</h2>
+    <div id="qr-display" class="qr-container">
+      <p style="color:var(--muted)">Đang tải mã QR...</p>
+    </div>
+    <div style="margin-top:12px;text-align:left">
+      <label style="font-size:12px;color:var(--muted)">Hoặc paste cookie Zalo Web:</label>
+      <textarea id="zalo-cookie-input" placeholder="Paste cookie từ DevTools (F12 → Application → Cookies → chat.zalo.me)" style="font-family:monospace;font-size:11px;min-height:60px;margin-top:4px"></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="hideModal('modal-zalo-qr')">Huỷ</button>
+      <button class="btn btn-green" onclick="saveZaloCookie()">💾 Lưu Cookie</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
 <script>
 const API='/api/admin';
 let currentPage='dashboard';
-function showPage(p){document.querySelectorAll('.main>div').forEach(d=>d.classList.add('hidden'));document.getElementById('page-'+p).classList.remove('hidden');document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));event.target.closest('a').classList.add('active');currentPage=p;loadPage()}
-function loadPage(){if(currentPage==='dashboard')loadDashboard();else if(currentPage==='tenants')loadTenants();else if(currentPage==='users')loadUsers();else if(currentPage==='audit')loadAudit()}
+let channelTenantId=null;
+let channelTenantName='';
+
+// ── Navigation ──────────────────────────────────
+function showPage(p){
+  document.querySelectorAll('.main>div').forEach(d=>d.classList.add('hidden'));
+  document.getElementById('page-'+p).classList.remove('hidden');
+  document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
+  event.target.closest('a').classList.add('active');
+  currentPage=p;loadPage();
+}
+function loadPage(){
+  if(currentPage==='dashboard')loadDashboard();
+  else if(currentPage==='tenants')loadTenants();
+  else if(currentPage==='users')loadUsers();
+  else if(currentPage==='audit')loadAudit();
+}
+
+// ── Toast ──────────────────────────────────
+function toast(msg,type='success'){
+  const t=document.createElement('div');t.className='toast'+(type==='error'?' error':'');
+  t.textContent=msg;document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+// ── Dashboard ──────────────────────────────────
 async function loadDashboard(){
   const s=await(await fetch(API+'/stats')).json();
   document.getElementById('stats-row').innerHTML=
@@ -120,29 +209,298 @@ async function loadDashboard(){
   document.getElementById('activity-list').innerHTML=(a.events||[]).slice(0,8).map(e=>
     `<div class="event"><div><div class="type">${e.event_type}</div><div class="meta">${e.actor_type} (${e.actor_id.slice(0,8)}…)</div></div><div class="time">${e.created_at}</div></div>`).join('')
 }
+
+// ── Tenants ──────────────────────────────────
 async function loadTenants(){
-    const d=await(await fetch(API+'/tenants')).json();
-    const host=location.hostname;
-    document.getElementById('tenants-list').innerHTML=d.tenants.map(t=>
-      `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${t.name}</strong> <span class="badge ${t.status}">${t.status}</span><div class="tenant-slug" style="margin-top:4px"><a href="http://${host}:${t.port}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">🔗 Open Dashboard (Port ${t.port})</a> · ${t.slug} · ${t.provider}/${t.model} · ${t.plan}</div></div><div style="display:flex;gap:8px">`+
-    (t.status!=='running'?`<button class="btn btn-primary" onclick="tenantAction('${t.id}','start')">▶ Start</button>`:`<button class="btn btn-outline" onclick="tenantAction('${t.id}','stop')">⏹ Stop</button>`)+
-    `<button class="btn btn-outline" onclick="tenantAction('${t.id}','restart')">🔄</button><button class="btn btn-danger" onclick="tenantAction('${t.id}','delete')">✕</button></div></div>${t.pairing_code?`<div style="margin-top:10px;font-size:12px;color:var(--muted)">Pairing: <strong style="color:var(--yellow);font-size:16px">${t.pairing_code}</strong></div>`:''}</div>`).join('')
+  const d=await(await fetch(API+'/tenants')).json();
+  const baseDomain=location.hostname.replace(/^admin\./,'');
+  const proto=location.protocol;
+  document.getElementById('tenants-list').innerHTML=d.tenants.map(t=>{
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong>${t.name}</strong> <span class="badge ${t.status}">${t.status}</span>
+          <div class="tenant-slug" style="margin-top:4px">
+            <a href="${proto}//${t.slug}.${baseDomain}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">🔗 ${t.slug}.${baseDomain}</a>
+            · ${t.provider}/${t.model} · ${t.plan}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-purple btn-sm" onclick="openChannels('${t.id}','${t.name}')">⚙️ Channels</button>
+          ${t.status!=='running'
+            ?`<button class="btn btn-primary btn-sm" onclick="tenantAction('${t.id}','start')">▶ Start</button>`
+            :`<button class="btn btn-outline btn-sm" onclick="tenantAction('${t.id}','stop')">⏹ Stop</button>`}
+          <button class="btn btn-outline btn-sm" onclick="tenantAction('${t.id}','restart')">🔄</button>
+          <button class="btn btn-danger btn-sm" onclick="tenantAction('${t.id}','delete')">✕</button>
+        </div>
+      </div>
+      ${t.pairing_code?`<div style="margin-top:10px;font-size:12px;color:var(--muted)">Pairing: <strong style="color:var(--yellow);font-size:16px">${t.pairing_code}</strong></div>`:''}
+    </div>`;
+  }).join('');
 }
+
+// ── Users & Audit ──────────────────────────────────
 async function loadUsers(){const d=await(await fetch(API+'/users')).json();document.getElementById('users-list').innerHTML=(d.users||[]).map(u=>`<div class="card" style="margin-bottom:8px"><strong>${u.email}</strong> · ${u.role} · ${u.created_at}</div>`).join('')||'<p style="color:var(--muted)">No users yet</p>'}
 async function loadAudit(){const d=await(await fetch(API+'/activity')).json();document.getElementById('audit-full').innerHTML=(d.events||[]).map(e=>`<div class="event"><div><div class="type">${e.event_type}</div><div class="meta">${e.actor_type} · ${e.actor_id}</div></div><div class="time">${e.created_at}</div></div>`).join('')}
+
+// ── Modals ──────────────────────────────────
 function showCreateModal(){document.getElementById('modal-create').classList.remove('hidden')}
-function hideModal(){document.getElementById('modal-create').classList.add('hidden')}
+function hideModal(id){document.getElementById(id).classList.add('hidden')}
+
 async function createTenant(){
-  const r=await fetch(API+'/tenants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('f-name').value,slug:document.getElementById('f-slug').value,provider:document.getElementById('f-provider').value,model:document.getElementById('f-model').value,plan:document.getElementById('f-plan').value})});
-  hideModal();loadPage()
+  await fetch(API+'/tenants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name:document.getElementById('f-name').value,
+    slug:document.getElementById('f-slug').value,
+    provider:document.getElementById('f-provider').value,
+    model:document.getElementById('f-model').value,
+    plan:document.getElementById('f-plan').value
+  })});
+  hideModal('modal-create');toast('Tenant created!');loadPage();
 }
+
 async function tenantAction(id,action){
   if(action==='delete'&&!confirm('Delete this tenant?'))return;
   const method=action==='delete'?'DELETE':'POST';
   const url=action==='delete'?`${API}/tenants/${id}`:`${API}/tenants/${id}/${action}`;
-  await fetch(url,{method});loadPage()
+  await fetch(url,{method});toast(`Tenant ${action}ed`);loadPage();
 }
 function logout(){location.reload()}
+
+// ══════════════════════════════════════════════════
+// ── CHANNEL CONFIGURATION ──────────────────────
+// ══════════════════════════════════════════════════
+
+const CHANNEL_DEFS = [
+  {
+    type:'telegram', icon:'🤖', name:'Telegram Bot', color:'#229ED9',
+    fields:[
+      {key:'bot_token', label:'Bot Token', placeholder:'123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11', type:'password'},
+      {key:'allowed_chat_ids', label:'Allowed Chat IDs (comma-separated)', placeholder:'-100123456789, 987654321', type:'text'},
+    ]
+  },
+  {
+    type:'zalo', icon:'💬', name:'Zalo Personal', color:'#0068FF',
+    fields:[
+      {key:'cookie', label:'Zalo Cookie', placeholder:'zpw_sek=...; zpw_enk=...', type:'textarea'},
+      {key:'imei', label:'IMEI (Device ID)', placeholder:'Auto-generated if empty', type:'text'},
+    ],
+    hasQR: true
+  },
+  {
+    type:'discord', icon:'🎮', name:'Discord Bot', color:'#5865F2',
+    fields:[
+      {key:'bot_token', label:'Bot Token', placeholder:'MTA0Nz...', type:'password'},
+      {key:'allowed_channel_ids', label:'Allowed Channel IDs (comma-separated)', placeholder:'1234567890, 0987654321', type:'text'},
+    ]
+  },
+  {
+    type:'email', icon:'📧', name:'Email (IMAP/SMTP)', color:'#EA4335',
+    fields:[
+      {key:'imap_host', label:'IMAP Host', placeholder:'imap.gmail.com', type:'text'},
+      {key:'imap_port', label:'IMAP Port', placeholder:'993', type:'text'},
+      {key:'smtp_host', label:'SMTP Host', placeholder:'smtp.gmail.com', type:'text'},
+      {key:'smtp_port', label:'SMTP Port', placeholder:'587', type:'text'},
+      {key:'email', label:'Email Address', placeholder:'bot@example.com', type:'text'},
+      {key:'password', label:'App Password', placeholder:'xxxx-xxxx-xxxx-xxxx', type:'password'},
+    ]
+  },
+  {
+    type:'webhook', icon:'🔗', name:'Webhook', color:'var(--orange)',
+    fields:[
+      {key:'url', label:'Webhook URL', placeholder:'https://example.com/webhook', type:'text'},
+      {key:'secret', label:'Webhook Secret', placeholder:'your-secret-key', type:'password'},
+    ]
+  },
+  {
+    type:'whatsapp', icon:'📱', name:'WhatsApp Business', color:'#25D366',
+    fields:[
+      {key:'api_token', label:'API Token', placeholder:'EAAxxxxxx...', type:'password'},
+      {key:'phone_number_id', label:'Phone Number ID', placeholder:'123456789', type:'text'},
+      {key:'business_id', label:'Business ID', placeholder:'987654321', type:'text'},
+    ]
+  },
+];
+
+// Store loaded channel configs
+let loadedChannels = {};
+
+async function openChannels(tenantId, tenantName){
+  channelTenantId = tenantId;
+  channelTenantName = tenantName;
+  document.getElementById('ch-tenant-name').textContent = tenantName;
+
+  // Load existing channels from API
+  const res = await fetch(`${API}/tenants/${tenantId}/channels`);
+  const data = await res.json();
+  const existing = {};
+  if(data.ok && data.channels){
+    data.channels.forEach(ch => {
+      try { existing[ch.channel_type] = { ...ch, config: JSON.parse(ch.config_json) }; }
+      catch { existing[ch.channel_type] = { ...ch, config: {} }; }
+    });
+  }
+  loadedChannels = existing;
+
+  // Render channel cards
+  renderChannelCards();
+  document.getElementById('modal-channels').classList.remove('hidden');
+}
+
+function renderChannelCards(){
+  const grid = document.getElementById('ch-grid');
+  grid.innerHTML = CHANNEL_DEFS.map(def => {
+    const saved = loadedChannels[def.type];
+    const enabled = saved ? saved.enabled : false;
+    const status = saved ? saved.status : 'disconnected';
+    const config = saved ? saved.config : {};
+
+    return `<div class="ch-card" id="ch-${def.type}">
+      <div class="ch-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ch-icon">${def.icon}</span>
+          <span class="ch-name">${def.name}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge ${status}" style="font-size:10px">${status}</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-${def.type}" ${enabled?'checked':''} onchange="toggleChannel('${def.type}',this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="ch-fields">
+        ${def.fields.map(f => {
+          const val = config[f.key] || '';
+          if(f.type==='textarea'){
+            return `<label style="font-size:11px;color:var(--muted);margin-top:6px">${f.label}</label>
+              <textarea id="ch-${def.type}-${f.key}" placeholder="${f.placeholder}">${val}</textarea>`;
+          }
+          if(f.type==='password'){
+            return `<label style="font-size:11px;color:var(--muted);margin-top:6px">${f.label}</label>
+              <input type="password" id="ch-${def.type}-${f.key}" placeholder="${f.placeholder}" value="${val}">`;
+          }
+          return `<label style="font-size:11px;color:var(--muted);margin-top:6px">${f.label}</label>
+            <input type="text" id="ch-${def.type}-${f.key}" placeholder="${f.placeholder}" value="${val}">`;
+        }).join('')}
+      </div>
+      <div class="ch-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveChannel('${def.type}')">💾 Lưu</button>
+        ${def.hasQR ? `<button class="btn btn-green btn-sm" onclick="openZaloQR()">📱 Quét QR</button>` : ''}
+        ${saved ? `<button class="btn btn-danger btn-sm" onclick="removeChannel('${def.type}','${saved.id}')">✕ Xoá</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveChannel(type){
+  const def = CHANNEL_DEFS.find(d=>d.type===type);
+  if(!def) return;
+
+  const config = {};
+  def.fields.forEach(f => {
+    const el = document.getElementById(`ch-${type}-${f.key}`);
+    if(el) config[f.key] = el.value;
+  });
+
+  const enabled = document.getElementById(`toggle-${type}`).checked;
+
+  const res = await fetch(`${API}/tenants/${channelTenantId}/channels`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ channel_type: type, enabled, config })
+  });
+  const data = await res.json();
+  if(data.ok){
+    toast(`${def.name} — Đã lưu cấu hình!`);
+    // Reload
+    const r2 = await fetch(`${API}/tenants/${channelTenantId}/channels`);
+    const d2 = await r2.json();
+    loadedChannels = {};
+    if(d2.ok && d2.channels){
+      d2.channels.forEach(ch => {
+        try { loadedChannels[ch.channel_type] = { ...ch, config: JSON.parse(ch.config_json) }; }
+        catch { loadedChannels[ch.channel_type] = { ...ch, config: {} }; }
+      });
+    }
+    renderChannelCards();
+  } else {
+    toast(data.error || 'Lỗi lưu cấu hình', 'error');
+  }
+}
+
+async function toggleChannel(type, enabled){
+  // Auto-save toggle state
+  const def = CHANNEL_DEFS.find(d=>d.type===type);
+  if(!def) return;
+
+  const config = {};
+  def.fields.forEach(f => {
+    const el = document.getElementById(`ch-${type}-${f.key}`);
+    if(el) config[f.key] = el.value;
+  });
+
+  await fetch(`${API}/tenants/${channelTenantId}/channels`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ channel_type: type, enabled, config })
+  });
+  toast(`${def.name} — ${enabled?'Đã bật':'Đã tắt'}`);
+}
+
+async function removeChannel(type, channelId){
+  if(!confirm('Xoá cấu hình kênh này?')) return;
+  await fetch(`${API}/tenants/${channelTenantId}/channels/${channelId}`, {method:'DELETE'});
+  delete loadedChannels[type];
+  renderChannelCards();
+  toast('Đã xoá kênh');
+}
+
+// ── Zalo QR ──────────────────────────────────
+async function openZaloQR(){
+  document.getElementById('modal-zalo-qr').classList.remove('hidden');
+  document.getElementById('qr-display').innerHTML = '<p style="color:var(--muted)">⏳ Đang tạo mã QR...</p>';
+  document.getElementById('zalo-cookie-input').value = '';
+
+  try {
+    const res = await fetch(`${API}/tenants/${channelTenantId}/channels/zalo/qr`, {method:'POST'});
+    const data = await res.json();
+    if(data.ok && data.qr_code){
+      document.getElementById('qr-display').innerHTML = `
+        <img src="${data.qr_code}" alt="Zalo QR Code" style="max-width:200px;border:2px solid var(--accent);border-radius:8px">
+        <p style="margin-top:8px;font-size:12px;color:var(--muted)">${data.message || 'Mở Zalo → Quét mã QR'}</p>
+      `;
+    } else {
+      document.getElementById('qr-display').innerHTML = `
+        <p style="color:var(--yellow)">⚠️ ${data.error || 'Không lấy được QR'}</p>
+        <p style="font-size:12px;color:var(--muted);margin-top:6px">${data.fallback || 'Vui lòng paste cookie bên dưới'}</p>
+      `;
+    }
+  } catch(e) {
+    document.getElementById('qr-display').innerHTML = `
+      <p style="color:var(--yellow)">⚠️ Lỗi kết nối đến server</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">Vui lòng paste cookie Zalo Web bên dưới</p>
+    `;
+  }
+}
+
+async function saveZaloCookie(){
+  const cookie = document.getElementById('zalo-cookie-input').value.trim();
+  if(!cookie){
+    toast('Vui lòng nhập cookie Zalo', 'error');
+    return;
+  }
+
+  // Save cookie to Zalo channel config
+  const el = document.getElementById('ch-zalo-cookie');
+  if(el) el.value = cookie;
+
+  // Auto-save
+  await saveChannel('zalo');
+  hideModal('modal-zalo-qr');
+  toast('✅ Cookie Zalo đã được lưu!');
+}
+
+// ── Init ──────────────────────────────────
 loadDashboard();
 </script>
 </body>

@@ -3,295 +3,525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BizClaw — Dashboard</title>
+<title>BizClaw — Agent Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;
-  --text:#e4e4ef;--text2:#8888aa;--accent:#6c5ce7;--accent2:#a29bfe;
-  --green:#00b894;--red:#ff6b6b;--orange:#fdcb6e;--blue:#74b9ff;
+  --bg:#08090d;--bg2:#0d1017;--surface:#12151e;--surface2:#1a1e2e;--border:#1e2433;--border-hover:#2a3048;
+  --text:#e8ecf4;--text2:#7c8599;--accent:#6366f1;--accent2:#818cf8;--accent-glow:rgba(99,102,241,.12);
+  --green:#34d399;--red:#ef4444;--orange:#fb923c;--blue:#60a5fa;--cyan:#22d3ee;--pink:#f472b6;
+  --grad1:linear-gradient(135deg,#6366f1,#8b5cf6);
+  --radius:10px;--font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
 }
-body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
 a{color:var(--accent2);text-decoration:none}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 /* Layout */
-.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
-.main{padding:24px 32px;overflow-y:auto}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.main{padding:28px 36px;overflow-y:auto;height:100vh}
 
 /* Sidebar */
-.logo{padding:0 20px 20px;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border)}
-.logo span{font-size:24px}
-.nav{flex:1;padding:12px 8px}
-.nav a{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;color:var(--text2);font-size:14px;transition:all .15s}
-.nav a:hover,.nav a.active{background:var(--surface2);color:var(--text)}
-.nav a.active{color:var(--accent2);font-weight:500}
-.nav-icon{font-size:16px;width:20px;text-align:center}
+.logo{padding:20px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;border-bottom:1px solid var(--border)}
+.logo .icon{font-size:22px}
+.logo .text{background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav{flex:1;padding:8px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;cursor:pointer}
+.nav a:hover{background:var(--surface2);color:var(--text)}
+.nav a.active{background:var(--accent-glow);color:var(--accent2)}
+.nav-sep{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)}
 
-/* Cards */
-h1{font-size:24px;margin-bottom:20px;font-weight:600}
-h2{font-size:18px;margin-bottom:16px;font-weight:500;color:var(--text2)}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
-.card-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.card-value{font-size:28px;font-weight:700}
-.card-sub{font-size:12px;color:var(--text2);margin-top:4px}
-.green{color:var(--green)}.red{color:var(--red)}.orange{color:var(--orange)}.blue{color:var(--blue)}.accent{color:var(--accent2)}
+/* Header */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.page-header h1{font-size:22px;font-weight:700}
+.page-header .sub{font-size:13px;color:var(--text2)}
+
+/* Cards & Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:border-color .2s}
+.card:hover{border-color:var(--border-hover)}
+.card-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600}
+.card-value{font-size:26px;font-weight:700}
+.card-sub{font-size:11px;color:var(--text2);margin-top:3px}
+
+/* Colors */
+.green{color:var(--green)}.red{color:var(--red)}.orange{color:var(--orange)}.blue{color:var(--blue)}.accent{color:var(--accent2)}.cyan{color:var(--cyan)}
+
+/* Forms */
+.form-section{margin-bottom:28px}
+.form-section h2{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-row{display:grid;grid-template-columns:160px 1fr;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+.form-label{font-size:12px;color:var(--text2);font-weight:500}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--accent)}
+.form-row textarea{min-height:60px;resize:vertical;font-family:var(--mono);font-size:12px}
+
+/* Buttons */
+.btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:var(--font)}
+.btn-primary{background:var(--grad1);color:#fff}
+.btn-primary:hover{box-shadow:0 4px 16px rgba(99,102,241,.35);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-green{background:#059669;color:#fff}.btn-green:hover{background:#047857}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.9}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-green{background:rgba(52,211,153,.12);color:var(--green)}
+.badge-blue{background:rgba(96,165,250,.12);color:var(--blue)}
+.badge-orange{background:rgba(251,146,60,.12);color:var(--orange)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-purple{background:rgba(99,102,241,.12);color:var(--accent2)}
 
 /* Tables */
 table{width:100%;border-collapse:collapse}
-th{text-align:left;font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:1px solid var(--border)}
-td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
-.badge-green{background:rgba(0,184,148,.15);color:var(--green)}
-.badge-blue{background:rgba(116,185,255,.15);color:var(--blue)}
-.badge-orange{background:rgba(253,203,110,.15);color:var(--orange)}
+th{text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:rgba(255,255,255,.02)}
 
 /* Chat */
-.chat-container{display:flex;flex-direction:column;height:calc(100vh - 120px)}
-.chat-messages{flex:1;overflow-y:auto;padding:16px 0;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:75%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.5;animation:fadeIn .2s}
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 120px)}
+.chat-messages{flex:1;overflow-y:auto;padding:12px 0;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:72%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55;animation:fadeIn .2s}
 .msg-user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
-.msg-bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:4px}
-.msg-system{align-self:center;font-size:12px;color:var(--text2);font-style:italic}
-.chat-input{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
-.chat-input input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-size:14px;outline:none}
-.chat-input input:focus{border-color:var(--accent)}
-.chat-input button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-size:14px;cursor:pointer;font-weight:500;transition:all .15s}
-.chat-input button:hover{background:var(--accent2)}
-.typing{color:var(--text2);font-size:13px;padding:4px 0}
+.msg-bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:4px;white-space:pre-wrap;font-family:var(--font)}
+.msg-system{align-self:center;font-size:11px;color:var(--text2);font-style:italic}
+.chat-input-wrap{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+.chat-input-wrap input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 16px;color:var(--text);font-size:13px;outline:none}
+.chat-input-wrap input:focus{border-color:var(--accent)}
+.chat-input-wrap button{background:var(--grad1);color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:13px;cursor:pointer;font-weight:600}
+.typing{color:var(--text2);font-size:12px;padding:4px 0}
 
-/* Config */
-.config-group{margin-bottom:24px}
-.config-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
-.config-label{width:160px;font-size:13px;color:var(--text2);flex-shrink:0}
-.config-value{flex:1;font-size:14px;font-family:monospace;color:var(--accent2)}
-.config-row input,.config-row select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none}
-.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:500}
-.btn:hover{opacity:.9}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+/* Channel cards */
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.ch-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:border-color .2s}
+.ch-card:hover{border-color:var(--border-hover)}
+.ch-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ch-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
+.ch-fields{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.ch-fields label{font-size:11px;color:var(--text2);font-weight:500}
+.ch-fields input,.ch-fields textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:12px;outline:none;font-family:var(--mono)}
+.ch-fields input:focus,.ch-fields textarea:focus{border-color:var(--accent)}
+.ch-fields textarea{min-height:50px;resize:vertical}
+.ch-actions{display:flex;gap:6px;flex-wrap:wrap}
+.toggle{position:relative;width:36px;height:20px;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:.2s}
+.toggle .slider::before{content:'';position:absolute;width:16px;height:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked + .slider{background:var(--accent)}
+.toggle input:checked + .slider::before{transform:translateX(16px)}
 
-/* Section */
-.section{margin-bottom:32px}
-
-/* Animations */
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;z-index:999;animation:slideUp .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .pulse{animation:pulse 1.5s infinite}
 
 /* Responsive */
-@media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:16px}}
+@media(max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:16px}.form-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="logo"><span>🦀</span> BizClaw</div>
+    <div class="logo"><span class="icon">⚡</span><span class="text">BizClaw</span></div>
     <nav class="nav">
-      <a href="#" onclick="showPage('dashboard')" class="active" id="nav-dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="#" onclick="showPage('chat')" id="nav-chat"><span class="nav-icon">💬</span> Chat</a>
-      <a href="#" onclick="showPage('providers')" id="nav-providers"><span class="nav-icon">🔌</span> Providers</a>
-      <a href="#" onclick="showPage('channels')" id="nav-channels"><span class="nav-icon">📱</span> Channels</a>
-      <a href="#" onclick="showPage('config')" id="nav-config"><span class="nav-icon">⚙️</span> Config</a>
-      <a href="#" onclick="showPage('brain')" id="nav-brain"><span class="nav-icon">🧠</span> Brain</a>
+      <a onclick="showPage('dashboard')" class="active" id="nav-dashboard">📊 Dashboard</a>
+      <a onclick="showPage('chat')" id="nav-chat">💬 WebChat</a>
+      <div class="nav-sep"></div>
+      <a onclick="showPage('settings')" id="nav-settings">⚙️ Settings</a>
+      <a onclick="showPage('providers')" id="nav-providers">🔌 Providers</a>
+      <a onclick="showPage('channels')" id="nav-channels">📱 Channels</a>
+      <a onclick="showPage('tools')" id="nav-tools">🛠️ Tools</a>
+      <div class="nav-sep"></div>
+      <a onclick="showPage('brain')" id="nav-brain">🧠 Brain Engine</a>
+      <a onclick="showPage('configfile')" id="nav-configfile">📄 config.toml</a>
     </nav>
-    <div style="padding:12px 20px;font-size:11px;color:var(--text2)">
+    <div class="sidebar-footer">
       <div id="ws-status">⬜ Disconnected</div>
+      <div style="margin-top:4px" id="agent-name">BizClaw Agent</div>
     </div>
   </aside>
   <main class="main">
-    <!-- Dashboard -->
+    <!-- ═══ DASHBOARD ═══ -->
     <div id="page-dashboard">
-      <h1>Dashboard</h1>
+      <div class="page-header"><div><h1>Dashboard</h1><div class="sub">Agent Gateway Control Panel</div></div></div>
       <div class="stats">
-        <div class="card"><div class="card-label">Status</div><div class="card-value green" id="stat-status">●  Online</div></div>
-        <div class="card"><div class="card-label">Version</div><div class="card-value accent" id="stat-version">—</div></div>
-        <div class="card"><div class="card-label">Provider</div><div class="card-value blue" id="stat-provider">—</div></div>
-        <div class="card"><div class="card-label">Uptime</div><div class="card-value" id="stat-uptime">—</div></div>
+        <div class="card"><div class="card-label">Status</div><div class="card-value green" id="s-status">● Online</div></div>
+        <div class="card"><div class="card-label">Version</div><div class="card-value accent" id="s-version">—</div></div>
+        <div class="card"><div class="card-label">Provider</div><div class="card-value blue" id="s-provider">—</div></div>
+        <div class="card"><div class="card-label">Model</div><div class="card-value cyan" id="s-model">—</div></div>
+        <div class="card"><div class="card-label">Uptime</div><div class="card-value" id="s-uptime">—</div></div>
+        <div class="card"><div class="card-label">Platform</div><div class="card-value" id="s-platform" style="font-size:16px">—</div></div>
       </div>
-      <div class="section">
-        <h2>System Info</h2>
-        <div class="card" id="system-info"><div class="card-label">Loading...</div></div>
+      <div class="form-section">
+        <h2>📡 Active Channels</h2>
+        <div class="card"><table><thead><tr><th>Channel</th><th>Type</th><th>Status</th><th>Configured</th></tr></thead><tbody id="dash-channels"></tbody></table></div>
       </div>
     </div>
 
-    <!-- Chat -->
+    <!-- ═══ WEBCHAT ═══ -->
     <div id="page-chat" style="display:none">
-      <h1>Chat</h1>
-      <div class="chat-container">
+      <div class="page-header"><h1>💬 WebChat</h1></div>
+      <div class="chat-wrap">
         <div class="chat-messages" id="chat-messages">
-          <div class="msg msg-system">Connected to BizClaw. Type a message to start.</div>
+          <div class="msg msg-system">Connected to BizClaw. Type a message to start chatting.</div>
         </div>
-        <div class="typing" id="chat-typing" style="display:none">BizClaw is typing<span class="pulse">...</span></div>
-        <div class="chat-input">
+        <div class="typing" id="chat-typing" style="display:none">BizClaw is thinking<span class="pulse">...</span></div>
+        <div class="chat-input-wrap">
           <input type="text" id="chat-input" placeholder="Type your message..." onkeydown="if(event.key==='Enter')sendChat()">
-          <button onclick="sendChat()">Send</button>
+          <button onclick="sendChat()">Send ↑</button>
         </div>
       </div>
     </div>
 
-    <!-- Providers -->
+    <!-- ═══ SETTINGS ═══ -->
+    <div id="page-settings" style="display:none">
+      <div class="page-header"><div><h1>⚙️ Agent Settings</h1><div class="sub">Configure your AI agent — provider, model, identity, security</div></div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      </div>
+      <div class="form-section">
+        <h2>🤖 AI Provider</h2>
+        <div class="form-row"><span class="form-label">Provider</span><select id="set-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option><option value="groq">Groq</option><option value="ollama">Ollama (local)</option><option value="llamacpp">llama.cpp</option><option value="brain">Brain Engine</option></select></div>
+        <div class="form-row"><span class="form-label">Model</span><input id="set-model" placeholder="gpt-4o-mini"></div>
+        <div class="form-row"><span class="form-label">API Key</span><input id="set-apikey" type="password" placeholder="sk-..."></div>
+        <div class="form-row"><span class="form-label">Temperature</span><input id="set-temp" type="number" step="0.1" min="0" max="2" value="0.7"></div>
+      </div>
+      <div class="form-section">
+        <h2>🎭 Identity</h2>
+        <div class="form-row"><span class="form-label">Agent Name</span><input id="set-name" placeholder="BizClaw"></div>
+        <div class="form-row"><span class="form-label">Persona</span><input id="set-persona" placeholder="A helpful AI assistant"></div>
+        <div class="form-row"><span class="form-label">System Prompt</span><textarea id="set-sysprompt" placeholder="You are BizClaw, a fast and capable AI assistant."></textarea></div>
+      </div>
+      <div class="form-section">
+        <h2>💾 Memory</h2>
+        <div class="form-row"><span class="form-label">Backend</span><select id="set-mem-backend"><option value="sqlite">SQLite</option><option value="postgres">PostgreSQL</option><option value="none">None (NoOp)</option></select></div>
+        <div class="form-row"><span class="form-label">Auto Save</span><select id="set-mem-autosave"><option value="true">Yes</option><option value="false">No</option></select></div>
+      </div>
+      <div class="form-section">
+        <h2>🔒 Security / Autonomy</h2>
+        <div class="form-row"><span class="form-label">Autonomy Level</span><select id="set-auto-level"><option value="readonly">Read Only</option><option value="supervised">Supervised</option><option value="full">Full</option></select></div>
+        <div class="form-row"><span class="form-label">Workspace Only</span><select id="set-auto-workspace"><option value="true">Yes</option><option value="false">No</option></select></div>
+      </div>
+    </div>
+
+    <!-- ═══ PROVIDERS ═══ -->
     <div id="page-providers" style="display:none">
-      <h1>Providers</h1>
-      <div class="card"><table><thead><tr><th>Name</th><th>Type</th><th>Status</th></tr></thead><tbody id="providers-table"></tbody></table></div>
+      <div class="page-header"><h1>🔌 Providers</h1></div>
+      <div class="card"><table><thead><tr><th>Provider</th><th>Type</th><th>Status</th><th>Models</th></tr></thead><tbody id="providers-table"></tbody></table></div>
     </div>
 
-    <!-- Channels -->
+    <!-- ═══ CHANNELS ═══ -->
     <div id="page-channels" style="display:none">
-      <h1>Channels</h1>
-      <div class="card"><table><thead><tr><th>Name</th><th>Type</th><th>Status</th></tr></thead><tbody id="channels-table"></tbody></table></div>
+      <div class="page-header"><div><h1>📱 Channel Configuration</h1><div class="sub">Connect your agent to messaging platforms</div></div></div>
+      <div class="ch-grid" id="channels-grid"></div>
+      <!-- Zalo QR Modal -->
+      <div id="zalo-qr-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:90%;text-align:center">
+          <h2 style="margin-bottom:12px">📱 Zalo QR Login</h2>
+          <div id="zalo-qr-content" style="margin:16px 0;min-height:100px"><div class="pulse" style="color:var(--text2)">Đang tạo mã QR...</div></div>
+          <div id="zalo-qr-instructions" style="font-size:12px;color:var(--text2);text-align:left;margin:12px 0"></div>
+          <div id="zalo-qr-imei" style="font-size:11px;color:var(--text2);margin:8px 0"></div>
+          <button class="btn btn-outline" onclick="closeZaloQR()" style="margin-top:12px">Đóng</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Config -->
-    <div id="page-config" style="display:none">
-      <h1>Configuration</h1>
-      <div id="config-content"><div class="card"><div class="card-label">Loading...</div></div></div>
+    <!-- ═══ TOOLS ═══ -->
+    <div id="page-tools" style="display:none">
+      <div class="page-header"><h1>🛠️ Tools</h1></div>
+      <div class="stats">
+        <div class="card"><div class="card-label">Shell</div><div class="card-value green">● Active</div><div class="card-sub">Execute system commands (sandboxed)</div></div>
+        <div class="card"><div class="card-label">File</div><div class="card-value green">● Active</div><div class="card-sub">Read/write/list files</div></div>
+        <div class="card"><div class="card-label">Web Search</div><div class="card-value orange">● Available</div><div class="card-sub">DuckDuckGo search</div></div>
+        <div class="card"><div class="card-label">Calendar</div><div class="card-value orange">● Available</div><div class="card-sub">Google Calendar integration</div></div>
+        <div class="card"><div class="card-label">Browser</div><div class="card-value" style="color:var(--text2)">○ Disabled</div><div class="card-sub">Browser automation (CDP)</div></div>
+      </div>
     </div>
 
-    <!-- Brain -->
+    <!-- ═══ BRAIN ENGINE ═══ -->
     <div id="page-brain" style="display:none">
-      <h1>Brain Engine</h1>
+      <div class="page-header"><h1>🧠 Brain Engine</h1></div>
       <div class="stats">
         <div class="card"><div class="card-label">Engine</div><div class="card-value green">GGUF v3</div></div>
         <div class="card"><div class="card-label">SIMD</div><div class="card-value accent" id="brain-simd">—</div></div>
-        <div class="card"><div class="card-label">Quantization</div><div class="card-value blue">Q4_0 / Q8_0</div></div>
+        <div class="card"><div class="card-label">Quantization</div><div class="card-value blue">Q4_0 / Q8_0 / F16</div></div>
+        <div class="card"><div class="card-label">Features</div><div class="card-value cyan">Flash Attn + KV Cache</div></div>
       </div>
-      <div class="section">
-        <h2>Available Models</h2>
-        <div class="card">
-          <table><thead><tr><th>Model</th><th>Size</th><th>Action</th></tr></thead>
-          <tbody>
-            <tr><td>TinyLlama 1.1B</td><td>~638 MB</td><td><code>bizclaw brain download tinyllama-1.1b</code></td></tr>
-            <tr><td>Phi-2</td><td>~1.6 GB</td><td><code>bizclaw brain download phi-2</code></td></tr>
-            <tr><td>Llama 3.2 1B</td><td>~750 MB</td><td><code>bizclaw brain download llama-3.2-1b</code></td></tr>
-          </tbody></table>
-        </div>
+      <div class="form-section"><h2>Available Models</h2>
+        <div class="card"><table><thead><tr><th>Model</th><th>Size</th><th>Download</th></tr></thead><tbody>
+          <tr><td><strong>TinyLlama 1.1B</strong></td><td>~638 MB</td><td><code>bizclaw brain download tinyllama-1.1b</code></td></tr>
+          <tr><td><strong>Phi-2</strong></td><td>~1.6 GB</td><td><code>bizclaw brain download phi-2</code></td></tr>
+          <tr><td><strong>Llama 3.2 1B</strong></td><td>~750 MB</td><td><code>bizclaw brain download llama-3.2-1b</code></td></tr>
+          <tr><td><strong>Qwen 3 0.6B</strong></td><td>~400 MB</td><td><code>bizclaw brain download qwen3-0.6b</code></td></tr>
+        </tbody></table></div>
       </div>
+    </div>
+
+    <!-- ═══ CONFIG FILE ═══ -->
+    <div id="page-configfile" style="display:none">
+      <div class="page-header"><div><h1>📄 config.toml</h1><div class="sub" id="config-path">—</div></div></div>
+      <div class="card"><pre id="config-toml-content" style="font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--accent2);white-space:pre-wrap;max-height:70vh;overflow-y:auto;padding:4px">Loading...</pre></div>
     </div>
   </main>
 </div>
 
 <script>
 const API = '';
-let ws = null;
-let reqCounter = 0;
+let ws = null, configData = {};
 
-// Navigation
+// ═══ NAVIGATION ═══
 function showPage(name) {
   document.querySelectorAll('[id^=page-]').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
-  document.getElementById('page-' + name).style.display = '';
-  document.getElementById('nav-' + name).classList.add('active');
+  const page = document.getElementById('page-' + name);
+  const nav = document.getElementById('nav-' + name);
+  if (page) page.style.display = '';
+  if (nav) nav.classList.add('active');
   if (name === 'chat') document.getElementById('chat-input').focus();
+  if (name === 'settings') loadSettingsForm();
+  if (name === 'channels') renderChannelCards();
+  if (name === 'configfile') loadConfigToml();
 }
 
-// Fetch data
+// ═══ DASHBOARD ═══
 async function loadDashboard() {
   try {
     const info = await (await fetch(API + '/api/v1/info')).json();
-    document.getElementById('stat-version').textContent = 'v' + info.version;
-    document.getElementById('stat-provider').textContent = info.default_provider || '—';
-    document.getElementById('stat-uptime').textContent = formatUptime(info.uptime_secs);
-    document.getElementById('system-info').innerHTML = `
-      <table>
-        <tr><td style="color:var(--text2);width:140px">Platform</td><td>${info.platform || '—'}</td></tr>
-        <tr><td style="color:var(--text2)">Architecture</td><td>${info.arch || '—'}</td></tr>
-        <tr><td style="color:var(--text2)">Provider</td><td>${info.default_provider || '—'}</td></tr>
-        <tr><td style="color:var(--text2)">Model</td><td>${info.default_model || '—'}</td></tr>
-        <tr><td style="color:var(--text2)">Crates</td><td>11</td></tr>
-        <tr><td style="color:var(--text2)">Tests</td><td>45 passing</td></tr>
-      </table>`;
-    // SIMD
-    const arch = info.arch || '';
-    document.getElementById('brain-simd').textContent =
-      arch.includes('aarch64') ? 'NEON' : arch.includes('x86') ? 'AVX2/SSE2' : 'Scalar';
-  } catch(e) { console.error('Dashboard load failed:', e); }
+    document.getElementById('s-version').textContent = 'v' + (info.version||'?');
+    document.getElementById('s-provider').textContent = info.default_provider || '—';
+    document.getElementById('s-model').textContent = info.default_model || '—';
+    document.getElementById('s-uptime').textContent = fmtUptime(info.uptime_secs);
+    document.getElementById('s-platform').textContent = info.platform || '—';
+    document.getElementById('agent-name').textContent = (info.name || 'BizClaw') + ' Agent';
+    const arch = info.platform || '';
+    document.getElementById('brain-simd').textContent = arch.includes('aarch64') ? 'NEON' : arch.includes('x86') ? 'AVX2/SSE2' : 'Auto';
+  } catch(e) {}
+  try {
+    const ch = await (await fetch(API + '/api/v1/channels')).json();
+    document.getElementById('dash-channels').innerHTML = ch.channels.map(c => `<tr>
+      <td><strong>${c.name}</strong></td><td>${c.type}</td>
+      <td><span class="badge badge-${c.status==='active'?'green':c.status==='disabled'?'orange':'blue'}">${c.status}</span></td>
+      <td>${c.configured?'✅':'—'}</td>
+    </tr>`).join('');
+  } catch(e) {}
 }
 
 async function loadProviders() {
   try {
     const data = await (await fetch(API + '/api/v1/providers')).json();
-    const tbody = document.getElementById('providers-table');
-    tbody.innerHTML = data.providers.map(p => `<tr>
-      <td><strong>${p.name}</strong></td>
-      <td>${p.type}</td>
-      <td><span class="badge badge-green">${p.status}</span></td>
+    document.getElementById('providers-table').innerHTML = data.providers.map(p => `<tr>
+      <td><strong>${p.name}</strong></td><td>${p.type}</td>
+      <td><span class="badge badge-${p.status==='active'?'green':'blue'}">${p.status}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${(p.models||[]).join(', ')}</td>
     </tr>`).join('');
   } catch(e) {}
 }
 
-async function loadChannels() {
-  try {
-    const data = await (await fetch(API + '/api/v1/channels')).json();
-    const tbody = document.getElementById('channels-table');
-    tbody.innerHTML = data.channels.map(c => `<tr>
-      <td><strong>${c.name}</strong></td>
-      <td>${c.type}</td>
-      <td><span class="badge badge-green">${c.status}</span></td>
-    </tr>`).join('');
-  } catch(e) {}
-}
-
+// ═══ SETTINGS ═══
 async function loadConfig() {
   try {
-    const data = await (await fetch(API + '/api/v1/config')).json();
-    const el = document.getElementById('config-content');
-    el.innerHTML = '<div class="card"><pre style="font-size:13px;line-height:1.6;color:var(--accent2);white-space:pre-wrap">' +
-      JSON.stringify(data, null, 2) + '</pre></div>';
+    configData = await (await fetch(API + '/api/v1/config')).json();
+  } catch(e) { configData = {}; }
+}
+
+function loadSettingsForm() {
+  const c = configData;
+  if (!c.default_provider) return;
+  document.getElementById('set-provider').value = c.default_provider || 'openai';
+  document.getElementById('set-model').value = c.default_model || '';
+  document.getElementById('set-temp').value = c.default_temperature || 0.7;
+  document.getElementById('set-apikey').value = c.api_key_set ? '••••••••' : '';
+  const id = c.identity || {};
+  document.getElementById('set-name').value = id.name || '';
+  document.getElementById('set-persona').value = id.persona || '';
+  document.getElementById('set-sysprompt').value = id.system_prompt || '';
+  const mem = c.memory || {};
+  document.getElementById('set-mem-backend').value = mem.backend || 'sqlite';
+  document.getElementById('set-mem-autosave').value = String(mem.auto_save !== false);
+  const auto = c.autonomy || {};
+  document.getElementById('set-auto-level').value = auto.level || 'supervised';
+  document.getElementById('set-auto-workspace').value = String(auto.workspace_only !== false);
+}
+
+async function saveSettings() {
+  const apiKeyVal = document.getElementById('set-apikey').value;
+  const body = {
+    default_provider: document.getElementById('set-provider').value,
+    default_model: document.getElementById('set-model').value,
+    default_temperature: parseFloat(document.getElementById('set-temp').value),
+    identity: {
+      name: document.getElementById('set-name').value,
+      persona: document.getElementById('set-persona').value,
+      system_prompt: document.getElementById('set-sysprompt').value,
+    },
+    memory: {
+      backend: document.getElementById('set-mem-backend').value,
+      auto_save: document.getElementById('set-mem-autosave').value === 'true',
+    },
+    autonomy: {
+      level: document.getElementById('set-auto-level').value,
+      workspace_only: document.getElementById('set-auto-workspace').value === 'true',
+    },
+  };
+  if (apiKeyVal && !apiKeyVal.startsWith('•')) body.api_key = apiKeyVal;
+  try {
+    const res = await fetch(API + '/api/v1/config/update', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r = await res.json();
+    toast(r.ok ? '✅ Settings saved!' : '❌ ' + r.error);
+    if (r.ok) { await loadConfig(); loadDashboard(); }
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+// ═══ CHANNELS ═══
+const CHANNELS = [
+  {type:'telegram',name:'Telegram Bot',icon:'🤖',fields:[
+    {key:'bot_token',label:'Bot Token',type:'password',placeholder:'123456:ABC-DEF...'},
+    {key:'allowed_chat_ids',label:'Allowed Chat IDs',type:'text',placeholder:'123456789, -100123...'},
+  ]},
+  {type:'zalo',name:'Zalo Personal',icon:'💬',hasQR:true,fields:[
+    {key:'cookie',label:'Zalo Cookie',type:'textarea',placeholder:'Paste cookie từ chat.zalo.me → F12 → Application → Cookies'},
+    {key:'imei',label:'IMEI',type:'text',placeholder:'Tự động tạo nếu để trống'},
+  ]},
+  {type:'discord',name:'Discord Bot',icon:'🎮',fields:[
+    {key:'bot_token',label:'Bot Token',type:'password',placeholder:'MTk...'},
+    {key:'allowed_channel_ids',label:'Channel IDs',type:'text',placeholder:'123456789, 987654321'},
+  ]},
+  {type:'email',name:'Email (SMTP)',icon:'📧',fields:[
+    {key:'smtp_host',label:'SMTP Host',type:'text',placeholder:'smtp.gmail.com'},
+    {key:'smtp_port',label:'Port',type:'text',placeholder:'587'},
+    {key:'smtp_user',label:'Username',type:'text',placeholder:'agent@company.com'},
+    {key:'smtp_pass',label:'Password',type:'password',placeholder:'App password'},
+  ]},
+  {type:'whatsapp',name:'WhatsApp Business',icon:'📲',fields:[
+    {key:'phone_id',label:'Phone Number ID',type:'text',placeholder:'Cloud API Phone ID'},
+    {key:'access_token',label:'Access Token',type:'password',placeholder:'EAAG...'},
+    {key:'webhook_secret',label:'Webhook Verify Token',type:'text',placeholder:'my_verify_token'},
+  ]},
+  {type:'webhook',name:'Webhook API',icon:'🔗',fields:[
+    {key:'webhook_url',label:'Inbound URL',type:'text',placeholder:'https://your-app.com/webhook'},
+    {key:'webhook_secret',label:'Secret',type:'password',placeholder:'shared secret for HMAC'},
+  ]},
+];
+
+function renderChannelCards() {
+  const ch = configData.channels || {};
+  document.getElementById('channels-grid').innerHTML = CHANNELS.map(def => {
+    const saved = ch[def.type];
+    const enabled = saved && saved.enabled !== undefined ? saved.enabled : false;
+    return `<div class="ch-card">
+      <div class="ch-header">
+        <span class="ch-name">${def.icon} ${def.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge badge-${enabled?'green':'orange'}">${enabled?'Active':'Disabled'}</span>
+          <label class="toggle"><input type="checkbox" id="ch-toggle-${def.type}" ${enabled?'checked':''}><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="ch-fields">
+        ${def.fields.map(f => {
+          const val = (saved && saved[f.key]) || '';
+          if (f.type === 'textarea') return `<label>${f.label}</label><textarea id="ch-${def.type}-${f.key}" placeholder="${f.placeholder}">${val}</textarea>`;
+          return `<label>${f.label}</label><input type="${f.type}" id="ch-${def.type}-${f.key}" value="${val}" placeholder="${f.placeholder}">`;
+        }).join('')}
+      </div>
+      <div class="ch-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveChannel('${def.type}')">💾 Save</button>
+        ${def.hasQR ? '<button class="btn btn-green btn-sm" onclick="openZaloQR()">📱 Quét mã QR</button>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveChannel(type) {
+  const def = CHANNELS.find(c => c.type === type);
+  if (!def) return;
+  const body = {
+    channel_type: type,
+    enabled: document.getElementById('ch-toggle-' + type)?.checked || false,
+  };
+  def.fields.forEach(f => {
+    const el = document.getElementById('ch-' + type + '-' + f.key);
+    if (el) body[f.key] = el.value;
+  });
+  try {
+    const res = await fetch(API + '/api/v1/channels/update', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r = await res.json();
+    toast(r.ok ? `✅ ${type} config saved` : '❌ ' + r.error);
+    if (r.ok) { await loadConfig(); renderChannelCards(); }
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function openZaloQR() {
+  const modal = document.getElementById('zalo-qr-modal');
+  modal.style.display = 'flex';
+  document.getElementById('zalo-qr-content').innerHTML = '<div class="pulse" style="color:var(--text2)">Đang kết nối đến Zalo...</div>';
+  try {
+    const res = await fetch(API + '/api/v1/zalo/qr', {method:'POST',headers:{'Content-Type':'application/json'}});
+    const r = await res.json();
+    if (r.ok) {
+      document.getElementById('zalo-qr-content').innerHTML = r.qr_code.startsWith('data:') 
+        ? `<img src="${r.qr_code}" style="max-width:280px;border-radius:12px;border:2px solid var(--accent)">`
+        : `<div style="background:#fff;padding:16px;border-radius:12px;display:inline-block"><div style="font-family:var(--mono);font-size:11px;word-break:break-all;color:#333;max-width:260px">${r.qr_code}</div></div>`;
+      document.getElementById('zalo-qr-instructions').innerHTML = (r.instructions||[]).map(i => `<div style="margin:3px 0">${i}</div>`).join('');
+      document.getElementById('zalo-qr-imei').textContent = r.imei ? `IMEI: ${r.imei}` : '';
+      // Auto-fill IMEI into channel card
+      const imeiEl = document.getElementById('ch-zalo-imei');
+      if (imeiEl && r.imei) imeiEl.value = r.imei;
+    } else {
+      document.getElementById('zalo-qr-content').innerHTML = `<div style="color:var(--red)">❌ ${r.error}</div><div style="margin-top:12px;font-size:12px;color:var(--text2)">${r.fallback||''}</div>`;
+    }
+  } catch(e) {
+    document.getElementById('zalo-qr-content').innerHTML = `<div style="color:var(--red)">Lỗi kết nối: ${e.message}</div>`;
+  }
+}
+
+function closeZaloQR() {
+  document.getElementById('zalo-qr-modal').style.display = 'none';
+}
+
+// ═══ CONFIG TOML ═══
+async function loadConfigToml() {
+  try {
+    const data = await (await fetch(API + '/api/v1/config/full')).json();
+    document.getElementById('config-toml-content').textContent = data.toml || 'No config loaded';
+    document.getElementById('config-path').textContent = data.config_path || '';
   } catch(e) {}
 }
 
-// WebSocket
+// ═══ WEBSOCKET CHAT ═══
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(proto + '//' + location.host + '/ws');
-  ws.onopen = () => {
-    document.getElementById('ws-status').innerHTML = '🟢 Connected';
-  };
-  ws.onclose = () => {
-    document.getElementById('ws-status').innerHTML = '🔴 Disconnected';
-    setTimeout(connectWS, 3000);
-  };
-  ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    handleWSMessage(msg);
-  };
+  ws.onopen = () => { document.getElementById('ws-status').innerHTML = '🟢 Connected'; };
+  ws.onclose = () => { document.getElementById('ws-status').innerHTML = '🔴 Disconnected'; setTimeout(connectWS, 3000); };
+  ws.onmessage = (e) => handleWS(JSON.parse(e.data));
 }
 
-function handleWSMessage(msg) {
-  const chatEl = document.getElementById('chat-messages');
-  const typingEl = document.getElementById('chat-typing');
-
+function handleWS(msg) {
+  const el = document.getElementById('chat-messages');
+  const typing = document.getElementById('chat-typing');
   switch(msg.type) {
-    case 'connected':
-      break;
-    case 'chat_start':
-      typingEl.style.display = '';
-      break;
+    case 'chat_start': typing.style.display = ''; break;
     case 'chat_chunk':
-      typingEl.style.display = 'none';
-      let lastMsg = chatEl.querySelector('.msg-streaming');
-      if (!lastMsg) {
-        lastMsg = document.createElement('div');
-        lastMsg.className = 'msg msg-bot msg-streaming';
-        chatEl.appendChild(lastMsg);
-      }
-      lastMsg.textContent += msg.content;
-      chatEl.scrollTop = chatEl.scrollHeight;
+      typing.style.display = 'none';
+      let s = el.querySelector('.msg-streaming');
+      if (!s) { s = document.createElement('div'); s.className = 'msg msg-bot msg-streaming'; el.appendChild(s); }
+      s.textContent += msg.content;
+      el.scrollTop = el.scrollHeight;
       break;
     case 'chat_done':
-      typingEl.style.display = 'none';
-      const streaming = chatEl.querySelector('.msg-streaming');
-      if (streaming) streaming.classList.remove('msg-streaming');
+      typing.style.display = 'none';
+      const st = el.querySelector('.msg-streaming');
+      if (st) st.classList.remove('msg-streaming');
       break;
-    case 'chat_response':
-      addChatMsg(msg.content, 'bot');
-      break;
-    case 'pong':
-      break;
-    case 'error':
-      addChatMsg('Error: ' + msg.message, 'system');
-      break;
+    case 'chat_response': addMsg(msg.content, 'bot'); break;
+    case 'error': addMsg('Error: ' + msg.message, 'system'); break;
   }
 }
 
@@ -299,14 +529,12 @@ function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text || !ws || ws.readyState !== 1) return;
-
-  addChatMsg(text, 'user');
-  ws.send(JSON.stringify({type: 'chat', content: text, stream: true}));
+  addMsg(text, 'user');
+  ws.send(JSON.stringify({type:'chat',content:text,stream:true}));
   input.value = '';
-  input.focus();
 }
 
-function addChatMsg(text, role) {
+function addMsg(text, role) {
   const el = document.createElement('div');
   el.className = 'msg msg-' + role;
   el.textContent = text;
@@ -314,21 +542,31 @@ function addChatMsg(text, role) {
   el.parentElement.scrollTop = el.parentElement.scrollHeight;
 }
 
-// Helpers
-function formatUptime(secs) {
-  if (!secs) return '—';
-  if (secs < 60) return secs + 's';
-  if (secs < 3600) return Math.floor(secs/60) + 'm ' + (secs%60) + 's';
-  return Math.floor(secs/3600) + 'h ' + Math.floor((secs%3600)/60) + 'm';
+// ═══ HELPERS ═══
+function fmtUptime(s) {
+  if (!s) return '—';
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's';
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h + 'h ' + m + 'm';
 }
 
-// Init
-loadDashboard();
-loadProviders();
-loadChannels();
-loadConfig();
-connectWS();
-setInterval(loadDashboard, 10000);
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ═══ INIT ═══
+(async () => {
+  await loadConfig();
+  loadDashboard();
+  loadProviders();
+  connectWS();
+  setInterval(loadDashboard, 15000);
+})();
 </script>
 </body>
 </html>

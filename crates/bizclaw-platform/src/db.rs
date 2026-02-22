@@ -53,6 +53,20 @@ pub struct AuditEntry {
     pub created_at: String,
 }
 
+/// Channel configuration for a tenant.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TenantChannel {
+    pub id: String,
+    pub tenant_id: String,
+    pub channel_type: String, // telegram, zalo, discord, email, webhook, whatsapp
+    pub enabled: bool,
+    pub config_json: String,  // JSON blob with channel-specific config
+    pub status: String,       // connected, disconnected, error
+    pub status_message: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 impl PlatformDb {
     /// Open or create the platform database.
     pub fn open(path: &Path) -> Result<Self> {
@@ -112,6 +126,19 @@ impl PlatformDb {
                 user_id TEXT,
                 role TEXT DEFAULT 'member',
                 PRIMARY KEY (tenant_id, user_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS tenant_channels (
+                id TEXT PRIMARY KEY,
+                tenant_id TEXT NOT NULL,
+                channel_type TEXT NOT NULL,
+                enabled INTEGER DEFAULT 1,
+                config_json TEXT DEFAULT '{}',
+                status TEXT DEFAULT 'disconnected',
+                status_message TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(tenant_id, channel_type)
             );
         ").map_err(|e| BizClawError::Memory(format!("Migration error: {e}")))?;
         Ok(())
@@ -298,6 +325,68 @@ impl PlatformDb {
             .filter_map(|r| r.ok())
             .collect();
         Ok(ports)
+    }
+
+    // ── Tenant Channels ────────────────────────────────────
+
+    /// Save or update a channel configuration for a tenant.
+    pub fn upsert_channel(&self, tenant_id: &str, channel_type: &str, enabled: bool, config_json: &str) -> Result<TenantChannel> {
+        let id = format!("{}-{}", tenant_id, channel_type);
+        self.conn.execute(
+            "INSERT INTO tenant_channels (id, tenant_id, channel_type, enabled, config_json, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
+             ON CONFLICT(tenant_id, channel_type) DO UPDATE SET
+               enabled = ?4, config_json = ?5, updated_at = datetime('now')",
+            params![id, tenant_id, channel_type, enabled as i32, config_json],
+        ).map_err(|e| BizClawError::Memory(format!("Upsert channel: {e}")))?;
+        self.get_channel(&id)
+    }
+
+    /// Get a single channel config by ID.
+    pub fn get_channel(&self, id: &str) -> Result<TenantChannel> {
+        self.conn.query_row(
+            "SELECT id, tenant_id, channel_type, enabled, config_json, status, status_message, created_at, updated_at FROM tenant_channels WHERE id=?1",
+            params![id],
+            |row| Ok(TenantChannel {
+                id: row.get(0)?, tenant_id: row.get(1)?, channel_type: row.get(2)?,
+                enabled: row.get::<_, i32>(3)? != 0,
+                config_json: row.get(4)?, status: row.get(5)?,
+                status_message: row.get(6)?, created_at: row.get(7)?, updated_at: row.get(8)?,
+            }),
+        ).map_err(|e| BizClawError::Memory(format!("Get channel: {e}")))
+    }
+
+    /// List all channels for a tenant.
+    pub fn list_channels(&self, tenant_id: &str) -> Result<Vec<TenantChannel>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, tenant_id, channel_type, enabled, config_json, status, status_message, created_at, updated_at FROM tenant_channels WHERE tenant_id=?1 ORDER BY channel_type"
+        ).map_err(|e| BizClawError::Memory(format!("Prepare: {e}")))?;
+
+        let channels = stmt.query_map(params![tenant_id], |row| Ok(TenantChannel {
+            id: row.get(0)?, tenant_id: row.get(1)?, channel_type: row.get(2)?,
+            enabled: row.get::<_, i32>(3)? != 0,
+            config_json: row.get(4)?, status: row.get(5)?,
+            status_message: row.get(6)?, created_at: row.get(7)?, updated_at: row.get(8)?,
+        })).map_err(|e| BizClawError::Memory(format!("Query: {e}")))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(channels)
+    }
+
+    /// Update channel connection status.
+    pub fn update_channel_status(&self, id: &str, status: &str, message: Option<&str>) -> Result<()> {
+        self.conn.execute(
+            "UPDATE tenant_channels SET status=?1, status_message=?2, updated_at=datetime('now') WHERE id=?3",
+            params![status, message, id],
+        ).map_err(|e| BizClawError::Memory(format!("Update channel status: {e}")))?;
+        Ok(())
+    }
+
+    /// Delete a channel config.
+    pub fn delete_channel(&self, id: &str) -> Result<()> {
+        self.conn.execute("DELETE FROM tenant_channels WHERE id=?1", params![id])
+            .map_err(|e| BizClawError::Memory(format!("Delete channel: {e}")))?;
+        Ok(())
     }
 }
 

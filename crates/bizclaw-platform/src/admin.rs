@@ -33,6 +33,11 @@ impl AdminServer {
             .route("/api/admin/tenants/{id}/stop", post(stop_tenant))
             .route("/api/admin/tenants/{id}/restart", post(restart_tenant))
             .route("/api/admin/tenants/{id}/pairing", post(reset_pairing))
+            // Channel Configuration
+            .route("/api/admin/tenants/{id}/channels", get(list_channels))
+            .route("/api/admin/tenants/{id}/channels", post(upsert_channel))
+            .route("/api/admin/tenants/{id}/channels/{channel_id}", delete(delete_channel))
+            .route("/api/admin/tenants/{id}/channels/zalo/qr", post(zalo_get_qr))
             // Users
             .route("/api/admin/users", get(list_users))
             // Auth
@@ -151,13 +156,16 @@ async fn start_tenant(
     };
 
     let mut mgr = state.manager.lock().unwrap();
-    match mgr.start_tenant(&tenant, &state.bizclaw_bin) {
+    let db = state.db.lock().unwrap();
+    match mgr.start_tenant(&tenant, &state.bizclaw_bin, &db) {
         Ok(pid) => {
+            drop(db);
             state.db.lock().unwrap().update_tenant_status(&id, "running", Some(pid)).ok();
             state.db.lock().unwrap().log_event("tenant_started", "admin", &id, None).ok();
             Json(serde_json::json!({"ok": true, "pid": pid}))
         }
         Err(e) => {
+            drop(db);
             state.db.lock().unwrap().update_tenant_status(&id, "error", None).ok();
             Json(serde_json::json!({"ok": false, "error": e.to_string()}))
         }
@@ -260,4 +268,81 @@ async fn validate_pairing(
 
 async fn admin_dashboard_page() -> axum::response::Html<&'static str> {
     axum::response::Html(include_str!("admin_dashboard.html"))
+}
+
+// ── Channel Configuration Handlers ────────────────────────────────────
+
+async fn list_channels(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+) -> Json<serde_json::Value> {
+    match state.db.lock().unwrap().list_channels(&id) {
+        Ok(channels) => Json(serde_json::json!({"ok": true, "channels": channels})),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct UpsertChannelReq {
+    channel_type: String,
+    enabled: bool,
+    config: serde_json::Value,
+}
+
+async fn upsert_channel(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+    Json(req): Json<UpsertChannelReq>,
+) -> Json<serde_json::Value> {
+    let config_json = serde_json::to_string(&req.config).unwrap_or_default();
+    match state.db.lock().unwrap().upsert_channel(&id, &req.channel_type, req.enabled, &config_json) {
+        Ok(channel) => {
+            state.db.lock().unwrap().log_event(
+                "channel_configured", "admin", &id,
+                Some(&format!("type={}, enabled={}", req.channel_type, req.enabled)),
+            ).ok();
+            Json(serde_json::json!({"ok": true, "channel": channel}))
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+async fn delete_channel(
+    State(state): State<Arc<AdminState>>,
+    Path((tenant_id, channel_id)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
+    match state.db.lock().unwrap().delete_channel(&channel_id) {
+        Ok(()) => {
+            state.db.lock().unwrap().log_event(
+                "channel_deleted", "admin", &tenant_id,
+                Some(&format!("channel_id={}", channel_id)),
+            ).ok();
+            Json(serde_json::json!({"ok": true}))
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+/// Zalo QR code generation endpoint — returns QR data URL for scanning.
+async fn zalo_get_qr(
+    State(_state): State<Arc<AdminState>>,
+    Path(_id): Path<String>,
+) -> Json<serde_json::Value> {
+    use bizclaw_channels::zalo::client::auth::{ZaloAuth, ZaloCredentials};
+
+    let creds = ZaloCredentials::default();
+    let auth = ZaloAuth::new(creds);
+
+    match auth.get_qr_code().await {
+        Ok(qr_data) => Json(serde_json::json!({
+            "ok": true,
+            "qr_code": qr_data,
+            "message": "Mở ứng dụng Zalo trên điện thoại → Quét mã QR này để đăng nhập"
+        })),
+        Err(e) => Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+            "fallback": "Vui lòng paste cookie Zalo Web trực tiếp vào ô phía dưới"
+        })),
+    }
 }
