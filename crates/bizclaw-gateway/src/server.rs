@@ -5,6 +5,7 @@ use axum::response::Html;
 use bizclaw_core::config::{GatewayConfig, BizClawConfig};
 use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
+use std::collections::HashMap;
 use tower_http::cors::{CorsLayer, Any};
 use tower_http::trace::TraceLayer;
 
@@ -24,6 +25,16 @@ pub struct AppState {
     pub scheduler: Arc<tokio::sync::Mutex<bizclaw_scheduler::SchedulerEngine>>,
     /// Knowledge base — personal RAG with FTS5 search.
     pub knowledge: Arc<tokio::sync::Mutex<Option<bizclaw_knowledge::KnowledgeStore>>>,
+    /// Active Telegram bot polling tasks — maps agent_name → abort handle.
+    pub telegram_bots: Arc<tokio::sync::Mutex<HashMap<String, TelegramBotState>>>,
+}
+
+/// State for an active Telegram bot connected to an agent.
+#[derive(Clone)]
+pub struct TelegramBotState {
+    pub bot_token: String,
+    pub bot_username: String,
+    pub abort_handle: Arc<tokio::sync::Notify>,
 }
 
 /// Serve the dashboard HTML page.
@@ -117,6 +128,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/agents/{name}", put(super::routes::update_agent))
         .route("/api/v1/agents/{name}/chat", post(super::routes::agent_chat))
         .route("/api/v1/agents/broadcast", post(super::routes::agent_broadcast))
+        // Telegram Bot ↔ Agent API
+        .route("/api/v1/agents/{name}/telegram", post(super::routes::connect_telegram))
+        .route("/api/v1/agents/{name}/telegram", axum::routing::delete(super::routes::disconnect_telegram))
+        .route("/api/v1/agents/{name}/telegram", get(super::routes::telegram_status))
         // Brain Workspace API
         .route("/api/v1/brain/files", get(super::routes::brain_list_files))
         .route("/api/v1/brain/files/{filename}", get(super::routes::brain_read_file))
@@ -257,6 +272,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         orchestrator: Arc::new(tokio::sync::Mutex::new(orchestrator)),
         scheduler,
         knowledge: Arc::new(tokio::sync::Mutex::new(knowledge)),
+        telegram_bots: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
     };
 
     let app = build_router(state);
