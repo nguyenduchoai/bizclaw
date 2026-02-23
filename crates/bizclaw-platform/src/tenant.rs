@@ -28,6 +28,7 @@ impl TenantManager {
     }
 
     /// Start a tenant as a child process.
+    /// Config is ALWAYS regenerated from DB state — DB is the source of truth.
     pub fn start_tenant(
         &mut self,
         tenant: &Tenant,
@@ -44,111 +45,172 @@ impl TenantManager {
         let tenant_dir = self.data_dir.join(&tenant.slug);
         std::fs::create_dir_all(&tenant_dir).ok();
 
-        // Only generate default config if it doesn't exist yet.
-        // Once a tenant dashboard saves settings, those persist in config.toml
-        // and should NOT be overwritten on platform restart.
+        // ── Generate config.toml from DB (always regenerate) ──────────
         let config_path = tenant_dir.join("config.toml");
-        if !config_path.exists() {
-            tracing::info!("📝 Creating initial config for tenant {}", tenant.slug);
-            let mut config_content = format!(
-                r#"default_provider = "{}"
-default_model = "{}"
-api_key = ""
+        tracing::info!("📝 Generating config.toml for tenant {} from DB", tenant.slug);
+
+        // Start with tenant-level defaults
+        let mut provider = tenant.provider.clone();
+        let mut model = tenant.model.clone();
+        let mut api_key = String::new();
+        let mut api_base_url = String::new();
+        let mut identity_name = tenant.name.clone();
+        let mut identity_persona = String::new();
+        let mut system_prompt = String::new();
+
+        // Override with tenant_configs from DB (key-value pairs)
+        if let Ok(configs) = db.list_configs(&tenant.id) {
+            for cfg in &configs {
+                match cfg.key.as_str() {
+                    "default_provider" => provider = cfg.value.clone(),
+                    "default_model" => model = cfg.value.clone(),
+                    "api_key" => api_key = cfg.value.clone(),
+                    "api_base_url" => api_base_url = cfg.value.clone(),
+                    "identity.name" => identity_name = cfg.value.clone(),
+                    "identity.persona" => identity_persona = cfg.value.clone(),
+                    "identity.system_prompt" => system_prompt = cfg.value.clone(),
+                    _ => {} // other keys handled by TOML file directly
+                }
+            }
+        }
+
+        let mut config_content = format!(
+            r#"default_provider = "{provider}"
+default_model = "{model}"
+api_key = "{api_key}"
+api_base_url = "{api_base_url}"
 
 [identity]
-name = "{}"
+name = "{identity_name}"
+persona = "{identity_persona}"
+system_prompt = """{system_prompt}"""
 
 [gateway]
 port = {}
 "#,
-                tenant.provider, tenant.model, tenant.name, tenant.port
-            );
+            tenant.port
+        );
 
-            // Load channel configs from database and inject into config.toml
-            if let Ok(channels) = db.list_channels(&tenant.id) {
-                for ch in &channels {
-                    if !ch.enabled {
-                        continue;
-                    }
-                    if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&ch.config_json) {
-                        match ch.channel_type.as_str() {
-                            "telegram" => {
-                                let token = cfg["bot_token"].as_str().unwrap_or("");
-                                if !token.is_empty() {
-                                    config_content.push_str(&format!(
-                                        "\n[channel.telegram]\nenabled = true\nbot_token = \"{}\"\n",
-                                        token
-                                    ));
-                                    if let Some(ids) = cfg["allowed_chat_ids"].as_str() {
-                                        let parsed: Vec<&str> = ids
-                                            .split(',')
-                                            .map(|s| s.trim())
-                                            .filter(|s| !s.is_empty())
-                                            .collect();
-                                        if !parsed.is_empty() {
-                                            config_content.push_str(&format!(
-                                                "allowed_chat_ids = [{}]\n",
-                                                parsed.join(", ")
-                                            ));
-                                        }
-                                    }
-                                }
-                            }
-                            "zalo" => {
-                                let cookie = cfg["cookie"].as_str().unwrap_or("");
-                                if !cookie.is_empty() {
-                                    let imei = cfg["imei"].as_str().unwrap_or("");
-                                    config_content.push_str(&format!(
-                                        "\n[channel.zalo]\nenabled = true\nmode = \"personal\"\n\n[channel.zalo.personal]\ncookie_path = \"{}\"\nimei = \"{}\"\n",
-                                        tenant_dir.join("zalo_cookie.txt").display(),
-                                        imei
-                                    ));
-                                    // Save the actual cookie to a file
-                                    std::fs::write(tenant_dir.join("zalo_cookie.txt"), cookie).ok();
-                                }
-                            }
-                            "discord" => {
-                                let token = cfg["bot_token"].as_str().unwrap_or("");
-                                if !token.is_empty() {
-                                    config_content.push_str(&format!(
-                                        "\n[channel.discord]\nenabled = true\nbot_token = \"{}\"\n",
-                                        token
-                                    ));
-                                }
-                            }
-                            "email" => {
-                                let email = cfg["email"].as_str().unwrap_or("");
-                                let password = cfg["password"].as_str().unwrap_or("");
-                                if !email.is_empty() && !password.is_empty() {
-                                    config_content.push_str(&format!(
-                                        "\n[channel.email]\nenabled = true\nimap_host = \"{}\"\nimap_port = {}\nsmtp_host = \"{}\"\nsmtp_port = {}\nemail = \"{}\"\npassword = \"{}\"\n",
-                                        cfg["imap_host"].as_str().unwrap_or("imap.gmail.com"),
-                                        cfg["imap_port"].as_str().unwrap_or("993"),
-                                        cfg["smtp_host"].as_str().unwrap_or("smtp.gmail.com"),
-                                        cfg["smtp_port"].as_str().unwrap_or("587"),
-                                        email, password
-                                    ));
-                                }
-                            }
-                            "webhook" => {
-                                let url = cfg["url"].as_str().unwrap_or("");
-                                if !url.is_empty() {
-                                    config_content.push_str(&format!(
-                                        "\n[channel.webhook]\nurl = \"{}\"\nsecret = \"{}\"\n",
-                                        url,
-                                        cfg["secret"].as_str().unwrap_or("")
-                                    ));
-                                }
-                            }
-                            _ => {}
-                        }
+        // ── Inject brain/memory/autonomy configs from DB ──────────
+        if let Ok(configs) = db.list_configs(&tenant.id) {
+            let brain_keys: Vec<_> = configs.iter().filter(|c| c.key.starts_with("brain.")).collect();
+            if !brain_keys.is_empty() {
+                config_content.push_str("\n[brain]\n");
+                for cfg in &brain_keys {
+                    let field = cfg.key.strip_prefix("brain.").unwrap_or(&cfg.key);
+                    // Detect booleans and numbers
+                    if cfg.value == "true" || cfg.value == "false" {
+                        config_content.push_str(&format!("{} = {}\n", field, cfg.value));
+                    } else if cfg.value.parse::<f64>().is_ok() {
+                        config_content.push_str(&format!("{} = {}\n", field, cfg.value));
+                    } else {
+                        config_content.push_str(&format!("{} = \"{}\"\n", field, cfg.value));
                     }
                 }
             }
+        }
 
-            std::fs::write(&config_path, config_content).ok();
-        } else {
-            tracing::info!("✅ Using existing config for tenant {}", tenant.slug);
+        // ── Inject channel configs from DB ──────────
+        if let Ok(channels) = db.list_channels(&tenant.id) {
+            for ch in &channels {
+                if !ch.enabled {
+                    continue;
+                }
+                if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&ch.config_json) {
+                    match ch.channel_type.as_str() {
+                        "telegram" => {
+                            let token = cfg["bot_token"].as_str().unwrap_or("");
+                            if !token.is_empty() {
+                                config_content.push_str(&format!(
+                                    "\n[channel.telegram]\nenabled = true\nbot_token = \"{}\"\n",
+                                    token
+                                ));
+                                if let Some(ids) = cfg["allowed_chat_ids"].as_str() {
+                                    let parsed: Vec<&str> = ids
+                                        .split(',')
+                                        .map(|s| s.trim())
+                                        .filter(|s| !s.is_empty())
+                                        .collect();
+                                    if !parsed.is_empty() {
+                                        config_content.push_str(&format!(
+                                            "allowed_chat_ids = [{}]\n",
+                                            parsed.join(", ")
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                        "zalo" => {
+                            let cookie = cfg["cookie"].as_str().unwrap_or("");
+                            if !cookie.is_empty() {
+                                let imei = cfg["imei"].as_str().unwrap_or("");
+                                config_content.push_str(&format!(
+                                    "\n[channel.zalo]\nenabled = true\nmode = \"personal\"\n\n[channel.zalo.personal]\ncookie_path = \"{}\"\nimei = \"{}\"\n",
+                                    tenant_dir.join("zalo_cookie.txt").display(),
+                                    imei
+                                ));
+                                std::fs::write(tenant_dir.join("zalo_cookie.txt"), cookie).ok();
+                            }
+                        }
+                        "discord" => {
+                            let token = cfg["bot_token"].as_str().unwrap_or("");
+                            if !token.is_empty() {
+                                config_content.push_str(&format!(
+                                    "\n[channel.discord]\nenabled = true\nbot_token = \"{}\"\n",
+                                    token
+                                ));
+                            }
+                        }
+                        "email" => {
+                            let email = cfg["email"].as_str().unwrap_or("");
+                            let password = cfg["password"].as_str().unwrap_or("");
+                            if !email.is_empty() && !password.is_empty() {
+                                config_content.push_str(&format!(
+                                    "\n[channel.email]\nenabled = true\nimap_host = \"{}\"\nimap_port = {}\nsmtp_host = \"{}\"\nsmtp_port = {}\nemail = \"{}\"\npassword = \"{}\"\n",
+                                    cfg["imap_host"].as_str().unwrap_or("imap.gmail.com"),
+                                    cfg["imap_port"].as_str().unwrap_or("993"),
+                                    cfg["smtp_host"].as_str().unwrap_or("smtp.gmail.com"),
+                                    cfg["smtp_port"].as_str().unwrap_or("587"),
+                                    email, password
+                                ));
+                            }
+                        }
+                        "webhook" => {
+                            let url = cfg["url"].as_str().unwrap_or("");
+                            if !url.is_empty() {
+                                config_content.push_str(&format!(
+                                    "\n[channel.webhook]\nurl = \"{}\"\nsecret = \"{}\"\n",
+                                    url,
+                                    cfg["secret"].as_str().unwrap_or("")
+                                ));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        std::fs::write(&config_path, &config_content).ok();
+
+        // ── Generate agents.json from DB ──────────
+        if let Ok(agents) = db.list_agents(&tenant.id) {
+            if !agents.is_empty() {
+                let agents_json: Vec<serde_json::Value> = agents.iter().map(|a| {
+                    serde_json::json!({
+                        "name": a.name,
+                        "role": a.role,
+                        "description": a.description,
+                        "provider": a.provider,
+                        "model": a.model,
+                        "system_prompt": a.system_prompt,
+                    })
+                }).collect();
+                if let Ok(json_str) = serde_json::to_string_pretty(&agents_json) {
+                    std::fs::write(tenant_dir.join("agents.json"), json_str).ok();
+                }
+                tracing::info!("  📋 Generated agents.json with {} agent(s)", agents.len());
+            }
         }
 
         // Write pairing code for gateway auth

@@ -2200,9 +2200,9 @@ async function editAgent(name) {
   document.getElementById('edit-agent-prompt').value = a.system_prompt || '';
   document.getElementById('edit-agent-tg-token').value = '';
   document.getElementById('agent-edit-modal').style.display = 'flex';
-  // Populate provider dropdown (only active/configured)
+  // Populate provider dropdown — show ALL providers, pre-select saved value
   const sel = document.getElementById('edit-agent-provider');
-  sel.innerHTML = '<option value="">— Giữ nguyên —</option>';
+  sel.innerHTML = '<option value="">— Chọn Provider —</option>';
   try {
     if (!_providersCache) {
       const res = await authFetch(API + '/api/v1/providers');
@@ -2210,36 +2210,158 @@ async function editAgent(name) {
       if (data.providers) _providersCache = data.providers;
     }
     if (_providersCache) {
-      const activeProv = _providersCache.filter(p => p.status === 'active' || p.type === 'local');
-      activeProv.forEach(p => {
+      _providersCache.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.name;
         const typeIcon = p.type === 'local' ? '🖥️' : '☁️';
         const badge = p.status === 'active' ? ' ⚡' : '';
         opt.textContent = `${typeIcon} ${p.name}${badge}`;
-        if (p.name === a.provider) opt.selected = true;
         sel.appendChild(opt);
       });
     }
   } catch(e) {}
-  // Populate model dropdown
+  // Pre-select saved provider
+  if (a.provider) {
+    sel.value = a.provider;
+    // If provider not found in list (e.g. custom), add it
+    if (sel.value !== a.provider) {
+      const opt = document.createElement('option');
+      opt.value = a.provider;
+      opt.textContent = `⚙️ ${a.provider} (đã lưu)`;
+      sel.appendChild(opt);
+      sel.value = a.provider;
+    }
+  }
+  // Populate model dropdown, pre-select saved model
   const modelSel = document.getElementById('edit-agent-model');
-  modelSel.innerHTML = '<option value="">— Giữ nguyên —</option>';
+  modelSel.innerHTML = '<option value="">— Chọn Model —</option>';
   if (a.provider) {
     await loadAgentModels(a.provider, 'edit-agent-model');
-    if (a.model) modelSel.value = a.model;
+    if (a.model) {
+      modelSel.value = a.model;
+      // If model not found in list, add it manually
+      if (modelSel.value !== a.model) {
+        const opt = document.createElement('option');
+        opt.value = a.model;
+        opt.textContent = `${a.model} (đã lưu)`;
+        modelSel.appendChild(opt);
+        modelSel.value = a.model;
+      }
+    }
   }
-  // Populate channel checkboxes (all channels, not just Telegram)
+  // Populate channel checkboxes with instance details
   const chContainer = document.getElementById('edit-agent-channels');
   const agentChannels = a.channels || [];
   chContainer.innerHTML = CHANNELS.map(ch => {
     const checked = agentChannels.includes(ch.type) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border:1px solid ${checked ? 'var(--accent)' : 'var(--border)'};border-radius:8px;cursor:pointer;font-size:12px;transition:border-color .2s">
-      <input type="checkbox" value="${ch.type}" class="agent-channel-cb" ${checked}> ${ch.icon} ${ch.name}
-    </label>`;
+    return `<div style="width:100%">
+      <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border:1px solid ${checked ? 'var(--accent)' : 'var(--border)'};border-radius:8px;cursor:pointer;font-size:12px;transition:border-color .2s">
+        <input type="checkbox" value="${ch.type}" class="agent-channel-cb" ${checked} onchange="toggleChannelInstances(this,'${ch.type}')">
+        ${ch.icon} ${ch.name}
+      </label>
+      <div id="ch-instances-${ch.type}" style="display:${checked ? 'block' : 'none'};margin:4px 0 8px 20px;font-size:11px;color:var(--text2)"></div>
+    </div>`;
   }).join('');
+  // Load instances for checked channels
+  agentChannels.forEach(chType => loadChannelInstances(chType));
   // Load telegram status
   loadTelegramStatus(name);
+}
+
+// Show/hide channel instances when checkbox toggled
+function toggleChannelInstances(cb, chType) {
+  const container = document.getElementById('ch-instances-' + chType);
+  if (!container) return;
+  // Update border color
+  cb.closest('label').style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
+  if (cb.checked) {
+    container.style.display = 'block';
+    loadChannelInstances(chType);
+  } else {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
+}
+
+// Load and display bots/accounts/links for a specific channel type
+function loadChannelInstances(chType) {
+  const container = document.getElementById('ch-instances-' + chType);
+  if (!container) return;
+  const ch = (configData && configData.channels) ? configData.channels[chType] : null;
+  let html = '';
+  switch(chType) {
+    case 'telegram':
+      if (ch && ch.bot_token_set) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> Bot Token: <code>${ch.bot_token || '••••'}</code>
+          ${ch.allowed_chat_ids ? '<br>Chat IDs: <code>' + ch.allowed_chat_ids + '</code>' : ''}
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa cấu hình Bot Token. Vào trang Kênh để thêm.</div>';
+      }
+      html += '<div style="color:var(--text2);padding:2px 0;font-size:10px">💡 Mỗi Telegram Bot cần 1 Bot Token từ @BotFather</div>';
+      break;
+    case 'zalo':
+      if (ch && ch.cookie_path) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> Zalo Cá nhân — Cookie: ${ch.cookie_path ? 'đã lưu' : 'chưa có'}
+          ${ch.imei ? '<br>IMEI: <code>' + ch.imei + '</code>' : ''}
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa đăng nhập Zalo. Vào trang Kênh để QR Login.</div>';
+      }
+      html += '<div style="color:var(--text2);padding:2px 0;font-size:10px">💡 Mỗi tài khoản Zalo là 1 session riêng biệt</div>';
+      break;
+    case 'zalo_oa':
+      html = '<div style="color:var(--text2);padding:4px 0">🇻🇳 Zalo OA Bot — cấu hình qua bot.zapps.me</div>';
+      html += '<div style="color:var(--text2);padding:2px 0;font-size:10px">💡 Mỗi OA Bot cần Token riêng từ Zalo Bot Creator</div>';
+      break;
+    case 'discord':
+      if (ch && ch.bot_token_set) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> Discord Bot: <code>${ch.bot_token || '••••'}</code>
+          ${ch.allowed_channel_ids ? '<br>Channel IDs: <code>' + ch.allowed_channel_ids + '</code>' : ''}
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa cấu hình Bot Token. Vào trang Kênh để thêm.</div>';
+      }
+      break;
+    case 'email':
+      if (ch && ch.smtp_host) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> SMTP: ${ch.smtp_host}:${ch.smtp_port}
+          <br>Email: <code>${ch.smtp_user || 'chưa set'}</code>
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa cấu hình Email. Vào trang Kênh để thêm.</div>';
+      }
+      break;
+    case 'whatsapp':
+      if (ch && ch.phone_number_id) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> Phone ID: <code>${ch.phone_number_id}</code>
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa cấu hình WhatsApp. Vào trang Kênh để thêm.</div>';
+      }
+      break;
+    case 'webhook':
+      if (ch && (ch.secret_set || ch.outbound_url)) {
+        html = `<div style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:2px 0">
+          <span style="color:var(--green)">🟢</span> Inbound: <code>${location.origin}/api/v1/webhook/inbound</code>
+          ${ch.outbound_url ? '<br>Outbound: <code>' + ch.outbound_url + '</code>' : ''}
+        </div>`;
+      } else {
+        html = '<div style="color:var(--orange);padding:4px 0">⚠️ Chưa cấu hình Webhook. Vào trang Kênh để thêm.</div>';
+      }
+      break;
+    case 'slack':
+      html = '<div style="color:var(--text2);padding:4px 0">💼 Slack Bot — cấu hình trên api.slack.com</div>';
+      break;
+    default:
+      html = '<div style="color:var(--text2);padding:4px 0">📌 Vào trang Kênh (Channels) để cấu hình kênh này.</div>';
+  }
+  container.innerHTML = html;
 }
 
 async function loadTelegramStatus(name) {
@@ -2309,10 +2431,11 @@ async function saveAgentEdit() {
   const model = document.getElementById('edit-agent-model').value;
   const prompt = document.getElementById('edit-agent-prompt').value.trim();
   const channels = [...document.querySelectorAll('.agent-channel-cb:checked')].map(cb => cb.value);
+  // Always include provider and model (even if unchanged) to ensure they persist
   const body = { role, description: desc };
   if (provider) body.provider = provider;
   if (model) body.model = model;
-  if (prompt) body.system_prompt = prompt;
+  body.system_prompt = prompt; // Always send system_prompt (even empty to allow clearing)
   try {
     const res = await authFetch(API + '/api/v1/agents/' + encodeURIComponent(name), {
       method: 'PUT', headers: {'Content-Type':'application/json'},
@@ -2325,8 +2448,9 @@ async function saveAgentEdit() {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ channels })
       });
+      const provLabel = provider ? ` [${provider}${model ? '/' + model : ''}]` : '';
       const chLabel = channels.length > 0 ? ' (' + channels.join(', ') + ')' : '';
-      toast('✅ Agent "' + name + '" đã cập nhật!' + chLabel);
+      toast('✅ Agent "' + name + '" đã cập nhật!' + provLabel + chLabel);
       document.getElementById('agent-edit-modal').style.display = 'none';
       loadAgents();
     } else toast('❌ ' + r.message);

@@ -84,6 +84,16 @@ impl AdminServer {
             .route("/api/admin/ollama/pull", post(ollama_pull_model))
             .route("/api/admin/ollama/delete", post(ollama_delete_model))
             .route("/api/admin/ollama/health", get(ollama_health))
+            // Tenant Config (key-value settings)
+            .route("/api/admin/tenants/{id}/configs", get(list_tenant_configs))
+            .route("/api/admin/tenants/{id}/configs", post(set_tenant_configs))
+            // Tenant Agents
+            .route("/api/admin/tenants/{id}/agents", get(list_tenant_agents))
+            .route("/api/admin/tenants/{id}/agents", post(upsert_tenant_agent))
+            .route(
+                "/api/admin/tenants/{id}/agents/{name}",
+                delete(delete_tenant_agent),
+            )
             // Users
             .route("/api/admin/users", get(list_users))
             .route_layer(middleware::from_fn_with_state(state.clone(), require_auth));
@@ -683,3 +693,148 @@ async fn ollama_delete_model(
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
     }
 }
+
+// ═════════════════════════════════════════════════════════════
+// TENANT CONFIG (KEY-VALUE SETTINGS) — DB as source of truth
+// ═════════════════════════════════════════════════════════════
+
+/// List all config entries for a tenant.
+async fn list_tenant_configs(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+) -> Json<serde_json::Value> {
+    match state.db.lock().unwrap().list_configs(&id) {
+        Ok(configs) => {
+            // Convert Vec<TenantConfig> to a flat JSON object
+            let mut obj = serde_json::Map::new();
+            for cfg in &configs {
+                obj.insert(cfg.key.clone(), serde_json::Value::String(cfg.value.clone()));
+            }
+            Json(serde_json::json!({"ok": true, "configs": obj}))
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+/// Set one or more config values for a tenant.
+/// Body: {"configs": {"default_provider": "ollama", "default_model": "llama3.2", ...}}
+async fn set_tenant_configs(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let configs = match body.get("configs").and_then(|c| c.as_object()) {
+        Some(c) => c,
+        None => return Json(serde_json::json!({"ok": false, "error": "Missing 'configs' object"})),
+    };
+
+    let db = state.db.lock().unwrap();
+    let mut saved_count = 0;
+    for (key, value) in configs {
+        let val_str = match value {
+            serde_json::Value::String(s) => s.clone(),
+            other => other.to_string(),
+        };
+        if db.set_config(&id, key, &val_str).is_ok() {
+            saved_count += 1;
+        }
+    }
+
+    // Also update the tenants table provider/model for consistency
+    if let Some(provider) = configs.get("default_provider").and_then(|v| v.as_str()) {
+        if let Some(model) = configs.get("default_model").and_then(|v| v.as_str()) {
+            db.update_tenant_provider(&id, provider, model).ok();
+        }
+    }
+
+    drop(db);
+    state.db.lock().unwrap().log_event(
+        "config_updated",
+        "admin",
+        &id,
+        Some(&format!("keys={}", saved_count)),
+    ).ok();
+
+    Json(serde_json::json!({"ok": true, "saved": saved_count}))
+}
+
+// ═════════════════════════════════════════════════════════════
+// TENANT AGENTS — DB-backed agent persistence
+// ═════════════════════════════════════════════════════════════
+
+/// List all agents for a tenant.
+async fn list_tenant_agents(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+) -> Json<serde_json::Value> {
+    match state.db.lock().unwrap().list_agents(&id) {
+        Ok(agents) => Json(serde_json::json!({"ok": true, "agents": agents})),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct UpsertAgentReq {
+    name: String,
+    role: Option<String>,
+    description: Option<String>,
+    provider: Option<String>,
+    model: Option<String>,
+    system_prompt: Option<String>,
+}
+
+/// Create or update an agent for a tenant.
+async fn upsert_tenant_agent(
+    State(state): State<Arc<AdminState>>,
+    Path(id): Path<String>,
+    Json(req): Json<UpsertAgentReq>,
+) -> Json<serde_json::Value> {
+    let db = state.db.lock().unwrap();
+
+    // Get tenant defaults for fallback values
+    let tenant = db.get_tenant(&id).ok();
+    let default_provider = tenant.as_ref().map(|t| t.provider.as_str()).unwrap_or("openai");
+    let default_model = tenant.as_ref().map(|t| t.model.as_str()).unwrap_or("gpt-4o-mini");
+
+    match db.upsert_agent(
+        &id,
+        &req.name,
+        req.role.as_deref().unwrap_or("assistant"),
+        req.description.as_deref().unwrap_or(""),
+        req.provider.as_deref().unwrap_or(default_provider),
+        req.model.as_deref().unwrap_or(default_model),
+        req.system_prompt.as_deref().unwrap_or(""),
+    ) {
+        Ok(agent) => {
+            drop(db);
+            state.db.lock().unwrap().log_event(
+                "agent_upserted",
+                "admin",
+                &id,
+                Some(&format!("name={}", req.name)),
+            ).ok();
+            Json(serde_json::json!({"ok": true, "agent": agent}))
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+/// Delete an agent by tenant_id + name.
+async fn delete_tenant_agent(
+    State(state): State<Arc<AdminState>>,
+    Path((id, name)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
+    match state.db.lock().unwrap().delete_agent_by_name(&id, &name) {
+        Ok(()) => {
+            state.db.lock().unwrap().log_event(
+                "agent_deleted",
+                "admin",
+                &id,
+                Some(&format!("name={}", name)),
+            ).ok();
+            Json(serde_json::json!({"ok": true}))
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+

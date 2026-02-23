@@ -1,14 +1,0 @@
-Script started on Mon Feb 23 13:28:27 2026
-[1m[7m%[27m[1m[0m                                                                                      [0m[27m[24m[J(base) nguyenduchoai@HoaiNguyen BizClaw % [K[?2004h[?2004l
-[1m[7m%[27m[1m[0m                                                                                      [0m[27m[24m[J(base) nguyenduchoai@HoaiNguyen BizClaw % [K[?2004hsssh root@116.118.2.98 'echo "#!/bin/bash[?2004l
-[0m[27m[24m[Jquote> [K[?2004hssystemctl stop bizclaw-platform[?2004l
-[0m[27m[24m[Jquote> [K[?2004hssleep 2[?2004l
-[0m[27m[24m[Jquote> [K[?2004hccp /root/bizclaw/target/release/bizclaw /usr/local/bin/bizclaw[?2004l
-[0m[27m[24m[Jquote> [K[?2004hccp /root/bizclaw/target/release/bizclaw-platform /usr/local/bin/bizclaw-platfor [Km[?2004l
-[0m[27m[24m[Jquote> [K[?2004hssystemctl start bizclaw-platform[?2004l
-[0m[27m[24m[Jquote> [K[?2004hssleep 3[?2004l
-[0m[27m[24m[Jquote> [K[?2004hssystemctl status bizclaw-platform --no-pager | head -5[?2004l
-[0m[27m[24m[Jquote> [K[?2004hccurl -s http://localhost:10002/health" > /tmp/deploy.sh && chmod +x /tmp/deploy [K..sh && echo READY'[?2004l
-READY
-[1m[7m%[27m[1m[0m                                                                                      [0m[27m[24m[J(base) nguyenduchoai@HoaiNguyen BizClaw % [K[?2004h[?2004l
-[1m[7m%[27m[1m[0m                                                                                      [0m[27m[24m[J(base) nguyenduchoai@HoaiNguyen BizClaw % [K[?2004h

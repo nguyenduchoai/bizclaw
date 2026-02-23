@@ -67,6 +67,31 @@ pub struct TenantChannel {
     pub updated_at: String,
 }
 
+/// Key-value config entry for a tenant (hybrid persistence).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TenantConfig {
+    pub tenant_id: String,
+    pub key: String,
+    pub value: String,
+    pub updated_at: String,
+}
+
+/// Agent record persisted in DB (replaces agents.json).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TenantAgent {
+    pub id: String,
+    pub tenant_id: String,
+    pub name: String,
+    pub role: String,
+    pub description: String,
+    pub provider: String,
+    pub model: String,
+    pub system_prompt: String,
+    pub enabled: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 impl PlatformDb {
     /// Open or create the platform database.
     pub fn open(path: &Path) -> Result<Self> {
@@ -134,13 +159,37 @@ impl PlatformDb {
                 id TEXT PRIMARY KEY,
                 tenant_id TEXT NOT NULL,
                 channel_type TEXT NOT NULL,
+                instance_id TEXT DEFAULT '',
                 enabled INTEGER DEFAULT 1,
                 config_json TEXT DEFAULT '{}',
                 status TEXT DEFAULT 'disconnected',
                 status_message TEXT,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now')),
-                UNIQUE(tenant_id, channel_type)
+                UNIQUE(tenant_id, channel_type, instance_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS tenant_configs (
+                tenant_id TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL DEFAULT '',
+                updated_at TEXT DEFAULT (datetime('now')),
+                PRIMARY KEY (tenant_id, key)
+            );
+
+            CREATE TABLE IF NOT EXISTS tenant_agents (
+                id TEXT PRIMARY KEY,
+                tenant_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                role TEXT DEFAULT 'assistant',
+                description TEXT DEFAULT '',
+                provider TEXT DEFAULT 'openai',
+                model TEXT DEFAULT 'gpt-4o-mini',
+                system_prompt TEXT DEFAULT '',
+                enabled INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(tenant_id, name)
             );
         ",
             )
@@ -500,6 +549,160 @@ impl PlatformDb {
             .map_err(|e| BizClawError::Memory(format!("Delete channel: {e}")))?;
         Ok(())
     }
+
+    // ── Tenant Configs (Key-Value Settings) ────────────────────────────────
+
+    /// Set a config value for a tenant.
+    pub fn set_config(&self, tenant_id: &str, key: &str, value: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO tenant_configs (tenant_id, key, value, updated_at)
+             VALUES (?1, ?2, ?3, datetime('now'))
+             ON CONFLICT(tenant_id, key) DO UPDATE SET
+               value = ?3, updated_at = datetime('now')",
+            params![tenant_id, key, value],
+        ).map_err(|e| BizClawError::Memory(format!("Set config: {e}")))?;
+        Ok(())
+    }
+
+    /// Get a single config value.
+    pub fn get_config(&self, tenant_id: &str, key: &str) -> Result<Option<String>> {
+        match self.conn.query_row(
+            "SELECT value FROM tenant_configs WHERE tenant_id=?1 AND key=?2",
+            params![tenant_id, key],
+            |row| row.get::<_, String>(0),
+        ) {
+            Ok(v) => Ok(Some(v)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(BizClawError::Memory(format!("Get config: {e}"))),
+        }
+    }
+
+    /// Get all config entries for a tenant.
+    pub fn list_configs(&self, tenant_id: &str) -> Result<Vec<TenantConfig>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT tenant_id, key, value, updated_at FROM tenant_configs WHERE tenant_id=?1 ORDER BY key"
+        ).map_err(|e| BizClawError::Memory(format!("Prepare: {e}")))?;
+
+        let configs = stmt
+            .query_map(params![tenant_id], |row| {
+                Ok(TenantConfig {
+                    tenant_id: row.get(0)?,
+                    key: row.get(1)?,
+                    value: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
+            })
+            .map_err(|e| BizClawError::Memory(format!("Query: {e}")))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(configs)
+    }
+
+    /// Set multiple config values at once.
+    pub fn set_configs(&self, tenant_id: &str, configs: &[(String, String)]) -> Result<()> {
+        for (key, value) in configs {
+            self.set_config(tenant_id, key, value)?;
+        }
+        Ok(())
+    }
+
+    /// Delete a config key.
+    pub fn delete_config(&self, tenant_id: &str, key: &str) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM tenant_configs WHERE tenant_id=?1 AND key=?2",
+            params![tenant_id, key],
+        ).map_err(|e| BizClawError::Memory(format!("Delete config: {e}")))?;
+        Ok(())
+    }
+
+    /// Update tenant provider/model in the tenants table.
+    pub fn update_tenant_provider(&self, id: &str, provider: &str, model: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE tenants SET provider=?1, model=?2, updated_at=datetime('now') WHERE id=?3",
+            params![provider, model, id],
+        ).map_err(|e| BizClawError::Memory(format!("Update provider: {e}")))?;
+        Ok(())
+    }
+
+    // ── Tenant Agents ────────────────────────────────────
+
+    /// Create or update an agent for a tenant.
+    pub fn upsert_agent(
+        &self,
+        tenant_id: &str,
+        name: &str,
+        role: &str,
+        description: &str,
+        provider: &str,
+        model: &str,
+        system_prompt: &str,
+    ) -> Result<TenantAgent> {
+        let id = format!("{}-{}", tenant_id, name);
+        self.conn.execute(
+            "INSERT INTO tenant_agents (id, tenant_id, name, role, description, provider, model, system_prompt, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
+             ON CONFLICT(tenant_id, name) DO UPDATE SET
+               role=?4, description=?5, provider=?6, model=?7, system_prompt=?8, updated_at=datetime('now')",
+            params![id, tenant_id, name, role, description, provider, model, system_prompt],
+        ).map_err(|e| BizClawError::Memory(format!("Upsert agent: {e}")))?;
+        self.get_agent(&id)
+    }
+
+    /// Get a single agent by ID.
+    pub fn get_agent(&self, id: &str) -> Result<TenantAgent> {
+        self.conn.query_row(
+            "SELECT id, tenant_id, name, role, description, provider, model, system_prompt, enabled, created_at, updated_at FROM tenant_agents WHERE id=?1",
+            params![id],
+            |row| Ok(TenantAgent {
+                id: row.get(0)?, tenant_id: row.get(1)?, name: row.get(2)?,
+                role: row.get(3)?, description: row.get(4)?, provider: row.get(5)?,
+                model: row.get(6)?, system_prompt: row.get(7)?,
+                enabled: row.get::<_, i32>(8)? != 0,
+                created_at: row.get(9)?, updated_at: row.get(10)?,
+            }),
+        ).map_err(|e| BizClawError::Memory(format!("Get agent: {e}")))
+    }
+
+    /// List all agents for a tenant.
+    pub fn list_agents(&self, tenant_id: &str) -> Result<Vec<TenantAgent>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, tenant_id, name, role, description, provider, model, system_prompt, enabled, created_at, updated_at FROM tenant_agents WHERE tenant_id=?1 ORDER BY name"
+        ).map_err(|e| BizClawError::Memory(format!("Prepare: {e}")))?;
+
+        let agents = stmt
+            .query_map(params![tenant_id], |row| {
+                Ok(TenantAgent {
+                    id: row.get(0)?, tenant_id: row.get(1)?, name: row.get(2)?,
+                    role: row.get(3)?, description: row.get(4)?, provider: row.get(5)?,
+                    model: row.get(6)?, system_prompt: row.get(7)?,
+                    enabled: row.get::<_, i32>(8)? != 0,
+                    created_at: row.get(9)?, updated_at: row.get(10)?,
+                })
+            })
+            .map_err(|e| BizClawError::Memory(format!("Query: {e}")))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(agents)
+    }
+
+    /// Delete an agent.
+    pub fn delete_agent(&self, id: &str) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM tenant_agents WHERE id=?1", params![id])
+            .map_err(|e| BizClawError::Memory(format!("Delete agent: {e}")))?;
+        Ok(())
+    }
+
+    /// Delete an agent by tenant_id + name.
+    pub fn delete_agent_by_name(&self, tenant_id: &str, name: &str) -> Result<()> {
+        self.conn
+            .execute(
+                "DELETE FROM tenant_agents WHERE tenant_id=?1 AND name=?2",
+                params![tenant_id, name],
+            )
+            .map_err(|e| BizClawError::Memory(format!("Delete agent: {e}")))?;
+        Ok(())
+    }
 }
 
 fn rand_code() -> u32 {
@@ -611,5 +814,102 @@ mod tests {
         assert_eq!(total, 3);
         assert_eq!(running, 1);
         assert_eq!(stopped, 2);
+    }
+
+    #[test]
+    fn test_tenant_configs() {
+        let db = temp_db();
+        let t = db
+            .create_tenant("Bot", "bot", 10001, "openai", "gpt-4o-mini", "free")
+            .unwrap();
+
+        // Set config
+        db.set_config(&t.id, "default_provider", "ollama").unwrap();
+        db.set_config(&t.id, "default_model", "llama3.2").unwrap();
+        db.set_config(&t.id, "api_key", "sk-test123").unwrap();
+
+        // Get config
+        let provider = db.get_config(&t.id, "default_provider").unwrap();
+        assert_eq!(provider, Some("ollama".to_string()));
+
+        let missing = db.get_config(&t.id, "nonexistent").unwrap();
+        assert!(missing.is_none());
+
+        // List configs
+        let all = db.list_configs(&t.id).unwrap();
+        assert_eq!(all.len(), 3);
+
+        // Upsert (update existing)
+        db.set_config(&t.id, "default_model", "qwen2.5").unwrap();
+        let model = db.get_config(&t.id, "default_model").unwrap();
+        assert_eq!(model, Some("qwen2.5".to_string()));
+
+        // Delete config
+        db.delete_config(&t.id, "api_key").unwrap();
+        let all = db.list_configs(&t.id).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn test_tenant_agents() {
+        let db = temp_db();
+        let t = db
+            .create_tenant("Bot", "bot", 10001, "openai", "gpt-4o-mini", "free")
+            .unwrap();
+
+        // Create agent
+        let agent = db
+            .upsert_agent(
+                &t.id, "sales-bot", "assistant", "Sales helper",
+                "ollama", "llama3.2", "You are a sales bot.",
+            )
+            .unwrap();
+        assert_eq!(agent.name, "sales-bot");
+        assert_eq!(agent.provider, "ollama");
+        assert_eq!(agent.model, "llama3.2");
+
+        // Create another agent
+        db.upsert_agent(
+            &t.id, "hr-bot", "analyst", "HR helper",
+            "openai", "gpt-4o", "You help with HR.",
+        ).unwrap();
+
+        // List agents
+        let agents = db.list_agents(&t.id).unwrap();
+        assert_eq!(agents.len(), 2);
+
+        // Update agent (upsert existing)
+        let updated = db
+            .upsert_agent(
+                &t.id, "sales-bot", "assistant", "Updated sales helper",
+                "gemini", "gemini-2.0-flash", "Updated prompt.",
+            )
+            .unwrap();
+        assert_eq!(updated.provider, "gemini");
+        assert_eq!(updated.description, "Updated sales helper");
+
+        // Still only 2 agents (upsert, not insert)
+        let agents = db.list_agents(&t.id).unwrap();
+        assert_eq!(agents.len(), 2);
+
+        // Delete by name
+        db.delete_agent_by_name(&t.id, "hr-bot").unwrap();
+        let agents = db.list_agents(&t.id).unwrap();
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name, "sales-bot");
+    }
+
+    #[test]
+    fn test_update_tenant_provider() {
+        let db = temp_db();
+        let t = db
+            .create_tenant("Bot", "bot", 10001, "openai", "gpt-4o-mini", "free")
+            .unwrap();
+        assert_eq!(t.provider, "openai");
+
+        db.update_tenant_provider(&t.id, "ollama", "llama3.2").unwrap();
+        let updated = db.get_tenant(&t.id).unwrap();
+        assert_eq!(updated.provider, "ollama");
+        assert_eq!(updated.model, "llama3.2");
     }
 }
