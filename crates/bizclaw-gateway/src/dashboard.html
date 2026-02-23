@@ -1995,7 +1995,7 @@ function deleteGroup(idx) {
 function escHtml(s) { return (s||'').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
 
 // ═══ WEBCHAT AGENT SELECTOR ═══
-let _chatAgentName = ''; // empty = default WS agent
+// _chatAgentName is declared in AGENT GROUP CHAT section above
 
 async function refreshChatAgents() {
   try {
