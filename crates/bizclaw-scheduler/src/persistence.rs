@@ -110,7 +110,12 @@ impl SchedulerDb {
         let (action_type, action_data) = match &task.action {
             TaskAction::AgentPrompt(p) => ("agent_prompt", serde_json::json!({"prompt": p})),
             TaskAction::Notify(m) => ("notify", serde_json::json!({"message": m})),
-            TaskAction::Webhook { url, method, body, headers } => (
+            TaskAction::Webhook {
+                url,
+                method,
+                body,
+                headers,
+            } => (
                 "webhook",
                 serde_json::json!({"url": url, "method": method, "body": body, "headers": headers}),
             ),
@@ -197,13 +202,12 @@ impl SchedulerDb {
                         url: action_data["url"].as_str().unwrap_or("").to_string(),
                         method: action_data["method"].as_str().unwrap_or("POST").to_string(),
                         body: action_data["body"].as_str().map(|s| s.to_string()),
-                        headers: serde_json::from_value(
-                            action_data["headers"].clone()
-                        ).unwrap_or_default(),
+                        headers: serde_json::from_value(action_data["headers"].clone())
+                            .unwrap_or_default(),
                     },
-                    _ => {
-                        TaskAction::Notify(action_data["message"].as_str().unwrap_or("").to_string())
-                    }
+                    _ => TaskAction::Notify(
+                        action_data["message"].as_str().unwrap_or("").to_string(),
+                    ),
                 };
 
                 let task_type = match task_type_name.as_str() {
@@ -396,7 +400,14 @@ impl SchedulerDb {
             .execute(
                 "INSERT INTO notifications (title, body, priority, source, channel, created_at) 
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                rusqlite::params![title, body, priority, source, channel, Utc::now().to_rfc3339()],
+                rusqlite::params![
+                    title,
+                    body,
+                    priority,
+                    source,
+                    channel,
+                    Utc::now().to_rfc3339()
+                ],
             )
             .map_err(|e| format!("Save notification: {e}"))?;
         Ok(self.conn.last_insert_rowid())
@@ -508,10 +519,13 @@ impl WorkflowRule {
         action_config: serde_json::Value,
     ) -> Self {
         Self {
-            id: format!("wf-{:x}", std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis()),
+            id: format!(
+                "wf-{:x}",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis()
+            ),
             name: name.to_string(),
             description: String::new(),
             trigger_type: trigger_type.to_string(),

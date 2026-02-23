@@ -554,13 +554,15 @@ impl PlatformDb {
 
     /// Set a config value for a tenant.
     pub fn set_config(&self, tenant_id: &str, key: &str, value: &str) -> Result<()> {
-        self.conn.execute(
-            "INSERT INTO tenant_configs (tenant_id, key, value, updated_at)
+        self.conn
+            .execute(
+                "INSERT INTO tenant_configs (tenant_id, key, value, updated_at)
              VALUES (?1, ?2, ?3, datetime('now'))
              ON CONFLICT(tenant_id, key) DO UPDATE SET
                value = ?3, updated_at = datetime('now')",
-            params![tenant_id, key, value],
-        ).map_err(|e| BizClawError::Memory(format!("Set config: {e}")))?;
+                params![tenant_id, key, value],
+            )
+            .map_err(|e| BizClawError::Memory(format!("Set config: {e}")))?;
         Ok(())
     }
 
@@ -608,19 +610,23 @@ impl PlatformDb {
 
     /// Delete a config key.
     pub fn delete_config(&self, tenant_id: &str, key: &str) -> Result<()> {
-        self.conn.execute(
-            "DELETE FROM tenant_configs WHERE tenant_id=?1 AND key=?2",
-            params![tenant_id, key],
-        ).map_err(|e| BizClawError::Memory(format!("Delete config: {e}")))?;
+        self.conn
+            .execute(
+                "DELETE FROM tenant_configs WHERE tenant_id=?1 AND key=?2",
+                params![tenant_id, key],
+            )
+            .map_err(|e| BizClawError::Memory(format!("Delete config: {e}")))?;
         Ok(())
     }
 
     /// Update tenant provider/model in the tenants table.
     pub fn update_tenant_provider(&self, id: &str, provider: &str, model: &str) -> Result<()> {
-        self.conn.execute(
-            "UPDATE tenants SET provider=?1, model=?2, updated_at=datetime('now') WHERE id=?3",
-            params![provider, model, id],
-        ).map_err(|e| BizClawError::Memory(format!("Update provider: {e}")))?;
+        self.conn
+            .execute(
+                "UPDATE tenants SET provider=?1, model=?2, updated_at=datetime('now') WHERE id=?3",
+                params![provider, model, id],
+            )
+            .map_err(|e| BizClawError::Memory(format!("Update provider: {e}")))?;
         Ok(())
     }
 
@@ -672,11 +678,17 @@ impl PlatformDb {
         let agents = stmt
             .query_map(params![tenant_id], |row| {
                 Ok(TenantAgent {
-                    id: row.get(0)?, tenant_id: row.get(1)?, name: row.get(2)?,
-                    role: row.get(3)?, description: row.get(4)?, provider: row.get(5)?,
-                    model: row.get(6)?, system_prompt: row.get(7)?,
+                    id: row.get(0)?,
+                    tenant_id: row.get(1)?,
+                    name: row.get(2)?,
+                    role: row.get(3)?,
+                    description: row.get(4)?,
+                    provider: row.get(5)?,
+                    model: row.get(6)?,
+                    system_prompt: row.get(7)?,
                     enabled: row.get::<_, i32>(8)? != 0,
-                    created_at: row.get(9)?, updated_at: row.get(10)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
                 })
             })
             .map_err(|e| BizClawError::Memory(format!("Query: {e}")))?
@@ -860,8 +872,13 @@ mod tests {
         // Create agent
         let agent = db
             .upsert_agent(
-                &t.id, "sales-bot", "assistant", "Sales helper",
-                "ollama", "llama3.2", "You are a sales bot.",
+                &t.id,
+                "sales-bot",
+                "assistant",
+                "Sales helper",
+                "ollama",
+                "llama3.2",
+                "You are a sales bot.",
             )
             .unwrap();
         assert_eq!(agent.name, "sales-bot");
@@ -870,9 +887,15 @@ mod tests {
 
         // Create another agent
         db.upsert_agent(
-            &t.id, "hr-bot", "analyst", "HR helper",
-            "openai", "gpt-4o", "You help with HR.",
-        ).unwrap();
+            &t.id,
+            "hr-bot",
+            "analyst",
+            "HR helper",
+            "openai",
+            "gpt-4o",
+            "You help with HR.",
+        )
+        .unwrap();
 
         // List agents
         let agents = db.list_agents(&t.id).unwrap();
@@ -881,8 +904,13 @@ mod tests {
         // Update agent (upsert existing)
         let updated = db
             .upsert_agent(
-                &t.id, "sales-bot", "assistant", "Updated sales helper",
-                "gemini", "gemini-2.0-flash", "Updated prompt.",
+                &t.id,
+                "sales-bot",
+                "assistant",
+                "Updated sales helper",
+                "gemini",
+                "gemini-2.0-flash",
+                "Updated prompt.",
             )
             .unwrap();
         assert_eq!(updated.provider, "gemini");
@@ -907,7 +935,8 @@ mod tests {
             .unwrap();
         assert_eq!(t.provider, "openai");
 
-        db.update_tenant_provider(&t.id, "ollama", "llama3.2").unwrap();
+        db.update_tenant_provider(&t.id, "ollama", "llama3.2")
+            .unwrap();
         let updated = db.get_tenant(&t.id).unwrap();
         assert_eq!(updated.provider, "ollama");
         assert_eq!(updated.model, "llama3.2");

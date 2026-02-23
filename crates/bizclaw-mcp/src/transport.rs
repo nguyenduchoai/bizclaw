@@ -50,7 +50,10 @@ impl StdioTransport {
     }
 
     /// Send a JSON-RPC request and read the response.
-    pub(crate) async fn request(&mut self, req: &JsonRpcRequest) -> Result<JsonRpcResponse, String> {
+    pub(crate) async fn request(
+        &mut self,
+        req: &JsonRpcRequest,
+    ) -> Result<JsonRpcResponse, String> {
         // Serialize request + newline
         let mut json = serde_json::to_string(req).map_err(|e| format!("Serialize error: {e}"))?;
         json.push('\n');

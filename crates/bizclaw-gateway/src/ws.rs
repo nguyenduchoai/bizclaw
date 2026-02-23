@@ -145,7 +145,8 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
                                 if !providers_match {
                                     tracing::warn!(
                                         "Agent provider ({}) != config provider ({}), using direct mode",
-                                        agent_provider, provider
+                                        agent_provider,
+                                        provider
                                     );
                                 }
                                 providers_match

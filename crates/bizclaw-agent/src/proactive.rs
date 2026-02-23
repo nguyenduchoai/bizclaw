@@ -15,8 +15,6 @@
 //!   └── Monitor channels → report connectivity issues
 //! ```
 
-
-
 /// Configuration for the proactive agent loop.
 #[derive(Debug, Clone)]
 pub struct ProactiveConfig {
@@ -197,8 +195,7 @@ pub async fn spawn_proactive_loop<F, Fut, S, SFut>(
     );
 
     let mut ploop = ProactiveLoop::new(config);
-    let mut interval =
-        tokio::time::interval(std::time::Duration::from_secs(interval_secs));
+    let mut interval = tokio::time::interval(std::time::Duration::from_secs(interval_secs));
 
     loop {
         interval.tick().await;
@@ -210,10 +207,7 @@ pub async fn spawn_proactive_loop<F, Fut, S, SFut>(
         let actions = ploop.check_cycle(pending_plans, agent_count, &channel_statuses);
 
         if !actions.is_empty() {
-            tracing::info!(
-                "🧠 Proactive loop generated {} action(s)",
-                actions.len()
-            );
+            tracing::info!("🧠 Proactive loop generated {} action(s)", actions.len());
         }
 
         // Execute proactive actions

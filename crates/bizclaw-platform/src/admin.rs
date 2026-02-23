@@ -708,7 +708,10 @@ async fn list_tenant_configs(
             // Convert Vec<TenantConfig> to a flat JSON object
             let mut obj = serde_json::Map::new();
             for cfg in &configs {
-                obj.insert(cfg.key.clone(), serde_json::Value::String(cfg.value.clone()));
+                obj.insert(
+                    cfg.key.clone(),
+                    serde_json::Value::String(cfg.value.clone()),
+                );
             }
             Json(serde_json::json!({"ok": true, "configs": obj}))
         }
@@ -748,12 +751,17 @@ async fn set_tenant_configs(
     }
 
     drop(db);
-    state.db.lock().unwrap().log_event(
-        "config_updated",
-        "admin",
-        &id,
-        Some(&format!("keys={}", saved_count)),
-    ).ok();
+    state
+        .db
+        .lock()
+        .unwrap()
+        .log_event(
+            "config_updated",
+            "admin",
+            &id,
+            Some(&format!("keys={}", saved_count)),
+        )
+        .ok();
 
     Json(serde_json::json!({"ok": true, "saved": saved_count}))
 }
@@ -793,8 +801,14 @@ async fn upsert_tenant_agent(
 
     // Get tenant defaults for fallback values
     let tenant = db.get_tenant(&id).ok();
-    let default_provider = tenant.as_ref().map(|t| t.provider.as_str()).unwrap_or("openai");
-    let default_model = tenant.as_ref().map(|t| t.model.as_str()).unwrap_or("gpt-4o-mini");
+    let default_provider = tenant
+        .as_ref()
+        .map(|t| t.provider.as_str())
+        .unwrap_or("openai");
+    let default_model = tenant
+        .as_ref()
+        .map(|t| t.model.as_str())
+        .unwrap_or("gpt-4o-mini");
 
     match db.upsert_agent(
         &id,
@@ -807,12 +821,17 @@ async fn upsert_tenant_agent(
     ) {
         Ok(agent) => {
             drop(db);
-            state.db.lock().unwrap().log_event(
-                "agent_upserted",
-                "admin",
-                &id,
-                Some(&format!("name={}", req.name)),
-            ).ok();
+            state
+                .db
+                .lock()
+                .unwrap()
+                .log_event(
+                    "agent_upserted",
+                    "admin",
+                    &id,
+                    Some(&format!("name={}", req.name)),
+                )
+                .ok();
             Json(serde_json::json!({"ok": true, "agent": agent}))
         }
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
@@ -826,15 +845,19 @@ async fn delete_tenant_agent(
 ) -> Json<serde_json::Value> {
     match state.db.lock().unwrap().delete_agent_by_name(&id, &name) {
         Ok(()) => {
-            state.db.lock().unwrap().log_event(
-                "agent_deleted",
-                "admin",
-                &id,
-                Some(&format!("name={}", name)),
-            ).ok();
+            state
+                .db
+                .lock()
+                .unwrap()
+                .log_event(
+                    "agent_deleted",
+                    "admin",
+                    &id,
+                    Some(&format!("name={}", name)),
+                )
+                .ok();
             Json(serde_json::json!({"ok": true}))
         }
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
     }
 }
-

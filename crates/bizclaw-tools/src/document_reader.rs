@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use bizclaw_core::error::Result;
 use bizclaw_core::traits::Tool;
 use bizclaw_core::types::{ToolDefinition, ToolResult};
-use kreuzberg::{extract_file, ExtractionConfig};
+use kreuzberg::{ExtractionConfig, extract_file};
 use std::path::Path;
 
 pub struct DocumentReaderTool;
@@ -77,9 +77,7 @@ impl Tool for DocumentReaderTool {
         let result = extract_file(path_str, None, &ExtractionConfig::default())
             .await
             .map_err(|e| {
-                bizclaw_core::error::BizClawError::Tool(format!(
-                    "Failed to extract document: {e}"
-                ))
+                bizclaw_core::error::BizClawError::Tool(format!("Failed to extract document: {e}"))
             })?;
 
         let mut content = result.content;

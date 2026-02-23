@@ -160,9 +160,10 @@ impl Agent {
         // CRITICAL: create_provider is sync and can block (e.g., brain GGUF loading).
         // Run it on a blocking thread so it doesn't stall the tokio runtime.
         let config_clone = config.clone();
-        let provider = tokio::task::spawn_blocking(move || {
-            bizclaw_providers::create_provider(&config_clone)
-        }).await.map_err(|e| bizclaw_core::error::BizClawError::Other(format!("spawn: {e}")))??;
+        let provider =
+            tokio::task::spawn_blocking(move || bizclaw_providers::create_provider(&config_clone))
+                .await
+                .map_err(|e| bizclaw_core::error::BizClawError::Other(format!("spawn: {e}")))??;
         let memory = bizclaw_memory::create_memory(&config.memory)?;
         let mut tools = bizclaw_tools::ToolRegistry::with_defaults();
         let security = bizclaw_security::DefaultSecurityPolicy::new(config.autonomy.clone());
@@ -188,7 +189,8 @@ impl Agent {
             let results = tokio::time::timeout(
                 std::time::Duration::from_secs(10),
                 bizclaw_mcp::bridge::connect_mcp_servers(&mcp_configs),
-            ).await;
+            )
+            .await;
             let mut total_mcp_tools = 0;
             match results {
                 Ok(connections) => {

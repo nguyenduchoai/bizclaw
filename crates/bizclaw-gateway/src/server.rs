@@ -114,9 +114,18 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/config/full", get(super::routes::get_full_config))
         .route("/api/v1/providers", get(super::routes::list_providers))
         .route("/api/v1/providers", post(super::routes::create_provider))
-        .route("/api/v1/providers/{name}", put(super::routes::update_provider))
-        .route("/api/v1/providers/{name}", axum::routing::delete(super::routes::delete_provider))
-        .route("/api/v1/providers/{name}/models", get(super::routes::fetch_provider_models))
+        .route(
+            "/api/v1/providers/{name}",
+            put(super::routes::update_provider),
+        )
+        .route(
+            "/api/v1/providers/{name}",
+            axum::routing::delete(super::routes::delete_provider),
+        )
+        .route(
+            "/api/v1/providers/{name}/models",
+            get(super::routes::fetch_provider_models),
+        )
         .route("/api/v1/channels", get(super::routes::list_channels))
         .route(
             "/api/v1/channels/update",
@@ -307,24 +316,23 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
     };
 
     // Create the Agent engine (sync — no MCP to avoid startup hang)
-    let agent: Option<bizclaw_agent::Agent> =
-        match bizclaw_agent::Agent::new(full_config.clone()) {
-            Ok(a) => {
-                let tool_count = a.tool_count();
-                tracing::info!(
-                    "✅ Agent engine initialized (provider={}, tools={})",
-                    a.provider_name(),
-                    tool_count
-                );
-                Some(a)
-            }
-            Err(e) => {
-                tracing::warn!(
-                    "⚠️ Agent engine not available: {e} — falling back to direct provider calls"
-                );
-                None
-            }
-        };
+    let agent: Option<bizclaw_agent::Agent> = match bizclaw_agent::Agent::new(full_config.clone()) {
+        Ok(a) => {
+            let tool_count = a.tool_count();
+            tracing::info!(
+                "✅ Agent engine initialized (provider={}, tools={})",
+                a.provider_name(),
+                tool_count
+            );
+            Some(a)
+        }
+        Err(e) => {
+            tracing::warn!(
+                "⚠️ Agent engine not available: {e} — falling back to direct provider calls"
+            );
+            None
+        }
+    };
 
     // Initialize Scheduler engine
     let sched_dir = config_path
@@ -390,7 +398,10 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
             bizclaw_agent::orchestrator::Orchestrator::load_agents_metadata(&agents_path);
         if !saved_agents.is_empty() {
             match gateway_db.migrate_from_agents_json(&saved_agents) {
-                Ok(count) => tracing::info!("📦 Migrated {} agent(s) from agents.json → gateway.db", count),
+                Ok(count) => tracing::info!(
+                    "📦 Migrated {} agent(s) from agents.json → gateway.db",
+                    count
+                ),
                 Err(e) => tracing::warn!("⚠️ Migration from agents.json failed: {e}"),
             }
         }
@@ -418,8 +429,17 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
             // Use sync Agent::new() for fast startup — MCP tools loaded lazily on first chat
             match bizclaw_agent::Agent::new(agent_cfg) {
                 Ok(agent) => {
-                    orchestrator.add_agent(&agent_rec.name, &agent_rec.role, &agent_rec.description, agent);
-                    tracing::info!("  ✅ Agent '{}' restored ({})", agent_rec.name, agent_rec.role);
+                    orchestrator.add_agent(
+                        &agent_rec.name,
+                        &agent_rec.role,
+                        &agent_rec.description,
+                        agent,
+                    );
+                    tracing::info!(
+                        "  ✅ Agent '{}' restored ({})",
+                        agent_rec.name,
+                        agent_rec.role
+                    );
                 }
                 Err(e) => {
                     tracing::warn!("  ⚠️ Failed to restore agent '{}': {}", agent_rec.name, e);
@@ -488,4 +508,3 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
     Ok(())
 }
-

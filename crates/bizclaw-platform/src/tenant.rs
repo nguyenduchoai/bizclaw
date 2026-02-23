@@ -53,7 +53,9 @@ impl TenantManager {
                 if let Ok(sync_data) = serde_json::from_str::<serde_json::Value>(&content) {
                     if let Some(obj) = sync_data.as_object() {
                         for (key, value) in obj {
-                            if key == "updated_at" { continue; }
+                            if key == "updated_at" {
+                                continue;
+                            }
                             let val_str = match value {
                                 serde_json::Value::String(s) => s.clone(),
                                 serde_json::Value::Bool(b) => b.to_string(),
@@ -74,7 +76,10 @@ impl TenantManager {
 
         // ── Generate config.toml from DB (always regenerate) ──────────
         let config_path = tenant_dir.join("config.toml");
-        tracing::info!("📝 Generating config.toml for tenant {} from DB", tenant.slug);
+        tracing::info!(
+            "📝 Generating config.toml for tenant {} from DB",
+            tenant.slug
+        );
 
         // Start with tenant-level defaults
         let mut provider = tenant.provider.clone();
@@ -120,7 +125,10 @@ port = {}
 
         // ── Inject brain/memory/autonomy configs from DB ──────────
         if let Ok(configs) = db.list_configs(&tenant.id) {
-            let brain_keys: Vec<_> = configs.iter().filter(|c| c.key.starts_with("brain.")).collect();
+            let brain_keys: Vec<_> = configs
+                .iter()
+                .filter(|c| c.key.starts_with("brain."))
+                .collect();
             if !brain_keys.is_empty() {
                 config_content.push_str("\n[brain]\n");
                 for cfg in &brain_keys {
@@ -239,12 +247,16 @@ port = {}
                                 meta["provider"].as_str().unwrap_or(&tenant.provider),
                                 meta["model"].as_str().unwrap_or(&tenant.model),
                                 meta["system_prompt"].as_str().unwrap_or(""),
-                            ).ok();
+                            )
+                            .ok();
                             imported += 1;
                         }
                     }
                     if imported > 0 {
-                        tracing::info!("  📥 Imported {} agent(s) from agents.json into DB", imported);
+                        tracing::info!(
+                            "  📥 Imported {} agent(s) from agents.json into DB",
+                            imported
+                        );
                     }
                 }
             }
@@ -253,16 +265,19 @@ port = {}
         // ── Generate agents.json from DB ──────────
         if let Ok(agents) = db.list_agents(&tenant.id) {
             if !agents.is_empty() {
-                let agents_json: Vec<serde_json::Value> = agents.iter().map(|a| {
-                    serde_json::json!({
-                        "name": a.name,
-                        "role": a.role,
-                        "description": a.description,
-                        "provider": a.provider,
-                        "model": a.model,
-                        "system_prompt": a.system_prompt,
+                let agents_json: Vec<serde_json::Value> = agents
+                    .iter()
+                    .map(|a| {
+                        serde_json::json!({
+                            "name": a.name,
+                            "role": a.role,
+                            "description": a.description,
+                            "provider": a.provider,
+                            "model": a.model,
+                            "system_prompt": a.system_prompt,
+                        })
                     })
-                }).collect();
+                    .collect();
                 if let Ok(json_str) = serde_json::to_string_pretty(&agents_json) {
                     std::fs::write(tenant_dir.join("agents.json"), json_str).ok();
                 }

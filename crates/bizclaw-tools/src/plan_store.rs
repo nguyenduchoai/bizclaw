@@ -17,8 +17,7 @@ impl SqlitePlanStore {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
-        let conn =
-            Connection::open(path).map_err(|e| format!("Failed to open plan DB: {e}"))?;
+        let conn = Connection::open(path).map_err(|e| format!("Failed to open plan DB: {e}"))?;
 
         // Enable WAL mode for better concurrent access
         conn.execute_batch("PRAGMA journal_mode=WAL;").ok();
@@ -137,8 +136,7 @@ impl SqlitePlanStore {
             let completed_at: Option<String> = row.get(8)?;
             let result: Option<String> = row.get(9)?;
 
-            let dependencies: Vec<usize> =
-                serde_json::from_str(&deps_str).unwrap_or_default();
+            let dependencies: Vec<usize> = serde_json::from_str(&deps_str).unwrap_or_default();
 
             Ok(PlanTask {
                 id,
@@ -186,7 +184,8 @@ impl SqlitePlanStore {
         .ok();
 
         for task in &plan.tasks {
-            let deps_json = serde_json::to_string(&task.dependencies).unwrap_or_else(|_| "[]".to_string());
+            let deps_json =
+                serde_json::to_string(&task.dependencies).unwrap_or_else(|_| "[]".to_string());
             conn.execute(
                 "INSERT INTO plan_tasks (plan_id, task_idx, title, description, task_type, status, complexity, dependencies, created_at, completed_at, result)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",

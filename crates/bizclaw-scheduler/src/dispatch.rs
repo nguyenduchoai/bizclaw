@@ -1,20 +1,15 @@
 //! Notification dispatch — actually sends notifications to configured channels.
 //! Supports: Telegram Bot API, Discord Webhook, HTTP Webhook, Dashboard WebSocket.
 
-use super::notify::{NotifyPriority, Notification};
+use super::notify::{Notification, NotifyPriority};
 
 /// Notification target configuration.
 #[derive(Debug, Clone)]
 pub enum NotifyTarget {
     /// Telegram Bot API — send via `sendMessage`.
-    Telegram {
-        bot_token: String,
-        chat_id: String,
-    },
+    Telegram { bot_token: String, chat_id: String },
     /// Discord Webhook URL.
-    Discord {
-        webhook_url: String,
-    },
+    Discord { webhook_url: String },
     /// Generic HTTP webhook — POST with JSON body.
     Webhook {
         url: String,
@@ -31,12 +26,8 @@ pub async fn dispatch(notification: &Notification, target: &NotifyTarget) -> Res
         NotifyTarget::Telegram { bot_token, chat_id } => {
             send_telegram(bot_token, chat_id, notification).await
         }
-        NotifyTarget::Discord { webhook_url } => {
-            send_discord(webhook_url, notification).await
-        }
-        NotifyTarget::Webhook { url, headers } => {
-            send_webhook(url, headers, notification).await
-        }
+        NotifyTarget::Discord { webhook_url } => send_discord(webhook_url, notification).await,
+        NotifyTarget::Webhook { url, headers } => send_webhook(url, headers, notification).await,
         NotifyTarget::Dashboard => {
             // Dashboard notifications are handled at gateway level (WebSocket broadcast).
             // This is just a marker — the gateway intercepts this.
@@ -47,7 +38,11 @@ pub async fn dispatch(notification: &Notification, target: &NotifyTarget) -> Res
 }
 
 /// Send notification via Telegram Bot API.
-async fn send_telegram(bot_token: &str, chat_id: &str, notification: &Notification) -> Result<(), String> {
+async fn send_telegram(
+    bot_token: &str,
+    chat_id: &str,
+    notification: &Notification,
+) -> Result<(), String> {
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
     let priority_emoji = match notification.priority {
         NotifyPriority::Urgent => "🚨",
@@ -91,10 +86,10 @@ async fn send_telegram(bot_token: &str, chat_id: &str, notification: &Notificati
 /// Send notification via Discord Webhook.
 async fn send_discord(webhook_url: &str, notification: &Notification) -> Result<(), String> {
     let color = match notification.priority {
-        NotifyPriority::Urgent => 0xFF0000,  // Red
-        NotifyPriority::High => 0xFF8800,    // Orange
-        NotifyPriority::Normal => 0x00AAFF,  // Blue
-        NotifyPriority::Low => 0x888888,     // Gray
+        NotifyPriority::Urgent => 0xFF0000, // Red
+        NotifyPriority::High => 0xFF8800,   // Orange
+        NotifyPriority::Normal => 0x00AAFF, // Blue
+        NotifyPriority::Low => 0x888888,    // Gray
     };
 
     let client = reqwest::Client::new();
@@ -153,7 +148,11 @@ async fn send_webhook(
         .map_err(|e| format!("Webhook send failed: {e}"))?;
 
     if resp.status().is_success() {
-        tracing::info!("✅ Webhook notification sent to {}: {}", url, notification.title);
+        tracing::info!(
+            "✅ Webhook notification sent to {}: {}",
+            url,
+            notification.title
+        );
         Ok(())
     } else {
         let status = resp.status();
@@ -185,7 +184,9 @@ pub async fn dispatch_all(
 
 /// Build NotifyTargets from BizClaw channel config.
 /// Called at server init to configure notification dispatch.
-pub fn targets_from_config(config: &bizclaw_core::config::BizClawConfig) -> Vec<(String, NotifyTarget)> {
+pub fn targets_from_config(
+    config: &bizclaw_core::config::BizClawConfig,
+) -> Vec<(String, NotifyTarget)> {
     let mut targets = Vec::new();
 
     // Telegram
@@ -196,10 +197,13 @@ pub fn targets_from_config(config: &bizclaw_core::config::BizClawConfig) -> Vec<
             // For now, we'll store the token and use a config-based chat_id.
             let chat_id = std::env::var("BIZCLAW_NOTIFY_TELEGRAM_CHAT_ID").unwrap_or_default();
             if !chat_id.is_empty() {
-                targets.push(("telegram".to_string(), NotifyTarget::Telegram {
-                    bot_token: tg.bot_token.clone(),
-                    chat_id,
-                }));
+                targets.push((
+                    "telegram".to_string(),
+                    NotifyTarget::Telegram {
+                        bot_token: tg.bot_token.clone(),
+                        chat_id,
+                    },
+                ));
             }
         }
     }
@@ -207,10 +211,13 @@ pub fn targets_from_config(config: &bizclaw_core::config::BizClawConfig) -> Vec<
     // Webhook
     if let Some(wh) = &config.channel.webhook {
         if wh.enabled && !wh.outbound_url.is_empty() {
-            targets.push(("webhook".to_string(), NotifyTarget::Webhook {
-                url: wh.outbound_url.clone(),
-                headers: vec![],
-            }));
+            targets.push((
+                "webhook".to_string(),
+                NotifyTarget::Webhook {
+                    url: wh.outbound_url.clone(),
+                    headers: vec![],
+                },
+            ));
         }
     }
 

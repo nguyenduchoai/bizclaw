@@ -250,15 +250,26 @@ pub async fn spawn_scheduler_with_agent<F, Fut>(
         for (task_name, action) in &triggered_tasks {
             match action {
                 TaskAction::AgentPrompt(prompt) => {
-                    tracing::info!("🤖 Executing agent prompt for task '{}': {}", task_name, 
-                        if prompt.len() > 100 { &prompt[..100] } else { prompt });
-                    
+                    tracing::info!(
+                        "🤖 Executing agent prompt for task '{}': {}",
+                        task_name,
+                        if prompt.len() > 100 {
+                            &prompt[..100]
+                        } else {
+                            prompt
+                        }
+                    );
+
                     match agent_callback(prompt.clone()).await {
                         Ok(response) => {
                             tracing::info!(
                                 "✅ Agent responded for task '{}': {}",
                                 task_name,
-                                if response.len() > 200 { format!("{}...", &response[..200]) } else { response }
+                                if response.len() > 200 {
+                                    format!("{}...", &response[..200])
+                                } else {
+                                    response
+                                }
                             );
                         }
                         Err(e) => {
@@ -266,8 +277,18 @@ pub async fn spawn_scheduler_with_agent<F, Fut>(
                         }
                     }
                 }
-                TaskAction::Webhook { url, method, body, headers } => {
-                    tracing::info!("🌐 Firing webhook for task '{}': {} {}", task_name, method, url);
+                TaskAction::Webhook {
+                    url,
+                    method,
+                    body,
+                    headers,
+                } => {
+                    tracing::info!(
+                        "🌐 Firing webhook for task '{}': {} {}",
+                        task_name,
+                        method,
+                        url
+                    );
 
                     let req = match method.to_uppercase().as_str() {
                         "POST" => http_client.post(url),
@@ -277,7 +298,8 @@ pub async fn spawn_scheduler_with_agent<F, Fut>(
                     };
 
                     let mut req = if let Some(body_str) = body {
-                        req.header("Content-Type", "application/json").body(body_str.clone())
+                        req.header("Content-Type", "application/json")
+                            .body(body_str.clone())
                     } else {
                         req
                     };

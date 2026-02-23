@@ -175,11 +175,7 @@ impl WorkflowEngine {
         let text = event.data["text"].as_str().unwrap_or("").to_lowercase();
         let keywords = rule.trigger_config["keywords"]
             .as_array()
-            .map(|arr| {
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .collect::<Vec<_>>()
-            })
+            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
             .unwrap_or_default();
 
         if keywords.is_empty() {
@@ -195,9 +191,7 @@ impl WorkflowEngine {
         }
 
         // Match mode: "any" (default) or "all"
-        let mode = rule.trigger_config["match_mode"]
-            .as_str()
-            .unwrap_or("any");
+        let mode = rule.trigger_config["match_mode"].as_str().unwrap_or("any");
         match mode {
             "all" => keywords.iter().all(|kw| text.contains(&kw.to_lowercase())),
             _ => keywords.iter().any(|kw| text.contains(&kw.to_lowercase())),
@@ -269,7 +263,10 @@ impl WorkflowEngine {
                 event.data["sender"].as_str().unwrap_or(""),
             )
             .replace("{{event.channel}}", &event.source)
-            .replace("{{event.chat_id}}", event.data["chat_id"].as_str().unwrap_or(""))
+            .replace(
+                "{{event.chat_id}}",
+                event.data["chat_id"].as_str().unwrap_or(""),
+            )
             .replace("{{event.timestamp}}", &event.timestamp.to_rfc3339())
             .replace(
                 "{{event.metric}}",
@@ -349,9 +346,6 @@ mod tests {
             actions[0].config["message"].as_str().unwrap(),
             "Chào Alice trên telegram!"
         );
-        assert_eq!(
-            actions[0].config["chat_id"].as_str().unwrap(),
-            "chat-99"
-        );
+        assert_eq!(actions[0].config["chat_id"].as_str().unwrap(), "chat-99");
     }
 }
