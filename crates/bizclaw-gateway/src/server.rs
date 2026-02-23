@@ -31,6 +31,8 @@ pub struct AppState {
     pub knowledge: Arc<tokio::sync::Mutex<Option<bizclaw_knowledge::KnowledgeStore>>>,
     /// Active Telegram bot polling tasks — maps agent_name → abort handle.
     pub telegram_bots: Arc<tokio::sync::Mutex<HashMap<String, TelegramBotState>>>,
+    /// Per-tenant SQLite database for persistent CRUD (providers, agents, channels, settings).
+    pub db: Arc<super::db::GatewayDb>,
 }
 
 /// State for an active Telegram bot connected to an agent.
@@ -111,6 +113,9 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/config/update", post(super::routes::update_config))
         .route("/api/v1/config/full", get(super::routes::get_full_config))
         .route("/api/v1/providers", get(super::routes::list_providers))
+        .route("/api/v1/providers", post(super::routes::create_provider))
+        .route("/api/v1/providers/{name}", put(super::routes::update_provider))
+        .route("/api/v1/providers/{name}", axum::routing::delete(super::routes::delete_provider))
         .route("/api/v1/channels", get(super::routes::list_channels))
         .route(
             "/api/v1/channels/update",
@@ -351,49 +356,71 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         }
     };
 
+    // Initialize Gateway DB (per-tenant SQLite)
+    let db_path = config_path
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("gateway.db");
+    let gateway_db = match super::db::GatewayDb::open(&db_path) {
+        Ok(db) => {
+            tracing::info!("💾 Gateway DB initialized: {}", db_path.display());
+            db
+        }
+        Err(e) => {
+            tracing::error!("❌ Failed to open gateway DB: {e}");
+            // Create in-memory fallback
+            super::db::GatewayDb::open(std::path::Path::new(":memory:")).unwrap()
+        }
+    };
+    let gateway_db = Arc::new(gateway_db);
+
     // Initialize Multi-Agent Orchestrator
     let mut orchestrator = bizclaw_agent::orchestrator::Orchestrator::new();
 
-    // Restore persisted agents from agents.json
+    // Migrate from legacy agents.json if it exists AND DB is empty
     let agents_path = config_path
         .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("agents.json");
-    let saved_agents =
-        bizclaw_agent::orchestrator::Orchestrator::load_agents_metadata(&agents_path);
-    if !saved_agents.is_empty() {
+    let db_agents = gateway_db.list_agents().unwrap_or_default();
+    if db_agents.is_empty() && agents_path.exists() {
+        // First launch with DB — migrate from flat file
+        let saved_agents =
+            bizclaw_agent::orchestrator::Orchestrator::load_agents_metadata(&agents_path);
+        if !saved_agents.is_empty() {
+            match gateway_db.migrate_from_agents_json(&saved_agents) {
+                Ok(count) => tracing::info!("📦 Migrated {} agent(s) from agents.json → gateway.db", count),
+                Err(e) => tracing::warn!("⚠️ Migration from agents.json failed: {e}"),
+            }
+        }
+    }
+
+    // Restore agents from DB (not flat file)
+    let db_agents = gateway_db.list_agents().unwrap_or_default();
+    if !db_agents.is_empty() {
         tracing::info!(
-            "🔄 Restoring {} agent(s) from agents.json...",
-            saved_agents.len()
+            "🔄 Restoring {} agent(s) from gateway.db...",
+            db_agents.len()
         );
-        for meta in &saved_agents {
-            let name = meta["name"].as_str().unwrap_or("agent");
-            let role = meta["role"].as_str().unwrap_or("assistant");
-            let description = meta["description"].as_str().unwrap_or("AI agent");
+        for agent_rec in &db_agents {
             let mut agent_cfg = full_config.clone();
-            if let Some(p) = meta["provider"].as_str() {
-                if !p.is_empty() {
-                    agent_cfg.default_provider = p.to_string();
-                }
+            if !agent_rec.provider.is_empty() {
+                agent_cfg.default_provider = agent_rec.provider.clone();
             }
-            if let Some(m) = meta["model"].as_str() {
-                if !m.is_empty() {
-                    agent_cfg.default_model = m.to_string();
-                }
+            if !agent_rec.model.is_empty() {
+                agent_cfg.default_model = agent_rec.model.clone();
             }
-            if let Some(sp) = meta["system_prompt"].as_str() {
-                if !sp.is_empty() {
-                    agent_cfg.identity.system_prompt = sp.to_string();
-                }
+            if !agent_rec.system_prompt.is_empty() {
+                agent_cfg.identity.system_prompt = agent_rec.system_prompt.clone();
             }
-            agent_cfg.identity.name = name.to_string();
+            agent_cfg.identity.name = agent_rec.name.clone();
             match bizclaw_agent::Agent::new_with_mcp(agent_cfg).await {
                 Ok(agent) => {
-                    orchestrator.add_agent(name, role, description, agent);
-                    tracing::info!("  ✅ Agent '{}' restored ({})", name, role);
+                    orchestrator.add_agent(&agent_rec.name, &agent_rec.role, &agent_rec.description, agent);
+                    tracing::info!("  ✅ Agent '{}' restored ({})", agent_rec.name, agent_rec.role);
                 }
                 Err(e) => {
-                    tracing::warn!("  ⚠️ Failed to restore agent '{}': {}", name, e);
+                    tracing::warn!("  ⚠️ Failed to restore agent '{}': {}", agent_rec.name, e);
                 }
             }
         }
@@ -447,6 +474,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         scheduler,
         knowledge: Arc::new(tokio::sync::Mutex::new(knowledge)),
         telegram_bots: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+        db: gateway_db,
     };
 
     let app = build_router(state);

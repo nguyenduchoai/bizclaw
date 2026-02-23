@@ -26,3 +26,4 @@ bizclaw-scheduler.workspace = true
 bizclaw-knowledge.workspace = true
 bizclaw-memory.workspace = true
 sha2.workspace = true
+rusqlite.workspace = true

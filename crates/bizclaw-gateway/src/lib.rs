@@ -2,6 +2,7 @@
 //! HTTP/WebSocket gateway API with embedded web dashboard.
 
 pub mod dashboard;
+pub mod db;
 pub mod routes;
 pub mod server;
 pub mod ws;

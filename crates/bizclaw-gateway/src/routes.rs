@@ -493,23 +493,82 @@ pub async fn update_channel(
     }
 }
 
-/// List available providers.
+/// List available providers (from DB).
 pub async fn list_providers(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let cfg = state.full_config.lock().unwrap();
-    let active = &cfg.default_provider;
-    Json(serde_json::json!({
-        "providers": [
-            {"name": "openai", "type": "cloud", "status": if active == "openai" {"active"} else {"available"}, "models": ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo", "o1-mini", "o3-mini"]},
-            {"name": "anthropic", "type": "cloud", "status": if active == "anthropic" {"active"} else {"available"}, "models": ["claude-sonnet-4-20250514", "claude-3.5-sonnet", "claude-3-haiku"]},
-            {"name": "gemini", "type": "cloud", "status": if active == "gemini" {"active"} else {"available"}, "models": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"]},
-            {"name": "deepseek", "type": "cloud", "status": if active == "deepseek" {"active"} else {"available"}, "models": ["deepseek-chat", "deepseek-reasoner"]},
-            {"name": "groq", "type": "cloud", "status": if active == "groq" {"active"} else {"available"}, "models": ["llama-3.3-70b", "mixtral-8x7b-32768"]},
-            {"name": "ollama", "type": "local", "status": if active == "ollama" {"active"} else {"available"}, "models": ["llama3.2", "qwen3", "phi-4", "gemma2"]},
-            {"name": "llamacpp", "type": "local", "status": if active == "llamacpp" {"active"} else {"available"}, "models": ["server endpoint"]},
-            {"name": "brain", "type": "local", "status": if active == "brain" {"active"} else {"available"}, "models": ["tinyllama-1.1b", "phi-2", "llama-3.2-1b"]},
-        ]
-    }))
+    let active = cfg.default_provider.clone();
+    drop(cfg);
+    
+    match state.db.list_providers(&active) {
+        Ok(providers) => {
+            let provider_json: Vec<serde_json::Value> = providers.iter().map(|p| {
+                serde_json::json!({
+                    "name": p.name,
+                    "type": p.provider_type,
+                    "status": if p.is_active { "active" } else { "available" },
+                    "models": p.models,
+                    "api_key_set": !p.api_key.is_empty(),
+                    "base_url": p.base_url,
+                    "enabled": p.enabled,
+                })
+            }).collect();
+            Json(serde_json::json!({ "providers": provider_json }))
+        }
+        Err(e) => Json(serde_json::json!({ "ok": false, "error": format!("DB error: {e}") })),
+    }
 }
+
+/// Create or update a provider.
+pub async fn create_provider(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let name = body["name"].as_str().unwrap_or("").trim();
+    if name.is_empty() {
+        return Json(serde_json::json!({"ok": false, "error": "Provider name is required"}));
+    }
+    let provider_type = body["type"].as_str().unwrap_or("cloud");
+    let api_key = body["api_key"].as_str().unwrap_or("");
+    let base_url = body["base_url"].as_str().unwrap_or("");
+    let models: Vec<String> = body["models"].as_array()
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .unwrap_or_default();
+
+    match state.db.upsert_provider(name, provider_type, api_key, base_url, &models) {
+        Ok(p) => Json(serde_json::json!({
+            "ok": true,
+            "provider": {"name": p.name, "type": p.provider_type, "models": p.models},
+        })),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
+    }
+}
+
+/// Delete a provider.
+pub async fn delete_provider(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
+    match state.db.delete_provider(&name) {
+        Ok(()) => Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' deleted", name)})),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
+    }
+}
+
+/// Update provider config (API key, base URL).
+pub async fn update_provider(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let api_key = body["api_key"].as_str();
+    let base_url = body["base_url"].as_str();
+    
+    match state.db.update_provider_config(&name, api_key, base_url) {
+        Ok(()) => Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' updated", name)})),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
+    }
+}
+
 
 /// List available channels with config status.
 pub async fn list_channels(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
@@ -1161,9 +1220,16 @@ pub async fn create_agent(
 
     match bizclaw_agent::Agent::new_with_mcp(agent_config).await {
         Ok(agent) => {
+            let provider = agent.provider_name().to_string();
+            let model = agent.model_name().to_string();
+            let system_prompt = agent.system_prompt().to_string();
             let mut orch = state.orchestrator.lock().await;
             orch.add_agent(name, role, description, agent);
-            // Persist agent metadata to disk
+            // Persist to SQLite DB
+            if let Err(e) = state.db.upsert_agent(name, role, description, &provider, &model, &system_prompt) {
+                tracing::warn!("DB persist failed for agent '{}': {}", name, e);
+            }
+            // Also save to legacy agents.json for backward compatibility
             let agents_path = state.config_path.parent()
                 .unwrap_or(std::path::Path::new("."))
                 .join("agents.json");
@@ -1190,8 +1256,12 @@ pub async fn delete_agent(
 ) -> Json<serde_json::Value> {
     let mut orch = state.orchestrator.lock().await;
     let removed = orch.remove_agent(&name);
-    // Persist updated agent list
     if removed {
+        // Delete from SQLite DB
+        if let Err(e) = state.db.delete_agent(&name) {
+            tracing::warn!("DB delete failed for agent '{}': {}", name, e);
+        }
+        // Also update legacy agents.json
         let agents_path = state.config_path.parent()
             .unwrap_or(std::path::Path::new("."))
             .join("agents.json");
@@ -1276,7 +1346,21 @@ pub async fn update_agent(
         }
     }
 
-    // Persist to disk
+    // Persist to DB
+    if let Some(agent) = orch.get_agent_mut(&name) {
+        let provider = agent.provider_name().to_string();
+        let model = agent.model_name().to_string();
+        let sys_prompt = agent.system_prompt().to_string();
+        let agents_list = orch.list_agents();
+        let current = agents_list.iter().find(|a| a["name"].as_str() == Some(&name));
+        let final_role = current.and_then(|a| a["role"].as_str()).unwrap_or("assistant");
+        let final_desc = current.and_then(|a| a["description"].as_str()).unwrap_or("");
+        if let Err(e) = state.db.upsert_agent(&name, final_role, final_desc, &provider, &model, &sys_prompt) {
+            tracing::warn!("DB persist failed for agent '{}': {}", name, e);
+        }
+    }
+
+    // Also persist to legacy agents.json for backward compatibility
     let agents_path = state.config_path.parent()
         .unwrap_or(std::path::Path::new("."))
         .join("agents.json");
@@ -1886,6 +1970,7 @@ mod tests {
             )),
             knowledge: Arc::new(tokio::sync::Mutex::new(None)),
             telegram_bots: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
+            db: Arc::new(crate::db::GatewayDb::open(std::path::Path::new(":memory:")).unwrap()),
         }))
     }
 
