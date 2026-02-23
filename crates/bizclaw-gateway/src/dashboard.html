@@ -2223,48 +2223,62 @@ async function showCreateAgentForm() {
 
 async function loadAgentModels(providerName, selectId) {
   const sel = document.getElementById(selectId);
-  sel.innerHTML = '<option value="">— Đang tải... —</option>';
-  
+  sel.innerHTML = '<option value="">⏳ Đang lấy model từ API...</option>';
+  sel.disabled = true;
+
   if (!providerName) {
     sel.innerHTML = '<option value="">— Dùng mặc định —</option>';
+    sel.disabled = false;
     return;
   }
-  
+
   try {
-    // For ollama: fetch live models
-    if (providerName === 'ollama') {
-      const res = await authFetch(API + '/api/v1/ollama/models');
-      const data = await res.json();
+    // Always fetch live from provider API — works for all providers (ollama, openai, brain, etc.)
+    const res = await authFetch(API + `/api/v1/providers/${encodeURIComponent(providerName)}/models`);
+    const data = await res.json();
+
+    if (data.ok && data.models && data.models.length > 0) {
       sel.innerHTML = '<option value="">— Chọn model —</option>';
-      if (data.ok && data.models) {
-        data.models.forEach(m => {
+      data.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        sel.appendChild(opt);
+      });
+      const src = data.source === 'live_api' ? ' 🔴' : data.source === 'filesystem' ? ' 📁' : ' 💾';
+      sel.options[0].textContent = `— Chọn model (${data.models.length}${src}) —`;
+    } else {
+      // Fallback: use cached data from _providersCache
+      const prov = (_providersCache || []).find(p => p.name === providerName);
+      if (prov && prov.models && prov.models.length > 0) {
+        sel.innerHTML = '<option value="">— Chọn model (cache) —</option>';
+        prov.models.forEach(m => {
           const opt = document.createElement('option');
-          opt.value = m.name || m;
-          const size = m.size ? ` (${(m.size / 1e9).toFixed(1)}GB)` : '';
-          opt.textContent = (m.name || m) + size;
+          opt.value = m;
+          opt.textContent = m;
           sel.appendChild(opt);
         });
-      }
-      return;
-    }
-    // For others: use cached provider data
-    if (_providersCache) {
-      const prov = _providersCache.find(p => p.name === providerName);
-      if (prov && prov.models) {
-        sel.innerHTML = '<option value="">— Chọn model —</option>';
-        prov.models.forEach(model => {
-          const opt = document.createElement('option');
-          opt.value = model;
-          opt.textContent = model;
-          sel.appendChild(opt);
-        });
-        return;
+      } else {
+        sel.innerHTML = '<option value="">— Không có model —</option>';
       }
     }
-    sel.innerHTML = '<option value="">— Không có model —</option>';
   } catch(e) {
-    sel.innerHTML = '<option value="">— Lỗi tải model —</option>';
-    console.log('model load err:', e);
+    // Network error — try cache
+    const prov = (_providersCache || []).find(p => p.name === providerName);
+    if (prov && prov.models && prov.models.length > 0) {
+      sel.innerHTML = '<option value="">— Chọn model (offline cache) —</option>';
+      prov.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        sel.appendChild(opt);
+      });
+    } else {
+      sel.innerHTML = '<option value="">— Lỗi tải model —</option>';
+    }
+    console.warn('loadAgentModels error:', e);
+  } finally {
+    sel.disabled = false;
   }
 }
 

@@ -463,13 +463,24 @@ pub async fn update_channel(
             });
         }
         "webhook" => {
-            let secret_val = req.get("webhook_secret").and_then(|v| v.as_str()).unwrap_or("");
+            let secret_val = req
+                .get("webhook_secret")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let secret = if secret_val.contains('•') {
-                cfg.channel.webhook.as_ref().map(|wh| wh.secret.clone()).unwrap_or_default()
+                cfg.channel
+                    .webhook
+                    .as_ref()
+                    .map(|wh| wh.secret.clone())
+                    .unwrap_or_default()
             } else {
                 secret_val.to_string()
             };
-            let outbound_url = req.get("webhook_url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let outbound_url = req
+                .get("webhook_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             cfg.channel.webhook = Some(bizclaw_core::config::WebhookChannelConfig {
                 enabled,
                 secret,
@@ -498,26 +509,29 @@ pub async fn list_providers(State(state): State<Arc<AppState>>) -> Json<serde_js
     let cfg = state.full_config.lock().unwrap();
     let active = cfg.default_provider.clone();
     drop(cfg);
-    
+
     match state.db.list_providers(&active) {
         Ok(providers) => {
-            let provider_json: Vec<serde_json::Value> = providers.iter().map(|p| {
-                serde_json::json!({
-                    "name": p.name,
-                    "label": p.label,
-                    "icon": p.icon,
-                    "type": p.provider_type,
-                    "status": if p.is_active { "active" } else { "available" },
-                    "models": p.models,
-                    "api_key_set": !p.api_key.is_empty(),
-                    "base_url": p.base_url,
-                    "chat_path": p.chat_path,
-                    "models_path": p.models_path,
-                    "auth_style": p.auth_style,
-                    "env_keys": p.env_keys,
-                    "enabled": p.enabled,
+            let provider_json: Vec<serde_json::Value> = providers
+                .iter()
+                .map(|p| {
+                    serde_json::json!({
+                        "name": p.name,
+                        "label": p.label,
+                        "icon": p.icon,
+                        "type": p.provider_type,
+                        "status": if p.is_active { "active" } else { "available" },
+                        "models": p.models,
+                        "api_key_set": !p.api_key.is_empty(),
+                        "base_url": p.base_url,
+                        "chat_path": p.chat_path,
+                        "models_path": p.models_path,
+                        "auth_style": p.auth_style,
+                        "env_keys": p.env_keys,
+                        "enabled": p.enabled,
+                    })
                 })
-            }).collect();
+                .collect();
             Json(serde_json::json!({ "providers": provider_json }))
         }
         Err(e) => Json(serde_json::json!({ "ok": false, "error": format!("DB error: {e}") })),
@@ -541,16 +555,35 @@ pub async fn create_provider(
     let chat_path = body["chat_path"].as_str().unwrap_or("/chat/completions");
     let models_path = body["models_path"].as_str().unwrap_or("/models");
     let auth_style = body["auth_style"].as_str().unwrap_or("bearer");
-    let env_keys: Vec<String> = body["env_keys"].as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+    let env_keys: Vec<String> = body["env_keys"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
-    let models: Vec<String> = body["models"].as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+    let models: Vec<String> = body["models"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
 
     match state.db.upsert_provider(
-        name, label, icon, provider_type, api_key, base_url,
-        chat_path, models_path, auth_style, &env_keys, &models,
+        name,
+        label,
+        icon,
+        provider_type,
+        api_key,
+        base_url,
+        chat_path,
+        models_path,
+        auth_style,
+        &env_keys,
+        &models,
     ) {
         Ok(p) => Json(serde_json::json!({
             "ok": true,
@@ -569,7 +602,9 @@ pub async fn delete_provider(
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Json<serde_json::Value> {
     match state.db.delete_provider(&name) {
-        Ok(()) => Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' deleted", name)})),
+        Ok(()) => {
+            Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' deleted", name)}))
+        }
         Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
     }
 }
@@ -582,9 +617,11 @@ pub async fn update_provider(
 ) -> Json<serde_json::Value> {
     let api_key = body["api_key"].as_str();
     let base_url = body["base_url"].as_str();
-    
+
     match state.db.update_provider_config(&name, api_key, base_url) {
-        Ok(()) => Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' updated", name)})),
+        Ok(()) => {
+            Json(serde_json::json!({"ok": true, "message": format!("Provider '{}' updated", name)}))
+        }
         Err(e) => Json(serde_json::json!({"ok": false, "error": e})),
     }
 }
@@ -599,7 +636,11 @@ pub async fn fetch_provider_models(
     // Get provider from DB
     let provider = match state.db.get_provider(&name) {
         Ok(p) => p,
-        Err(e) => return Json(serde_json::json!({"ok": false, "error": format!("Provider not found: {e}")})),
+        Err(e) => {
+            return Json(
+                serde_json::json!({"ok": false, "error": format!("Provider not found: {e}")}),
+            );
+        }
     };
 
     // Special case: Ollama uses /api/tags not /v1/models
@@ -614,8 +655,13 @@ pub async fn fetch_provider_models(
         {
             Ok(resp) if resp.status().is_success() => {
                 if let Ok(body) = resp.json::<serde_json::Value>().await {
-                    let models: Vec<String> = body["models"].as_array()
-                        .map(|arr| arr.iter().filter_map(|m| m["name"].as_str().map(String::from)).collect())
+                    let models: Vec<String> = body["models"]
+                        .as_array()
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|m| m["name"].as_str().map(String::from))
+                                .collect()
+                        })
                         .unwrap_or_default();
                     // Cache in DB
                     state.db.update_provider_models(&name, &models).ok();
@@ -649,11 +695,15 @@ pub async fn fetch_provider_models(
 
     // Special case: Brain — scan filesystem for GGUF files
     if name == "brain" {
-        let config_dir = state.config_path.parent().unwrap_or(std::path::Path::new("."));
+        let config_dir = state
+            .config_path
+            .parent()
+            .unwrap_or(std::path::Path::new("."));
         let scan_dirs = vec![
             config_dir.join("models"),
             std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                .join(".bizclaw").join("models"),
+                .join(".bizclaw")
+                .join("models"),
         ];
         let mut models = Vec::new();
         for dir in &scan_dirs {
@@ -691,7 +741,11 @@ pub async fn fetch_provider_models(
         }));
     }
 
-    let url = format!("{}{}", provider.base_url.trim_end_matches('/'), provider.models_path);
+    let url = format!(
+        "{}{}",
+        provider.base_url.trim_end_matches('/'),
+        provider.models_path
+    );
     let client = reqwest::Client::new();
 
     // Apply auth — detect API key from provider config or env vars
@@ -699,7 +753,9 @@ pub async fn fetch_provider_models(
         provider.api_key.clone()
     } else {
         // Try env vars
-        provider.env_keys.iter()
+        provider
+            .env_keys
+            .iter()
             .find_map(|key| std::env::var(key).ok())
             .unwrap_or_default()
     };
@@ -709,16 +765,21 @@ pub async fn fetch_provider_models(
         // Anthropic uses x-api-key header (not Bearer)
         let mut r = client.get(&url).timeout(std::time::Duration::from_secs(10));
         if !api_key.is_empty() {
-            r = r.header("x-api-key", &api_key)
-                 .header("anthropic-version", "2023-06-01");
+            r = r
+                .header("x-api-key", &api_key)
+                .header("anthropic-version", "2023-06-01");
         }
         r
     } else if name == "gemini" {
         // Gemini uses ?key= query param
         let full_url = if !api_key.is_empty() {
             format!("{}?key={}", url, api_key)
-        } else { url.clone() };
-        client.get(&full_url).timeout(std::time::Duration::from_secs(10))
+        } else {
+            url.clone()
+        };
+        client
+            .get(&full_url)
+            .timeout(std::time::Duration::from_secs(10))
     } else {
         let mut r = client.get(&url).timeout(std::time::Duration::from_secs(10));
         if provider.auth_style == "bearer" && !api_key.is_empty() {
@@ -727,12 +788,16 @@ pub async fn fetch_provider_models(
         r
     };
 
-
     match req.send().await {
         Ok(resp) if resp.status().is_success() => {
             if let Ok(body) = resp.json::<serde_json::Value>().await {
-                let models: Vec<String> = body["data"].as_array()
-                    .map(|arr| arr.iter().filter_map(|m| m["id"].as_str().map(String::from)).collect())
+                let models: Vec<String> = body["data"]
+                    .as_array()
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|m| m["id"].as_str().map(String::from))
+                            .collect()
+                    })
                     .unwrap_or_default();
                 if !models.is_empty() {
                     // Cache in DB
@@ -765,17 +830,14 @@ pub async fn fetch_provider_models(
                 "source": "cached",
             }))
         }
-        Err(e) => {
-            Json(serde_json::json!({
-                "ok": false,
-                "error": format!("Connection failed: {e}"),
-                "models": provider.models,
-                "source": "cached",
-            }))
-        }
+        Err(e) => Json(serde_json::json!({
+            "ok": false,
+            "error": format!("Connection failed: {e}"),
+            "models": provider.models,
+            "source": "cached",
+        })),
     }
 }
-
 
 /// List available channels with config status.
 pub async fn list_channels(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
@@ -1145,8 +1207,14 @@ pub async fn webhook_inbound(
     };
 
     let content = payload["content"].as_str().unwrap_or("").to_string();
-    let sender_id = payload["sender_id"].as_str().unwrap_or("webhook-user").to_string();
-    let thread_id = payload["thread_id"].as_str().unwrap_or("webhook").to_string();
+    let sender_id = payload["sender_id"]
+        .as_str()
+        .unwrap_or("webhook-user")
+        .to_string();
+    let thread_id = payload["thread_id"]
+        .as_str()
+        .unwrap_or("webhook")
+        .to_string();
 
     if content.is_empty() {
         return Json(serde_json::json!({
@@ -1371,7 +1439,9 @@ pub async fn list_agents(State(state): State<Arc<AppState>>) -> Json<serde_json:
     let mut agents = orch.list_agents();
 
     // Load channel bindings and attach to each agent
-    let bindings_path = state.config_path.parent()
+    let bindings_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("agent-channels.json");
     let bindings: serde_json::Value = if bindings_path.exists() {
@@ -1386,7 +1456,9 @@ pub async fn list_agents(State(state): State<Arc<AppState>>) -> Json<serde_json:
     for agent in agents.iter_mut() {
         if let Some(name) = agent["name"].as_str() {
             let ch = bindings.get(name).cloned().unwrap_or(serde_json::json!([]));
-            agent.as_object_mut().map(|o| o.insert("channels".into(), ch));
+            agent
+                .as_object_mut()
+                .map(|o| o.insert("channels".into(), ch));
         }
     }
 
@@ -1398,7 +1470,6 @@ pub async fn list_agents(State(state): State<Arc<AppState>>) -> Json<serde_json:
         "recent_messages": orch.recent_messages(10),
     }))
 }
-
 
 /// Create a new named agent.
 pub async fn create_agent(
@@ -1436,11 +1507,17 @@ pub async fn create_agent(
             tracing::info!("create_agent — orch lock acquired");
             orch.add_agent(name, role, description, agent);
             // Persist to SQLite DB
-            if let Err(e) = state.db.upsert_agent(name, role, description, &provider, &model, &system_prompt) {
+            if let Err(e) =
+                state
+                    .db
+                    .upsert_agent(name, role, description, &provider, &model, &system_prompt)
+            {
                 tracing::warn!("DB persist failed for agent '{}': {}", name, e);
             }
             // Also save to legacy agents.json for backward compatibility
-            let agents_path = state.config_path.parent()
+            let agents_path = state
+                .config_path
+                .parent()
                 .unwrap_or(std::path::Path::new("."))
                 .join("agents.json");
             orch.save_agents_metadata(&agents_path);
@@ -1472,7 +1549,9 @@ pub async fn delete_agent(
             tracing::warn!("DB delete failed for agent '{}': {}", name, e);
         }
         // Also update legacy agents.json
-        let agents_path = state.config_path.parent()
+        let agents_path = state
+            .config_path
+            .parent()
             .unwrap_or(std::path::Path::new("."))
             .join("agents.json");
         orch.save_agents_metadata(&agents_path);
@@ -1503,29 +1582,46 @@ pub async fn update_agent(
         tracing::info!("📝 update_agent '{}' — Phase 1: lock acquired", name);
         let updated = orch.update_agent(&name, role, description);
         if !updated {
-            return Json(serde_json::json!({"ok": false, "message": format!("Agent '{}' not found", name)}));
+            return Json(
+                serde_json::json!({"ok": false, "message": format!("Agent '{}' not found", name)}),
+            );
         }
         // Only re-create if provider or model ACTUALLY CHANGED (not just present)
-        if let Some(agent) = orch.get_agent_mut(&name) {
-            let cur_provider = agent.provider_name().to_string();
-            let cur_model = agent.model_name().to_string();
+        if let Some(named) = orch.get_named_mut(&name) {
+            let cur_provider = named.cached_provider.clone();
+            let cur_model = named.cached_model.clone();
             if let Some(p) = provider {
-                if !p.is_empty() && p != cur_provider { needs_recreate = true; }
+                if !p.is_empty() && p != cur_provider {
+                    needs_recreate = true;
+                }
             }
             if let Some(m) = model {
-                if !m.is_empty() && m != cur_model { needs_recreate = true; }
+                if !m.is_empty() && m != cur_model {
+                    needs_recreate = true;
+                }
             }
-            // Update system prompt directly on live agent (no re-creation needed)
+            // Update system prompt in-place (no re-creation needed).
+            // Use try_lock to avoid blocking the orch mutex if the agent is processing.
             if !needs_recreate {
                 if let Some(sp) = system_prompt {
-                    if !sp.is_empty() && sp != agent.system_prompt() {
-                        agent.set_system_prompt(sp);
-                        tracing::info!("📝 update_agent '{}' — system_prompt updated in-place", name);
+                    if !sp.is_empty() && sp != named.cached_system_prompt {
+                        if let Ok(mut agent) = named.agent.try_lock() {
+                            agent.set_system_prompt(sp);
+                            tracing::info!(
+                                "📝 update_agent '{}' — system_prompt updated in-place",
+                                name
+                            );
+                        }
+                        named.cached_system_prompt = sp.to_string();
                     }
                 }
             }
         }
-        tracing::info!("📝 update_agent '{}' — Phase 1: done, needs_recreate={}", name, needs_recreate);
+        tracing::info!(
+            "📝 update_agent '{}' — Phase 1: done, needs_recreate={}",
+            name,
+            needs_recreate
+        );
     } // lock released here
 
     // Phase 2: Re-create agent ONLY if provider/model actually changed
@@ -1533,19 +1629,23 @@ pub async fn update_agent(
         tracing::info!("📝 update_agent '{}' — Phase 2: re-creating agent", name);
         let mut agent_config = state.full_config.lock().unwrap().clone();
         {
-            let mut orch = state.orchestrator.lock().await;
-            if let Some(agent) = orch.get_agent_mut(&name) {
-                agent_config.default_provider = agent.provider_name().to_string();
-                agent_config.default_model = agent.model_name().to_string();
-                agent_config.identity.system_prompt = agent.system_prompt().to_string();
+            let orch = state.orchestrator.lock().await;
+            if let Some(named) = orch.get_named(&name) {
+                agent_config.default_provider = named.cached_provider.clone();
+                agent_config.default_model = named.cached_model.clone();
+                agent_config.identity.system_prompt = named.cached_system_prompt.clone();
             }
         } // lock released before potentially slow await
 
         if let Some(p) = provider {
-            if !p.is_empty() { agent_config.default_provider = p.to_string(); }
+            if !p.is_empty() {
+                agent_config.default_provider = p.to_string();
+            }
         }
         if let Some(m) = model {
-            if !m.is_empty() { agent_config.default_model = m.to_string(); }
+            if !m.is_empty() {
+                agent_config.default_model = m.to_string();
+            }
         }
         if let Some(sp) = system_prompt {
             agent_config.identity.system_prompt = sp.to_string();
@@ -1559,12 +1659,24 @@ pub async fn update_agent(
                 let role_str = role.unwrap_or("assistant").to_string();
                 let desc_str = description.unwrap_or("").to_string();
                 let agents_list = orch.list_agents();
-                let current = agents_list.iter().find(|a| a["name"].as_str() == Some(&name));
-                let final_role = if role.is_some() { role_str.clone() } else {
-                    current.and_then(|a| a["role"].as_str()).unwrap_or("assistant").to_string()
+                let current = agents_list
+                    .iter()
+                    .find(|a| a["name"].as_str() == Some(&name));
+                let final_role = if role.is_some() {
+                    role_str.clone()
+                } else {
+                    current
+                        .and_then(|a| a["role"].as_str())
+                        .unwrap_or("assistant")
+                        .to_string()
                 };
-                let final_desc = if description.is_some() { desc_str.clone() } else {
-                    current.and_then(|a| a["description"].as_str()).unwrap_or("").to_string()
+                let final_desc = if description.is_some() {
+                    desc_str.clone()
+                } else {
+                    current
+                        .and_then(|a| a["description"].as_str())
+                        .unwrap_or("")
+                        .to_string()
                 };
                 orch.remove_agent(&name);
                 orch.add_agent(&name, &final_role, &final_desc, new_agent);
@@ -1580,22 +1692,40 @@ pub async fn update_agent(
     tracing::info!("📝 update_agent '{}' — Phase 3: persisting to DB", name);
     {
         let orch = state.orchestrator.lock().await;
-        tracing::info!("📝 update_agent '{}' — Phase 3: orch locked, listing agents", name);
+        tracing::info!(
+            "📝 update_agent '{}' — Phase 3: orch locked, listing agents",
+            name
+        );
         let agents_list = orch.list_agents();
-        let current = agents_list.iter().find(|a| a["name"].as_str() == Some(&name));
-        let final_role = current.and_then(|a| a["role"].as_str()).unwrap_or("assistant");
-        let final_desc = current.and_then(|a| a["description"].as_str()).unwrap_or("");
+        let current = agents_list
+            .iter()
+            .find(|a| a["name"].as_str() == Some(&name));
+        let final_role = current
+            .and_then(|a| a["role"].as_str())
+            .unwrap_or("assistant");
+        let final_desc = current
+            .and_then(|a| a["description"].as_str())
+            .unwrap_or("");
         let final_provider = provider.unwrap_or(
-            current.and_then(|a| a["provider"].as_str()).unwrap_or("openai")
+            current
+                .and_then(|a| a["provider"].as_str())
+                .unwrap_or("openai"),
         );
-        let final_model = model.unwrap_or(
-            current.and_then(|a| a["model"].as_str()).unwrap_or("")
-        );
+        let final_model = model.unwrap_or(current.and_then(|a| a["model"].as_str()).unwrap_or(""));
         let final_prompt = system_prompt.unwrap_or(
-            current.and_then(|a| a["system_prompt"].as_str()).unwrap_or("")
+            current
+                .and_then(|a| a["system_prompt"].as_str())
+                .unwrap_or(""),
         );
         tracing::info!("📝 update_agent '{}' — Phase 3: calling upsert_agent", name);
-        if let Err(e) = state.db.upsert_agent(&name, final_role, final_desc, final_provider, final_model, final_prompt) {
+        if let Err(e) = state.db.upsert_agent(
+            &name,
+            final_role,
+            final_desc,
+            final_provider,
+            final_model,
+            final_prompt,
+        ) {
             tracing::warn!("DB persist failed for agent '{}': {}", name, e);
         }
         tracing::info!("📝 update_agent '{}' — Phase 3: DB done", name);
@@ -1605,7 +1735,9 @@ pub async fn update_agent(
     tracing::info!("📝 update_agent '{}' — Phase 4: saving agents.json", name);
     {
         let orch = state.orchestrator.lock().await;
-        let agents_path = state.config_path.parent()
+        let agents_path = state
+            .config_path
+            .parent()
             .unwrap_or(std::path::Path::new("."))
             .join("agents.json");
         orch.save_agents_metadata(&agents_path);
@@ -1629,13 +1761,47 @@ pub async fn agent_chat(
         return Json(serde_json::json!({"ok": false, "error": "Empty message"}));
     }
 
-    let mut orch = state.orchestrator.lock().await;
-    match orch.send_to(&name, message).await {
-        Ok(response) => Json(serde_json::json!({
-            "ok": true,
-            "agent": name,
-            "response": response,
-        })),
+    // ── Step 1: acquire orch lock BRIEFLY to get the per-agent Arc + increment counter ──
+    let agent_arc = {
+        let mut orch = state.orchestrator.lock().await;
+        let arc = match orch.get_agent_arc(&name) {
+            Some(a) => a,
+            None => {
+                return Json(serde_json::json!({
+                    "ok": false,
+                    "error": format!("Agent '{}' not found", name),
+                }))
+            }
+        };
+        orch.inc_message_count(&name);
+        arc
+    }; // ← orchestrator lock released here — other requests can proceed
+
+    // ── Step 2: run the slow LLM call WITHOUT holding the orchestrator lock ──
+    let response = {
+        let mut agent = agent_arc.lock().await;
+        agent.process(message).await
+    };
+
+    // ── Step 3: brief lock again to append to message log ──
+    match response {
+        Ok(resp) => {
+            {
+                let mut orch = state.orchestrator.lock().await;
+                orch.push_message_log(bizclaw_agent::orchestrator::AgentMessage {
+                    from: "user".to_string(),
+                    to: name.clone(),
+                    content: message.to_string(),
+                    response: Some(resp.clone()),
+                    timestamp: chrono::Utc::now(),
+                });
+            }
+            Json(serde_json::json!({
+                "ok": true,
+                "agent": name,
+                "response": resp,
+            }))
+        }
         Err(e) => Json(serde_json::json!({
             "ok": false,
             "error": e.to_string(),
@@ -1781,13 +1947,23 @@ pub async fn connect_telegram(
                                     // Send typing indicator
                                     let _ = channel.send_typing(chat_id).await;
 
-                                    // Route to agent
-                                    let response = {
+                                    // Route to agent — acquire orch lock BRIEFLY, then release
+                                    // before the slow LLM call to avoid blocking other requests.
+                                    let agent_arc = {
                                         let mut orch = state_clone.orchestrator.lock().await;
-                                        match orch.send_to(&agent_name_clone, &text).await {
+                                        let arc = orch.get_agent_arc(&agent_name_clone);
+                                        if let Some(a) = &arc {
+                                            let _ = a; // just to satisfy compiler
+                                        }
+                                        orch.inc_message_count(&agent_name_clone);
+                                        arc
+                                    };
+                                    let response = match agent_arc {
+                                        Some(arc) => match arc.lock().await.process(&text).await {
                                             Ok(r) => r,
                                             Err(e) => format!("⚠️ Agent error: {e}"),
-                                        }
+                                        },
+                                        None => format!("⚠️ Agent '{}' not found", agent_name_clone),
                                     };
 
                                     // Reply via Telegram
@@ -2460,14 +2636,15 @@ mod tests {
 
 /// List all gallery skills (built-in + user-created).
 pub async fn gallery_list(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
-    let gallery_path = state.config_path.parent()
+    let gallery_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("gallery.json");
 
     // Load built-in skills from embedded data
-    let builtin: Vec<serde_json::Value> = serde_json::from_str(
-        include_str!("../../../data/gallery-skills.json")
-    ).unwrap_or_default();
+    let builtin: Vec<serde_json::Value> =
+        serde_json::from_str(include_str!("../../../data/gallery-skills.json")).unwrap_or_default();
 
     // Load user-created skills
     let user_skills: Vec<serde_json::Value> = if gallery_path.exists() {
@@ -2480,16 +2657,24 @@ pub async fn gallery_list(State(state): State<Arc<AppState>>) -> Json<serde_json
     };
 
     // Check which skills have attached MD files
-    let skills_dir = state.config_path.parent()
+    let skills_dir = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("skills");
 
-    let mut all_skills: Vec<serde_json::Value> = builtin.into_iter()
-        .map(|mut s| { s.as_object_mut().map(|o| o.insert("source".into(), "builtin".into())); s })
+    let mut all_skills: Vec<serde_json::Value> = builtin
+        .into_iter()
+        .map(|mut s| {
+            s.as_object_mut()
+                .map(|o| o.insert("source".into(), "builtin".into()));
+            s
+        })
         .collect();
 
     for mut s in user_skills {
-        s.as_object_mut().map(|o| o.insert("source".into(), "user".into()));
+        s.as_object_mut()
+            .map(|o| o.insert("source".into(), "user".into()));
         all_skills.push(s);
     }
 
@@ -2498,7 +2683,9 @@ pub async fn gallery_list(State(state): State<Arc<AppState>>) -> Json<serde_json
         if let Some(id) = skill["id"].as_str() {
             let md_path = skills_dir.join(format!("{}.md", id));
             if md_path.exists() {
-                skill.as_object_mut().map(|o| o.insert("has_md".into(), true.into()));
+                skill
+                    .as_object_mut()
+                    .map(|o| o.insert("has_md".into(), true.into()));
             }
         }
     }
@@ -2515,7 +2702,9 @@ pub async fn gallery_create(
     State(state): State<Arc<AppState>>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let gallery_path = state.config_path.parent()
+    let gallery_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("gallery.json");
 
@@ -2532,7 +2721,9 @@ pub async fn gallery_create(
 
     // Check for duplicate
     if skills.iter().any(|s| s["id"].as_str() == Some(&id)) {
-        return Json(serde_json::json!({"ok": false, "error": format!("Skill '{}' already exists", id)}));
+        return Json(
+            serde_json::json!({"ok": false, "error": format!("Skill '{}' already exists", id)}),
+        );
     }
 
     skills.push(body.clone());
@@ -2549,7 +2740,9 @@ pub async fn gallery_delete(
     State(state): State<Arc<AppState>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Json<serde_json::Value> {
-    let gallery_path = state.config_path.parent()
+    let gallery_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("gallery.json");
 
@@ -2571,7 +2764,9 @@ pub async fn gallery_delete(
             let _ = std::fs::write(&gallery_path, json);
         }
         // Also remove any attached MD file
-        let skills_dir = state.config_path.parent()
+        let skills_dir = state
+            .config_path
+            .parent()
             .unwrap_or(std::path::Path::new("."))
             .join("skills");
         let md_path = skills_dir.join(format!("{}.md", id));
@@ -2587,7 +2782,9 @@ pub async fn gallery_upload_md(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: String,
 ) -> Json<serde_json::Value> {
-    let skills_dir = state.config_path.parent()
+    let skills_dir = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("skills");
     let _ = std::fs::create_dir_all(&skills_dir);
@@ -2612,7 +2809,9 @@ pub async fn gallery_get_md(
     State(state): State<Arc<AppState>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Json<serde_json::Value> {
-    let skills_dir = state.config_path.parent()
+    let skills_dir = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("skills");
     let md_path = skills_dir.join(format!("{}.md", id));
@@ -2635,12 +2834,19 @@ pub async fn agent_bind_channels(
     axum::extract::Path(name): axum::extract::Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let channels = body["channels"].as_array()
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<_>>())
+    let channels = body["channels"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_default();
 
     // Store binding in agent-channels.json
-    let bindings_path = state.config_path.parent()
+    let bindings_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("agent-channels.json");
 
@@ -2669,10 +2875,10 @@ pub async fn agent_bind_channels(
 }
 
 /// Get channel bindings for all agents.
-pub async fn agent_channel_bindings(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
-    let bindings_path = state.config_path.parent()
+pub async fn agent_channel_bindings(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let bindings_path = state
+        .config_path
+        .parent()
         .unwrap_or(std::path::Path::new("."))
         .join("agent-channels.json");
 

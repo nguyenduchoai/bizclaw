@@ -9,17 +9,30 @@
 
 use bizclaw_core::error::Result;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::Agent;
 
 /// A named agent instance with metadata.
+///
+/// The agent is wrapped in `Arc<Mutex<Agent>>` so that the orchestrator lock
+/// can be released before doing slow async LLM calls.  All other fields are
+/// cheap to read without touching the inner lock.
 pub struct NamedAgent {
-    pub agent: Agent,
+    /// The underlying agent — lock only for process() calls.
+    pub agent: Arc<Mutex<Agent>>,
     pub name: String,
     pub role: String,
     pub description: String,
     pub active: bool,
     pub message_count: u64,
+    /// Cached fields — populated at add_agent time, updated on recreate.
+    /// Avoids locking the agent just to read static metadata.
+    pub cached_provider: String,
+    pub cached_model: String,
+    pub cached_system_prompt: String,
+    pub cached_tool_count: usize,
 }
 
 /// Multi-Agent Orchestrator — manages a pool of agents.
@@ -53,20 +66,58 @@ impl Orchestrator {
     /// Add an agent to the orchestrator.
     pub fn add_agent(&mut self, name: &str, role: &str, description: &str, agent: Agent) {
         let is_first = self.agents.is_empty();
+        let cached_provider = agent.provider_name().to_string();
+        let cached_model = agent.model_name().to_string();
+        let cached_system_prompt = agent.system_prompt().to_string();
+        let cached_tool_count = agent.tool_count();
         self.agents.insert(
             name.to_string(),
             NamedAgent {
-                agent,
+                agent: Arc::new(Mutex::new(agent)),
                 name: name.to_string(),
                 role: role.to_string(),
                 description: description.to_string(),
                 active: true,
                 message_count: 0,
+                cached_provider,
+                cached_model,
+                cached_system_prompt,
+                cached_tool_count,
             },
         );
         if is_first {
             self.default_agent = Some(name.to_string());
         }
+    }
+
+    /// Get the `Arc<Mutex<Agent>>` for a named agent.
+    ///
+    /// The caller should release the orchestrator lock **before** locking the
+    /// returned Arc so that other requests are not blocked during LLM calls.
+    pub fn get_agent_arc(&self, name: &str) -> Option<Arc<Mutex<Agent>>> {
+        self.agents.get(name).map(|a| Arc::clone(&a.agent))
+    }
+
+    /// Increment the message count for a named agent.
+    pub fn inc_message_count(&mut self, name: &str) {
+        if let Some(a) = self.agents.get_mut(name) {
+            a.message_count += 1;
+        }
+    }
+
+    /// Append an entry to the inter-agent message log.
+    pub fn push_message_log(&mut self, entry: AgentMessage) {
+        self.message_log.push(entry);
+    }
+
+    /// Get a shared reference to a `NamedAgent` (reads cached metadata).
+    pub fn get_named(&self, name: &str) -> Option<&NamedAgent> {
+        self.agents.get(name)
+    }
+
+    /// Get a mutable reference to the `NamedAgent` metadata (not the inner Agent).
+    pub fn get_named_mut(&mut self, name: &str) -> Option<&mut NamedAgent> {
+        self.agents.get_mut(name)
     }
 
     /// Save agent metadata to a JSON file for persistence across restarts.
@@ -79,9 +130,9 @@ impl Orchestrator {
                     "name": a.name,
                     "role": a.role,
                     "description": a.description,
-                    "provider": a.agent.provider_name(),
-                    "model": a.agent.model_name(),
-                    "system_prompt": a.agent.system_prompt(),
+                    "provider": a.cached_provider,
+                    "model": a.cached_model,
+                    "system_prompt": a.cached_system_prompt,
                 })
             })
             .collect();
@@ -91,9 +142,7 @@ impl Orchestrator {
     }
 
     /// Load saved agent metadata from JSON file.
-    pub fn load_agents_metadata(
-        path: &std::path::Path,
-    ) -> Vec<serde_json::Value> {
+    pub fn load_agents_metadata(path: &std::path::Path) -> Vec<serde_json::Value> {
         if let Ok(content) = std::fs::read_to_string(path) {
             serde_json::from_str(&content).unwrap_or_default()
         } else {
@@ -118,13 +167,25 @@ impl Orchestrator {
     }
 
     /// Send a message to a specific agent.
+    ///
+    /// **Note for callers inside request handlers:** do NOT hold the orchestrator
+    /// `tokio::sync::Mutex` guard when calling this — release it first, then
+    /// call process() on the Arc returned by `get_agent_arc()`.  This method
+    /// is kept for internal/test use where the caller controls concurrency.
     pub async fn send_to(&mut self, agent_name: &str, message: &str) -> Result<String> {
         let named = self.agents.get_mut(agent_name).ok_or_else(|| {
-            bizclaw_core::error::BizClawError::Config(format!("Agent '{}' not found", agent_name))
+            bizclaw_core::error::BizClawError::Config(format!(
+                "Agent '{}' not found",
+                agent_name
+            ))
         })?;
 
         named.message_count += 1;
-        let response = named.agent.process(message).await?;
+        // Clone Arc so we can drop the borrow on `named` before awaiting.
+        let arc = Arc::clone(&named.agent);
+        drop(named);
+
+        let response = arc.lock().await.process(message).await?;
 
         self.message_log.push(AgentMessage {
             from: "user".to_string(),
@@ -152,7 +213,6 @@ impl Orchestrator {
         to_agent: &str,
         task: &str,
     ) -> Result<String> {
-        // Process the task with the target agent
         let to = self.agents.get_mut(to_agent).ok_or_else(|| {
             bizclaw_core::error::BizClawError::Config(format!(
                 "Target agent '{}' not found",
@@ -161,12 +221,15 @@ impl Orchestrator {
         })?;
 
         to.message_count += 1;
+        let arc = Arc::clone(&to.agent);
+        let _ = to;
+
         let delegate_prompt = format!(
             "[Delegation from agent '{from_agent}']\n\
              Task: {task}\n\
              Please process this task and return a clear result."
         );
-        let response = to.agent.process(&delegate_prompt).await?;
+        let response = arc.lock().await.process(&delegate_prompt).await?;
 
         self.message_log.push(AgentMessage {
             from: from_agent.to_string(),
@@ -192,7 +255,7 @@ impl Orchestrator {
         results
     }
 
-    /// List all agents with their status.
+    /// List all agents with their status (reads cached metadata — no lock needed).
     pub fn list_agents(&self) -> Vec<serde_json::Value> {
         self.agents
             .values()
@@ -202,12 +265,12 @@ impl Orchestrator {
                     "role": a.role,
                     "description": a.description,
                     "active": a.active,
-                    "provider": a.agent.provider_name(),
-                    "model": a.agent.model_name(),
-                    "system_prompt": a.agent.system_prompt(),
-                    "tools": a.agent.tool_count(),
+                    "provider": a.cached_provider,
+                    "model": a.cached_model,
+                    "system_prompt": a.cached_system_prompt,
+                    "tools": a.cached_tool_count,
                     "messages_processed": a.message_count,
-                    "conversation_length": a.agent.conversation().len(),
+                    "conversation_length": 0,
                     "is_default": self.default_agent.as_deref() == Some(&a.name),
                 })
             })
@@ -240,11 +303,6 @@ impl Orchestrator {
                 })
             })
             .collect()
-    }
-
-    /// Get a mutable reference to an agent.
-    pub fn get_agent_mut(&mut self, name: &str) -> Option<&mut Agent> {
-        self.agents.get_mut(name).map(|a| &mut a.agent)
     }
 
     /// Update agent metadata (role, description).
@@ -415,12 +473,21 @@ mod tests {
     }
 
     #[test]
-    fn test_get_agent_mut() {
+    fn test_get_named_mut() {
         let mut orch = Orchestrator::new();
         orch.add_agent("mutable", "assistant", "M", make_test_agent());
 
-        assert!(orch.get_agent_mut("mutable").is_some());
-        assert!(orch.get_agent_mut("nonexistent").is_none());
+        assert!(orch.get_named_mut("mutable").is_some());
+        assert!(orch.get_named_mut("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_get_agent_arc() {
+        let mut orch = Orchestrator::new();
+        orch.add_agent("locked", "assistant", "L", make_test_agent());
+
+        assert!(orch.get_agent_arc("locked").is_some());
+        assert!(orch.get_agent_arc("ghost").is_none());
     }
 
     #[test]
