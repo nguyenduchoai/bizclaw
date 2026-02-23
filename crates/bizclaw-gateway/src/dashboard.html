@@ -172,8 +172,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <a href="/channels" onclick="navigateTo(event,'channels')" id="nav-channels">📱 <span data-i18n="nav.channels">Kênh liên lạc</span></a>
       <a href="/tools" onclick="navigateTo(event,'tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
       <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 <span data-i18n="nav.mcp">Máy chủ MCP</span></a>
-      <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 <span data-i18n="nav.agents">Đa tác tử</span></a>
-      <a href="/groups" onclick="navigateTo(event,'groups')" id="nav-groups">👥 <span data-i18n="nav.groups">Nhóm Agent</span></a>
+      <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 <span data-i18n="nav.agents">AI Agent</span></a>
       <a href="/knowledge" onclick="navigateTo(event,'knowledge')" id="nav-knowledge">📚 <span data-i18n="nav.knowledge">Kho tri thức</span></a>
       <div class="nav-sep"></div>
       <a href="/brain" onclick="navigateTo(event,'brain')" id="nav-brain">🧠 <span data-i18n="nav.brain">Brain Engine</span></a>
@@ -353,7 +352,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div style="margin:12px 0">
             <div class="form-label" style="margin-bottom:8px" data-i18n="groups.select_agents">Chọn Agent tham gia:</div>
             <div id="group-agent-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-            <div style="font-size:11px;color:var(--text2);margin-top:6px" data-i18n="groups.agent_hint">Chưa có agent? Vào trang Đa tác tử để tạo trước.</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:6px" data-i18n="groups.agent_hint">Chưa có agent? Vào trang AI Agent để tạo trước.</div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px">
             <button class="btn btn-primary" onclick="createGroup()">👥 <span data-i18n="groups.create">Tạo nhóm</span></button>
@@ -578,7 +577,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ MULTI-AGENT ═══ -->
     <div id="page-agents" style="display:none">
-      <div class="page-header"><div><h1>🤖 <span data-i18n="agents.title">Đa tác tử AI</span></h1><div class="sub" data-i18n="agents.subtitle">Tạo và quản lý nhiều agent AI với vai trò khác nhau</div></div>
+      <div class="page-header"><div><h1>🤖 <span data-i18n="agents.title">AI Agent</span></h1><div class="sub" data-i18n="agents.subtitle">Tạo và quản lý nhiều Agent AI — mỗi agent có nhà cung cấp & mô hình riêng</div></div>
         <button class="btn btn-primary" onclick="showCreateAgentForm()">+ <span data-i18n="agents.create">Tạo Agent</span></button>
       </div>
       <div class="stats">
@@ -596,6 +595,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <option value="analyst">Phân tích viên</option><option value="translator">Phiên dịch</option>
         </select></div>
         <div class="form-row"><span class="form-label" data-i18n="form.description">Mô tả</span><input id="new-agent-desc" placeholder="Agent nghiên cứu thông minh"></div>
+        <div class="form-row"><span class="form-label">Nhà cung cấp</span><select id="new-agent-provider" onchange="loadAgentModels(this.value,'new-agent-model')"><option value="">— Dùng mặc định —</option></select></div>
+        <div class="form-row"><span class="form-label">Mô hình AI</span><select id="new-agent-model"><option value="">— Dùng mặc định —</option></select></div>
         <div class="form-row"><span class="form-label" data-i18n="set.sysprompt">Lời nhắc hệ thống</span><textarea id="new-agent-prompt" placeholder="Bạn là agent nghiên cứu chuyên sâu..."></textarea></div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn btn-primary" onclick="createAgent()">🤖 <span data-i18n="agents.create">Tạo</span></button>
@@ -1604,7 +1605,77 @@ async function runHealthCheck() {
 }
 
 // ═══ MULTI-AGENT ORCHESTRATOR ═══
-function showCreateAgentForm() { document.getElementById('agent-create-form').style.display = ''; }
+let _providersCache = null; // cache from GET /api/v1/providers
+
+async function showCreateAgentForm() {
+  document.getElementById('agent-create-form').style.display = '';
+  // Load providers dropdown
+  const sel = document.getElementById('new-agent-provider');
+  if (sel.options.length <= 1) { // not yet populated
+    try {
+      const res = await authFetch(API + '/api/v1/providers');
+      const data = await res.json();
+      if (data.ok && data.providers) {
+        _providersCache = data.providers;
+        data.providers.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.name;
+          const typeIcon = p.type === 'local' ? '🖥️' : '☁️';
+          const statusBadge = p.status === 'active' ? ' ⚡' : '';
+          opt.textContent = `${typeIcon} ${p.name}${statusBadge}`;
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e) { console.log('providers load err:', e); }
+  }
+}
+
+async function loadAgentModels(providerName, selectId) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">— Đang tải... —</option>';
+  
+  if (!providerName) {
+    sel.innerHTML = '<option value="">— Dùng mặc định —</option>';
+    return;
+  }
+  
+  try {
+    // For ollama: fetch live models
+    if (providerName === 'ollama') {
+      const res = await authFetch(API + '/api/v1/ollama/models');
+      const data = await res.json();
+      sel.innerHTML = '<option value="">— Chọn model —</option>';
+      if (data.ok && data.models) {
+        data.models.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.name || m;
+          const size = m.size ? ` (${(m.size / 1e9).toFixed(1)}GB)` : '';
+          opt.textContent = (m.name || m) + size;
+          sel.appendChild(opt);
+        });
+      }
+      return;
+    }
+    // For others: use cached provider data
+    if (_providersCache) {
+      const prov = _providersCache.find(p => p.name === providerName);
+      if (prov && prov.models) {
+        sel.innerHTML = '<option value="">— Chọn model —</option>';
+        prov.models.forEach(model => {
+          const opt = document.createElement('option');
+          opt.value = model;
+          opt.textContent = model;
+          sel.appendChild(opt);
+        });
+        return;
+      }
+    }
+    sel.innerHTML = '<option value="">— Không có model —</option>';
+  } catch(e) {
+    sel.innerHTML = '<option value="">— Lỗi tải model —</option>';
+    console.log('model load err:', e);
+  }
+}
 
 async function loadAgents() {
   try {
@@ -1667,18 +1738,28 @@ async function createAgent() {
   const role = document.getElementById('new-agent-role').value;
   const desc = document.getElementById('new-agent-desc').value.trim();
   const prompt = document.getElementById('new-agent-prompt').value.trim();
-  if (!name) { toast('Agent name is required', 'error'); return; }
+  const provider = document.getElementById('new-agent-provider').value;
+  const model = document.getElementById('new-agent-model').value;
+  if (!name) { toast('Nhập tên Agent', 'error'); return; }
+  
+  const body = { name, role, description: desc || `A ${role} agent` };
+  if (provider) body.provider = provider;
+  if (model) body.model = model;
+  if (prompt) body.system_prompt = prompt;
   
   try {
     const res = await authFetch(API + '/api/v1/agents', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, role, description: desc || `A ${role} agent`, system_prompt: prompt || undefined })
+      body: JSON.stringify(body)
     });
     const r = await res.json();
     if (r.ok) {
-      toast(`🤖 Agent '${name}' created!`);
+      const provLabel = provider ? ` (${provider}/${model || 'default'})` : '';
+      toast(`🤖 Agent '${name}'${provLabel} đã tạo!`);
       document.getElementById('agent-create-form').style.display = 'none';
       ['new-agent-name','new-agent-desc','new-agent-prompt'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('new-agent-provider').value = '';
+      document.getElementById('new-agent-model').innerHTML = '<option value="">— Dùng mặc định —</option>';
       loadAgents();
     } else { toast('❌ ' + r.error, 'error'); }
   } catch(e) { toast('❌ ' + e.message, 'error'); }
@@ -2368,8 +2449,8 @@ const I18N = {
   vi: {
     // Navigation
     'nav.dashboard':'Bảng điều khiển','nav.webchat':'Trò chuyện','nav.settings':'Cài đặt',
-    'nav.providers':'Nhà cung cấp','nav.channels':'Kênh liên lạc','nav.tools':'Công cụ','nav.groups':'Nhóm Agent',
-    'nav.brain':'Brain Engine','nav.mcp':'Máy chủ MCP','nav.agents':'Đa tác tử',
+    'nav.providers':'Nhà cung cấp','nav.channels':'Kênh liên lạc','nav.tools':'Công cụ',
+    'nav.brain':'Brain Engine','nav.mcp':'Máy chủ MCP','nav.agents':'AI Agent',
     'nav.knowledge':'Kho tri thức','nav.config':'Tệp cấu hình',
     // Dashboard
     'dash.title':'Bảng điều khiển','dash.subtitle':'Trung tâm quản lý Agent Gateway',
@@ -2429,7 +2510,7 @@ const I18N = {
     'mcp.add':'Thêm máy chủ','mcp.total':'Tổng máy chủ','mcp.active':'Đang hoạt động',
     'mcp.protocol':'Giao thức','mcp.add_title':'Thêm máy chủ MCP','mcp.popular':'MCP phổ biến',
     // Multi-Agent
-    'agents.title':'Đa tác tử AI','agents.subtitle':'Tạo và quản lý nhiều agent AI với vai trò khác nhau',
+    'agents.title':'AI Agent','agents.subtitle':'Tạo và quản lý nhiều Agent AI — mỗi agent có nhà cung cấp & mô hình riêng',
     'agents.create':'Tạo Agent','agents.total':'Tổng Agent','agents.default':'Agent mặc định',
     'agents.messages':'Tin nhắn','agents.create_new':'Tạo Agent mới','agents.broadcast':'Phát tin nhắn',
     'agents.msg':'Tin nhắn','agents.send_all':'Gửi tất cả','agents.edit':'Sửa Agent',
@@ -2438,7 +2519,7 @@ const I18N = {
     'groups.create':'Tạo nhóm','groups.total':'Tổng nhóm','groups.agents_count':'Agent trong nhóm',
     'groups.conversations':'Cuộc hội thoại','groups.create_new':'Tạo nhóm mới',
     'groups.topic':'Chủ đề','groups.select_agents':'Chọn Agent tham gia:',
-    'groups.agent_hint':'Chưa có agent? Vào trang Đa tác tử để tạo trước.',
+    'groups.agent_hint':'Chưa có agent? Vào trang AI Agent để tạo trước.',
     // Knowledge Base
     'kb.title':'Kho tri thức','kb.subtitle':'RAG cá nhân — thêm tài liệu để AI trả lời chính xác hơn',
     'kb.add_doc':'Thêm tài liệu','kb.documents':'Tài liệu','kb.chunks':'Đoạn văn',
@@ -2473,8 +2554,8 @@ const I18N = {
   en: {
     // Navigation
     'nav.dashboard':'Dashboard','nav.webchat':'WebChat','nav.settings':'Settings',
-    'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools','nav.groups':'Agent Groups',
-    'nav.brain':'Brain Engine','nav.mcp':'MCP Servers','nav.agents':'Multi-Agent',
+    'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools',
+    'nav.brain':'Brain Engine','nav.mcp':'MCP Servers','nav.agents':'AI Agent',
     'nav.knowledge':'Knowledge','nav.config':'Config File',
     // Dashboard
     'dash.title':'Dashboard','dash.subtitle':'Agent Gateway Control Panel',
