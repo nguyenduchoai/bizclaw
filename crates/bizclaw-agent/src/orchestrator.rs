@@ -174,10 +174,7 @@ impl Orchestrator {
     /// is kept for internal/test use where the caller controls concurrency.
     pub async fn send_to(&mut self, agent_name: &str, message: &str) -> Result<String> {
         let named = self.agents.get_mut(agent_name).ok_or_else(|| {
-            bizclaw_core::error::BizClawError::Config(format!(
-                "Agent '{}' not found",
-                agent_name
-            ))
+            bizclaw_core::error::BizClawError::Config(format!("Agent '{}' not found", agent_name))
         })?;
 
         named.message_count += 1;

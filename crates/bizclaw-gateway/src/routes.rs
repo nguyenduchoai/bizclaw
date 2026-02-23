@@ -1770,7 +1770,7 @@ pub async fn agent_chat(
                 return Json(serde_json::json!({
                     "ok": false,
                     "error": format!("Agent '{}' not found", name),
-                }))
+                }));
             }
         };
         orch.inc_message_count(&name);
