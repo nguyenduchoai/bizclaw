@@ -138,11 +138,13 @@ port = {}
         }
 
         // ── Inject channel configs from DB ──────────
+        let mut has_db_channels = false;
         if let Ok(channels) = db.list_channels(&tenant.id) {
             for ch in &channels {
                 if !ch.enabled {
                     continue;
                 }
+                has_db_channels = true;
                 if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&ch.config_json) {
                     match ch.channel_type.as_str() {
                         "telegram" => {
@@ -213,6 +215,94 @@ port = {}
                             }
                         }
                         _ => {}
+                    }
+                }
+            }
+        }
+
+        // ── Fallback: read channels_sync.json from gateway dashboard saves ──
+        if !has_db_channels {
+            let channels_sync_path = tenant_dir.join("channels_sync.json");
+            if channels_sync_path.exists() {
+                tracing::info!("📥 Reading channels_sync.json for tenant {}", tenant.slug);
+                if let Ok(content) = std::fs::read_to_string(&channels_sync_path) {
+                    if let Ok(channels) = serde_json::from_str::<serde_json::Value>(&content) {
+                        // Telegram
+                        if let Some(tg) = channels["telegram"].as_object() {
+                            if tg.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                let token = tg.get("bot_token").and_then(|v| v.as_str()).unwrap_or("");
+                                if !token.is_empty() {
+                                    config_content.push_str(&format!(
+                                        "\n[channel.telegram]\nenabled = true\nbot_token = \"{}\"\n", token
+                                    ));
+                                    if let Some(ids) = tg.get("allowed_chat_ids").and_then(|v| v.as_str()) {
+                                        let parsed: Vec<&str> = ids.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+                                        if !parsed.is_empty() {
+                                            config_content.push_str(&format!("allowed_chat_ids = [{}]\n", parsed.join(", ")));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Discord
+                        if let Some(dc) = channels["discord"].as_object() {
+                            if dc.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                let token = dc.get("bot_token").and_then(|v| v.as_str()).unwrap_or("");
+                                if !token.is_empty() {
+                                    config_content.push_str(&format!(
+                                        "\n[channel.discord]\nenabled = true\nbot_token = \"{}\"\n", token
+                                    ));
+                                }
+                            }
+                        }
+                        // Email
+                        if let Some(em) = channels["email"].as_object() {
+                            if em.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                let email = em.get("email").and_then(|v| v.as_str()).unwrap_or("");
+                                let password = em.get("password").and_then(|v| v.as_str()).unwrap_or("");
+                                if !email.is_empty() {
+                                    config_content.push_str(&format!(
+                                        "\n[channel.email]\nenabled = true\nsmtp_host = \"{}\"\nsmtp_port = {}\nemail = \"{}\"\npassword = \"{}\"\nimap_host = \"{}\"\nimap_port = {}\n",
+                                        em.get("smtp_host").and_then(|v| v.as_str()).unwrap_or("smtp.gmail.com"),
+                                        em.get("smtp_port").and_then(|v| v.as_u64()).unwrap_or(587),
+                                        email, password,
+                                        em.get("imap_host").and_then(|v| v.as_str()).unwrap_or("imap.gmail.com"),
+                                        em.get("imap_port").and_then(|v| v.as_u64()).unwrap_or(993),
+                                    ));
+                                }
+                            }
+                        }
+                        // Webhook
+                        if let Some(wh) = channels["webhook"].as_object() {
+                            if wh.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                let url = wh.get("outbound_url").and_then(|v| v.as_str()).unwrap_or("");
+                                config_content.push_str(&format!(
+                                    "\n[channel.webhook]\nenabled = true\noutbound_url = \"{}\"\nsecret = \"{}\"\n",
+                                    url, wh.get("secret").and_then(|v| v.as_str()).unwrap_or("")
+                                ));
+                            }
+                        }
+                        // WhatsApp
+                        if let Some(wa) = channels["whatsapp"].as_object() {
+                            if wa.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                config_content.push_str(&format!(
+                                    "\n[channel.whatsapp]\nenabled = true\nphone_number_id = \"{}\"\naccess_token = \"{}\"\nwebhook_verify_token = \"{}\"\n",
+                                    wa.get("phone_number_id").and_then(|v| v.as_str()).unwrap_or(""),
+                                    wa.get("access_token").and_then(|v| v.as_str()).unwrap_or(""),
+                                    wa.get("webhook_verify_token").and_then(|v| v.as_str()).unwrap_or(""),
+                                ));
+                            }
+                        }
+                        // Zalo
+                        if let Some(zl) = channels["zalo"].as_object() {
+                            if zl.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                let imei = zl.get("imei").and_then(|v| v.as_str()).unwrap_or("");
+                                config_content.push_str(&format!(
+                                    "\n[channel.zalo]\nenabled = true\nmode = \"personal\"\n\n[channel.zalo.personal]\nimei = \"{}\"\n",
+                                    imei
+                                ));
+                            }
+                        }
                     }
                 }
             }

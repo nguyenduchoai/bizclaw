@@ -542,6 +542,50 @@ pub async fn update_channel(
     let content = toml::to_string_pretty(&*cfg).unwrap_or_default();
     match std::fs::write(&state.config_path, &content) {
         Ok(_) => {
+            // Also save channels as standalone JSON for platform DB sync on restart
+            // This prevents channel loss when platform regenerates config.toml
+            if let Some(parent) = state.config_path.parent() {
+                let channels_json = serde_json::json!({
+                    "telegram": cfg.channel.telegram.as_ref().map(|t| serde_json::json!({
+                        "enabled": t.enabled,
+                        "bot_token": t.bot_token,
+                        "allowed_chat_ids": t.allowed_chat_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(", "),
+                    })),
+                    "zalo": cfg.channel.zalo.as_ref().map(|z| serde_json::json!({
+                        "enabled": z.enabled,
+                        "mode": z.mode,
+                        "cookie": z.personal.cookie_path.clone(),
+                        "imei": z.personal.imei,
+                    })),
+                    "discord": cfg.channel.discord.as_ref().map(|d| serde_json::json!({
+                        "enabled": d.enabled,
+                        "bot_token": d.bot_token,
+                        "allowed_channel_ids": d.allowed_channel_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(", "),
+                    })),
+                    "email": cfg.channel.email.as_ref().map(|e| serde_json::json!({
+                        "enabled": e.enabled,
+                        "smtp_host": e.smtp_host,
+                        "smtp_port": e.smtp_port,
+                        "email": e.email,
+                        "password": e.password,
+                        "imap_host": e.imap_host,
+                        "imap_port": e.imap_port,
+                    })),
+                    "whatsapp": cfg.channel.whatsapp.as_ref().map(|w| serde_json::json!({
+                        "enabled": w.enabled,
+                        "phone_number_id": w.phone_number_id,
+                        "access_token": w.access_token,
+                        "webhook_verify_token": w.webhook_verify_token,
+                    })),
+                    "webhook": cfg.channel.webhook.as_ref().map(|wh| serde_json::json!({
+                        "enabled": wh.enabled,
+                        "secret": wh.secret,
+                        "outbound_url": wh.outbound_url,
+                    })),
+                });
+                let sync_path = parent.join("channels_sync.json");
+                std::fs::write(&sync_path, serde_json::to_string_pretty(&channels_json).unwrap_or_default()).ok();
+            }
             Json(serde_json::json!({"ok": true, "message": format!("{channel_type} config saved")}))
         }
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
