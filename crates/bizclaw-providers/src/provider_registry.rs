@@ -258,6 +258,51 @@ static PROVIDERS: &[ProviderConfig] = &[
         base_url_env: Some("LLAMACPP_HOST"),
         default_models: LLAMACPP_MODELS,
     },
+    ProviderConfig {
+        name: "cliproxy",
+        base_url: "http://localhost:8888/v1",
+        chat_path: "/chat/completions",
+        models_path: "/models",
+        env_keys: &["CLIPROXY_API_KEY"],
+        auth_style: AuthStyle::Bearer,
+        base_url_env: Some("CLIPROXY_HOST"),
+        default_models: &[ModelDef {
+            id: "default",
+            name: "CLIProxy Model",
+            context_length: 128000,
+            max_output_tokens: Some(4096),
+        }],
+    },
+    ProviderConfig {
+        name: "vllm",
+        base_url: "http://localhost:8000/v1",
+        chat_path: "/chat/completions",
+        models_path: "/models",
+        env_keys: &["VLLM_API_KEY"],
+        auth_style: AuthStyle::None,
+        base_url_env: Some("VLLM_HOST"),
+        default_models: &[ModelDef {
+            id: "default",
+            name: "vLLM Model",
+            context_length: 32768,
+            max_output_tokens: Some(4096),
+        }],
+    },
+    ProviderConfig {
+        name: "together",
+        base_url: "https://api.together.xyz/v1",
+        chat_path: "/chat/completions",
+        models_path: "/models",
+        env_keys: &["TOGETHER_API_KEY"],
+        auth_style: AuthStyle::Bearer,
+        base_url_env: None,
+        default_models: &[ModelDef {
+            id: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+            name: "Llama 3.3 70B (Together)",
+            context_length: 128000,
+            max_output_tokens: Some(4096),
+        }],
+    },
 ];
 
 /// Look up a provider config by name.
@@ -266,6 +311,8 @@ pub fn get_provider_config(name: &str) -> Option<&'static ProviderConfig> {
     let lookup = match name {
         "google" => "gemini",
         "llama.cpp" => "llamacpp",
+        "cli_proxy" | "cliproxyapi" | "CLIProxy" => "cliproxy",
+        "together_ai" | "togetherai" => "together",
         other => other,
     };
     PROVIDERS.iter().find(|p| p.name == lookup)

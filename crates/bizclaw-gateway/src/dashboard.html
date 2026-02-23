@@ -611,19 +611,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
       <!-- Groups List -->
       <div id="groups-list" class="ch-grid" style="margin-top:16px"></div>
-      <!-- Group Conversation Modal -->
-      <div id="group-chat-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:700px;width:95%;max-height:85vh;display:flex;flex-direction:column">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <h2 id="group-chat-title" style="font-size:16px">👥 Group Chat</h2>
-            <button class="btn btn-outline btn-sm" onclick="closeGroupChat()">✕ Đóng</button>
-          </div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:8px" id="group-chat-members"></div>
-          <div id="group-chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:300px;max-height:55vh;padding:8px 0"></div>
-          <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)">
-            <input id="group-chat-input" placeholder="Nhập tin nhắn gửi đến nhóm..." style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendGroupMessage()">
-            <button class="btn btn-primary" onclick="sendGroupMessage()">Gửi ↑</button>
-          </div>
+      <!-- Group Conversation (Full Page View) -->
+      <div id="group-chat-section" class="card" style="display:none;margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 id="group-chat-title" style="font-size:16px;margin:0">👥 Group Chat</h2>
+          <button class="btn btn-outline btn-sm" onclick="closeGroupChat()">← <span data-i18n="groups.back">Quay lại</span></button>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px" id="group-chat-members"></div>
+        <div id="group-chat-messages" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:400px;max-height:60vh;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border)"></div>
+        <div style="display:flex;gap:8px;padding-top:12px">
+          <input id="group-chat-input" placeholder="Nhập tin nhắn gửi đến nhóm..." style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sendGroupMessage()">
+          <button class="btn btn-primary" onclick="sendGroupMessage()">Gửi ↑</button>
         </div>
       </div>
     </div>
@@ -1902,13 +1900,13 @@ function openGroupChat(idx) {
   const g = _groups[idx];
   document.getElementById('group-chat-title').textContent = '\ud83d\udc65 ' + g.name;
   document.getElementById('group-chat-members').textContent = '\ud83d\udc64 Th\u00e0nh vi\u00ean: ' + g.agents.join(', ') + ' \u2022 \ud83d\udccb ' + g.topic;
-  document.getElementById('group-chat-modal').style.display = 'flex';
+  document.getElementById('group-chat-section').style.display = '';
   renderGroupMessages();
   document.getElementById('group-chat-input').focus();
 }
 
 function closeGroupChat() {
-  document.getElementById('group-chat-modal').style.display = 'none';
+  document.getElementById('group-chat-section').style.display = 'none';
   _activeGroupIdx = -1;
 }
 
