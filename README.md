@@ -10,7 +10,7 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 [![Crates](https://img.shields.io/badge/crates-14-success)]()
 [![LOC](https://img.shields.io/badge/lines-32781-informational)]()
 
-<!-- AUTO-GENERATED STATS — updated 2026-02-24 @ abc2b8a -->
+<!-- AUTO-GENERATED STATS — updated 2026-02-24 @ 98d9c99 -->
 
 ---
 
@@ -18,9 +18,31 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 
 ### 🚀 100% Tự Host — Không phụ thuộc Cloud
 
-- **100% Độc lập:** Clone về là chạy — laptop, VPS, hay Raspberry Pi. Không token khoá, không telemetry.
-- **Dữ liệu nội bộ:** Chat history, cấu hình lưu SQLite local. API Keys mã hoá khi cần.
-- **Offline AI:** Brain Engine chạy GGUF models offline (Llama, DeepSeek). Hoặc kết nối Ollama trên LAN.
+> **Tuyệt đối KHÔNG cần tạo tài khoản trên server trung gian.** KHÔNG tự động upload dữ liệu lên cloud bên thứ ba.
+> Clone code về → build → chạy thẳng trên máy cá nhân, VPS hoặc Raspberry Pi.
+
+| | Chi tiết |
+|--|---------|
+| 🔒 **Local & Bảo Mật** | Dữ liệu chat, API Keys lưu mã hoá cục bộ trên ổ cứng. SQLite database nằm ngay trên máy bạn. |
+| 🌐 **Chạy Độc Lập** | Không token trung gian, không bị khóa quyền chức năng. Không telemetry, không tracking. |
+| 🧠 **Offline Mode** | Brain Engine + Ollama chạy LLM local. Internet chỉ cần cho cloud providers (OpenAI, Gemini...) |
+| 📱 **Mọi thiết bị** | Linux, macOS, Windows, Raspberry Pi. Binary duy nhất ~13MB. |
+
+**3 cách cài đặt:**
+
+```bash
+# 📥 Method 1: One-Click Install (VPS/Pi)
+curl -sSL https://bizclaw.vn/install.sh | sudo bash
+
+# 🐳 Method 2: Docker
+git clone https://github.com/nguyenduchoai/bizclaw
+cd bizclaw && docker-compose up -d
+
+# 🔧 Method 3: Build from Source
+git clone https://github.com/nguyenduchoai/bizclaw.git
+cd bizclaw && cargo build --release
+./target/release/bizclaw-platform --port 3001
+```
 
 ### 🎯 Tính năng chính
 
@@ -31,7 +53,7 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 | **🛠️ 13 Tools** | Shell, File, Edit File, Glob, Grep, Web Search, HTTP Request, Config Manager, Execute Code (9 ngôn ngữ), Plan Mode, Group Summarizer, Calendar, Document Reader, Memory Search, Session Context |
 | **🔗 MCP** | Model Context Protocol client — kết nối MCP servers bên ngoài, mở rộng tools không giới hạn |
 | **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log, Per-tenant SQLite DB |
-| **🌐 Web Dashboard** | 11 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, settings |
+| **🌐 Web Dashboard** | 12 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, settings |
 | **🤖 51 Agent Templates** | 13 danh mục nghiệp vụ, system prompt chuyên sâu, cài 1 click |
 | **👥 Group Chat** | Tạo nhóm agent cộng tác — gửi 1 câu hỏi, tất cả agent trong nhóm phản hồi |
 | **🧠 3-Tier Memory** | Brain workspace (SOUL.md/MEMORY.md), Daily auto-compaction, FTS5 search |
@@ -63,19 +85,41 @@ Cài đặt agent chuyên biệt chỉ 1 click. Mỗi agent có **system prompt*
 
 ### 💰 Tiết kiệm token — Mỗi Agent chọn Provider riêng
 
-Mỗi agent có thể chọn nhà cung cấp & mô hình riêng → tiết kiệm 60-80% chi phí:
+> **Điểm khác biệt lớn nhất của BizClaw:** Mỗi agent có thể chọn nhà cung cấp & mô hình riêng.
+> Thay vì dùng 1 provider đắt tiền cho mọi agent, hãy **tối ưu chi phí theo từng vai trò**.
 
-\`\`\`
-Agent "Dịch thuật"     → Ollama/qwen3 (miễn phí, local)
-Agent "Full-Stack Dev" → Anthropic/claude-sonnet-4 (mạnh)
-Agent "Social Media"   → Gemini/flash (nhanh, rẻ)
-Agent "Kế toán"        → DeepSeek/chat (giá tốt)
-Agent "Helpdesk"       → Groq/llama-3.3-70b (nhanh nhất)
-\`\`\`
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Agent           │  Provider           │  Chi phí     │  Lý do  │
+├──────────────────┼─────────────────────┼──────────────┼─────────┤
+│  Dịch thuật      │  Ollama/qwen3       │  $0 (local)  │  Free   │
+│  Full-Stack Dev  │  Anthropic/claude   │  $$$         │  Mạnh   │
+│  Social Media    │  Gemini/flash       │  $           │  Nhanh  │
+│  Kế toán         │  DeepSeek/chat      │  $$          │  Giá tốt│
+│  Helpdesk        │  Groq/llama-3.3-70b │  $           │  Nhanh  │
+│  Nội bộ          │  Brain Engine       │  $0 (offline)│  Bảo mật│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Kết quả:** Tiết kiệm **60-80% chi phí API** so với dùng 1 provider cho tất cả agent.
+
+**Cách hoạt động:**
+1. Vào **Nhà cung cấp** → nhập API key cho từng provider (💾 Save riêng)
+2. Vào **AI Agent** → chọn provider & model riêng cho mỗi agent
+3. Backend tự đọc credentials từ DB — không cần cấu hình thêm
 
 ### 👥 Group Chat — Đội ngũ Agent cộng tác
 
 Tạo nhóm nhiều agent cùng nhà cung cấp khác nhau làm việc cùng lúc. Gửi 1 câu hỏi → tất cả agent trong nhóm phản hồi theo chuyên môn.
+
+```
+Bạn: "Chuẩn bị pitch cho nhà đầu tư Series A"
+  │
+  ├── 🧑‍💼 Agent "Chiến lược" (Claude)  → Phân tích thị trường, USP
+  ├── 📊 Agent "Tài chính" (DeepSeek)  → Unit economics, projections
+  ├── 📣 Agent "Marketing" (Gemini)    → Brand story, go-to-market
+  └── ⚖️ Agent "Pháp lý" (Groq)       → Term sheet, cap table
+```
 
 ### 🏗️ Kiến trúc
 
@@ -178,7 +222,7 @@ ollama pull qwen3         # ~4.7GB
 | `bizclaw-mcp` | MCP client (JSON-RPC 2.0 via stdio) | ✅ |
 | `bizclaw-security` | AES-256, Command allowlist, Sandbox | ✅ |
 | `bizclaw-agent` | Agent loop, tool calling (max 3 rounds), context management | ✅ |
-| `bizclaw-gateway` | Axum HTTP + WS + Dashboard (11 pages, i18n VI/EN) | ✅ |
+| `bizclaw-gateway` | Axum HTTP + WS + Dashboard (12 pages, i18n VI/EN) | ✅ |
 | `bizclaw-knowledge` | Knowledge RAG with FTS5, document chunking | ✅ |
 | `bizclaw-scheduler` | Scheduled tasks, agent integration, notifications | ✅ |
 | `bizclaw-runtime` | Process adapters | ✅ |
@@ -196,9 +240,9 @@ ollama pull qwen3         # ~4.7GB
 | **Channels** | 9 types |
 | **Tools** | 13 native + MCP (unlimited) |
 | **Gallery** | 51 business agent templates |
-| **Dashboard** | 11 pages, bilingual (VI/EN) |
+| **Dashboard** | 12 pages, bilingual (VI/EN) |
 | **Binary Size** | bizclaw 12M, platform 7.2M |
-| **Last Updated** | 2026-02-24 (abc2b8a) |
+| **Last Updated** | 2026-02-24 (98d9c99) |
 
 ---
 
@@ -215,8 +259,9 @@ BizClaw is a **self-hosted AI Agent platform** built entirely in Rust. Run AI ag
 - **🛠️ 13 Tools** — Shell, File, Edit, Glob, Grep, Web Search, HTTP, Config, Execute Code (9 langs), Plan Mode, Group Summarizer, Calendar, Doc Reader, Memory Search, Session Context
 - **🔗 MCP Support** — Connect any MCP server for unlimited tool extensions
 - **🏢 Multi-Tenant Platform** — Admin dashboard, JWT auth, per-tenant isolated DB
-- **🌐 Web Dashboard** — 11-page bilingual UI (Vietnamese/English), real-time WebSocket chat
+- **🌐 Web Dashboard** — 12-page bilingual UI (Vietnamese/English), real-time WebSocket chat
 - **🤖 51 Agent Templates** — Pre-built agents for HR, Sales, Finance, Ops, Legal, Marketing, IT
+- **💰 Per-Agent Provider Selection** — Each agent picks its own LLM provider → save 60-80% on API costs
 - **👥 Group Chat** — Multi-agent collaboration with mixed providers
 - **🧠 3-Tier Memory** — Brain workspace + daily auto-compaction + FTS5 search
 - **📚 Knowledge RAG** — Upload documents for retrieval-augmented generation
