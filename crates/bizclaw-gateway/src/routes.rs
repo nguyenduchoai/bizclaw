@@ -639,6 +639,7 @@ pub async fn save_channel_instance(
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let channel_type = req.get("channel_type").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let agent_name = req.get("agent_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let config = req.get("config").cloned().unwrap_or(serde_json::json!({}));
 
     if name.is_empty() || channel_type.is_empty() {
@@ -659,6 +660,7 @@ pub async fn save_channel_instance(
         "name": name,
         "channel_type": channel_type,
         "enabled": enabled,
+        "agent_name": agent_name,
         "config": config,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
@@ -718,6 +720,19 @@ pub async fn save_channel_instance(
     }
     drop(cfg);
 
+    // Auto-connect Telegram if agent_name + bot_token provided
+    if enabled && channel_type == "telegram" && !agent_name.is_empty() {
+        let bot_token = config.get("bot_token").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        if !bot_token.is_empty() {
+            let s = state.clone();
+            let an = agent_name.clone();
+            let iid = instance_id.clone();
+            tokio::spawn(async move {
+                spawn_telegram_polling(s, an, bot_token, iid).await;
+            });
+        }
+    }
+
     Json(serde_json::json!({
         "ok": true,
         "instance": instance,
@@ -737,6 +752,149 @@ pub async fn delete_channel_instance(
     }
     save_channel_instances(&state, &instances);
     Json(serde_json::json!({"ok": true, "message": "Instance deleted"}))
+}
+
+/// Spawn a Telegram polling loop that routes messages to a specific agent.
+/// Reused by both save_channel_instance (manual) and auto_connect_channels (startup).
+pub async fn spawn_telegram_polling(
+    state: Arc<AppState>,
+    agent_name: String,
+    bot_token: String,
+    instance_id: String,
+) {
+    // Disconnect existing bot for this agent if any
+    {
+        let mut bots = state.telegram_bots.lock().await;
+        if let Some(existing) = bots.remove(&agent_name) {
+            existing.abort_handle.notify_one();
+            tracing::info!("[telegram] Disconnecting existing bot for agent '{}'", agent_name);
+            tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+        }
+    }
+
+    // Verify bot token
+    let tg = bizclaw_channels::telegram::TelegramChannel::new(
+        bizclaw_channels::telegram::TelegramConfig {
+            bot_token: bot_token.clone(),
+            enabled: true,
+            poll_interval: 1,
+        },
+    );
+    let bot_username = match tg.get_me().await {
+        Ok(me) => me.username.unwrap_or_default(),
+        Err(e) => {
+            tracing::error!("[telegram] Bot token invalid for instance '{}': {}", instance_id, e);
+            return;
+        }
+    };
+    tracing::info!("[telegram] @{} connected → agent '{}' (instance: {})", bot_username, agent_name, instance_id);
+
+    // Spawn polling loop
+    let stop = Arc::new(tokio::sync::Notify::new());
+    let stop_rx = stop.clone();
+    let state_clone = state.clone();
+    let agent_name_clone = agent_name.clone();
+    let bot_token_for_state = bot_token.clone();
+
+    tokio::spawn(async move {
+        let mut channel = bizclaw_channels::telegram::TelegramChannel::new(
+            bizclaw_channels::telegram::TelegramConfig {
+                bot_token: bot_token.clone(),
+                enabled: true,
+                poll_interval: 1,
+            },
+        );
+
+        loop {
+            tokio::select! {
+                _ = stop_rx.notified() => {
+                    tracing::info!("[telegram] Polling stopped for agent '{}'", agent_name_clone);
+                    break;
+                }
+                result = channel.get_updates() => {
+                    match result {
+                        Ok(updates) => {
+                            for update in updates {
+                                if let Some(msg) = update.to_incoming() {
+                                    let chat_id: i64 = msg.thread_id.parse().unwrap_or(0);
+                                    let sender = msg.sender_name.clone().unwrap_or_default();
+                                    let text = msg.content.clone();
+
+                                    tracing::info!("[telegram] {} → agent '{}': {}", sender, agent_name_clone, &text[..text.len().min(100)]);
+                                    let _ = channel.send_typing(chat_id).await;
+
+                                    // Route to agent
+                                    let response = {
+                                        let mut orch = state_clone.orchestrator.lock().await;
+                                        match orch.send_to(&agent_name_clone, &text).await {
+                                            Ok(r) => r,
+                                            Err(e) => format!("⚠️ Agent error: {e}"),
+                                        }
+                                    };
+
+                                    if let Err(e) = channel.send_message(chat_id, &response).await {
+                                        tracing::error!("[telegram] Reply failed: {e}");
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("[telegram] Polling error for '{}': {e}", agent_name_clone);
+                            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Save state
+    {
+        let mut bots = state.telegram_bots.lock().await;
+        bots.insert(
+            agent_name.clone(),
+            super::server::TelegramBotState {
+                bot_token: bot_token_for_state,
+                bot_username: bot_username.clone(),
+                abort_handle: stop,
+            },
+        );
+    }
+}
+
+/// Auto-connect all enabled channel instances on startup.
+/// Called from server::start() after AppState is built.
+pub async fn auto_connect_channels(state: Arc<AppState>) {
+    let instances = load_channel_instances(&state);
+    let mut connected = 0;
+    for inst in &instances {
+        let enabled = inst["enabled"].as_bool().unwrap_or(false);
+        if !enabled { continue; }
+        let channel_type = inst["channel_type"].as_str().unwrap_or("");
+        let agent_name = inst["agent_name"].as_str().unwrap_or("");
+        let instance_id = inst["id"].as_str().unwrap_or("");
+        let cfg = &inst["config"];
+
+        match channel_type {
+            "telegram" if !agent_name.is_empty() => {
+                let bot_token = cfg["bot_token"].as_str().unwrap_or("").to_string();
+                if !bot_token.is_empty() {
+                    spawn_telegram_polling(
+                        state.clone(),
+                        agent_name.to_string(),
+                        bot_token,
+                        instance_id.to_string(),
+                    ).await;
+                    connected += 1;
+                }
+            }
+            // Future: handle webhook, discord, etc.
+            _ => {}
+        }
+    }
+    if connected > 0 {
+        tracing::info!("📱 Auto-connected {} channel instance(s)", connected);
+    }
 }
 
 /// List available providers (from DB) — fully self-describing, no hardcoded metadata.

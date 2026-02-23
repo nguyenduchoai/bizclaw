@@ -104,7 +104,10 @@ async fn verify_pairing(
 
 /// Build the Axum router with all routes.
 pub fn build_router(state: AppState) -> Router {
-    let shared = Arc::new(state);
+    build_router_from_arc(Arc::new(state))
+}
+
+pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
 
     // Protected routes — require valid pairing code
     let protected = Router::new()
@@ -507,7 +510,17 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         db: gateway_db,
     };
 
-    let app = build_router(state);
+    let state_arc = Arc::new(state);
+    let app = build_router_from_arc(state_arc.clone());
+
+    // Auto-connect saved channel instances (Telegram bots, etc.)
+    let state_for_channels = state_arc.clone();
+    tokio::spawn(async move {
+        // Small delay to let server bind first
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        super::routes::auto_connect_channels(state_for_channels).await;
+    });
+
     let addr = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 

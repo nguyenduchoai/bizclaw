@@ -495,6 +495,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
               <option value="slack">💼 Slack Bot</option>
             </select>
           </div>
+          <div class="form-row"><span class="form-label">🤖 Gán Agent (đọc & trả lời tin nhắn)</span>
+            <select id="new-ch-agent" style="padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+              <option value="">(Không gán — chỉ gửi)</option>
+            </select>
+          </div>
           <div id="new-ch-fields" style="margin-top:12px"></div>
           <div style="display:flex;gap:8px;margin-top:16px">
             <button class="btn btn-primary" onclick="createChannelInstance()">💾 Tạo kênh</button>
@@ -1648,10 +1653,20 @@ function renderChannelCards() {
 }
 
 // ═══ MULTI-INSTANCE CHANNELS ═══
-function showAddChannelModal() {
+async function showAddChannelModal() {
   document.getElementById('add-channel-modal').style.display = 'flex';
   document.getElementById('new-ch-name').value = '';
   onNewChTypeChange();
+  // Populate agent dropdown
+  try {
+    const res = await authFetch(API + '/api/v1/agents');
+    const data = await res.json();
+    const sel = document.getElementById('new-ch-agent');
+    sel.innerHTML = '<option value="">(Không gán — chỉ gửi)</option>';
+    (data.agents || []).forEach(a => {
+      sel.innerHTML += `<option value="${a.name}">🤖 ${a.name} (${a.role})</option>`;
+    });
+  } catch(e) {}
 }
 
 function onNewChTypeChange() {
@@ -1667,6 +1682,7 @@ function onNewChTypeChange() {
 async function createChannelInstance() {
   const name = document.getElementById('new-ch-name').value.trim();
   const type = document.getElementById('new-ch-type').value;
+  const agent_name = document.getElementById('new-ch-agent').value;
   if (!name) { toast('❌ Nhập tên kênh'); return; }
   const def = CHANNELS.find(c => c.type === type);
   if (!def) return;
@@ -1679,11 +1695,11 @@ async function createChannelInstance() {
   try {
     const res = await authFetch(API + '/api/v1/channel-instances', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name, channel_type: type, enabled: true, config })
+      body: JSON.stringify({ name, channel_type: type, enabled: true, agent_name, config })
     });
     const r = await res.json();
     if (r.ok) {
-      toast('✅ Đã tạo kênh: ' + name);
+      toast('✅ Đã tạo kênh: ' + name + (agent_name ? ' → Agent: ' + agent_name : ''));
       document.getElementById('add-channel-modal').style.display = 'none';
       loadChannelInstances();
     } else toast('❌ ' + r.error);
@@ -1715,6 +1731,7 @@ function renderChannelInstances(instances) {
           <span style="font-size:10px;color:var(--text2)">${def.name}</span>
         </div>
       </div>
+      ${inst.agent_name ? `<div style="padding:4px 12px;font-size:11px;color:var(--accent2)">🤖 Agent: <b>${inst.agent_name}</b> (đang lắng nghe & trả lời)</div>` : '<div style="padding:4px 12px;font-size:11px;color:var(--text2)">📤 Chỉ gửi — chưa gán agent</div>'}
       <div class="ch-fields">
         ${def.fields.filter(f=>f.type!=='info').map(f => {
           const val = cfg[f.key] || '';
