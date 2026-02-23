@@ -1291,8 +1291,9 @@ const CHANNELS = [
     {key:'webhook_verify_token',label:'Webhook Verify Token',type:'text',placeholder:'my_verify_token'},
   ]},
   {type:'webhook',name:'Webhook API',icon:'🔗',fields:[
-    {key:'webhook_url',label:'Inbound URL',type:'text',placeholder:'https://your-app.com/webhook'},
-    {key:'webhook_secret',label:'Secret',type:'password',placeholder:'shared secret for HMAC'},
+    {key:'_inbound_info',label:'Inbound Endpoint',type:'info',value: location.origin + '/api/v1/webhook/inbound'},
+    {key:'webhook_url',label:'Outbound URL (nhận reply)',type:'text',placeholder:'https://your-app.com/callback'},
+    {key:'webhook_secret',label:'Secret (HMAC-SHA256)',type:'password',placeholder:'shared secret for signature verification'},
   ]},
   {type:'slack',name:'Slack Bot',icon:'💼',fields:[
     {key:'bot_token',label:'Bot Token (xoxb-)',type:'password',placeholder:'xoxb-...', masked:true},
@@ -1316,6 +1317,10 @@ function renderChannelCards() {
       </div>
       <div class="ch-fields">
         ${def.fields.map(f => {
+          // Info fields: read-only display (e.g. auto-generated webhook inbound URL)
+          if (f.type === 'info') {
+            return `<label>${f.label}</label><div style="font-size:11px;background:var(--bg);padding:8px 10px;border-radius:6px;border:1px solid var(--border);color:var(--cyan);word-break:break-all;cursor:pointer" title="Click to copy" onclick="navigator.clipboard.writeText('${f.value}');this.style.borderColor='var(--green)';setTimeout(()=>this.style.borderColor='var(--border)',1500)">${f.value} 📋</div>`;
+          }
           let val = (saved && saved[f.key]) || '';
           // For masked fields (tokens/passwords), show indicator but keep actual input empty
           // so user can type new value. Don't pre-fill masked values.
@@ -1342,6 +1347,7 @@ async function saveChannel(type) {
     enabled: document.getElementById('ch-toggle-' + type)?.checked || false,
   };
   def.fields.forEach(f => {
+    if (f.type === 'info') return; // skip display-only fields
     const el = document.getElementById('ch-' + type + '-' + f.key);
     if (el) body[f.key] = el.value;
   });
@@ -2437,6 +2443,18 @@ function createGroup() {
   refreshChatSidebar();
   // Auto-select the new group
   selectGroupChat(_groups.length - 1);
+}
+
+// ═══ AGENT ICON HELPER ═══
+function agentIcon(role) {
+  switch(role) {
+    case 'coder': return '💻';
+    case 'researcher': return '🔬';
+    case 'writer': return '✍️';
+    case 'analyst': return '📊';
+    case 'translator': return '🌐';
+    default: return '🤖';
+  }
 }
 
 // ═══ CHAT SIDEBAR (2-Column Messenger) ═══

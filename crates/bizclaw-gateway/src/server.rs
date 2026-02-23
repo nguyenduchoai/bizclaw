@@ -245,6 +245,11 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/v1/webhook/whatsapp",
             get(super::routes::whatsapp_webhook_verify).post(super::routes::whatsapp_webhook),
+        )
+        // Generic webhook inbound — public, auth via HMAC signature
+        .route(
+            "/api/v1/webhook/inbound",
+            post(super::routes::webhook_inbound),
         );
 
     // SPA fallback — serve dashboard HTML for all frontend routes

@@ -413,6 +413,8 @@ pub struct ChannelConfig {
     pub email: Option<EmailChannelConfig>,
     #[serde(default)]
     pub whatsapp: Option<WhatsAppChannelConfig>,
+    #[serde(default)]
+    pub webhook: Option<WebhookChannelConfig>,
 }
 
 /// Zalo channel configuration.
@@ -588,6 +590,21 @@ pub struct WhatsAppChannelConfig {
     pub webhook_verify_token: String,
     #[serde(default)]
     pub business_id: String,
+}
+
+/// Generic Webhook channel configuration.
+/// Allows external systems (Zapier, n8n, custom APIs) to send messages to BizClaw
+/// and optionally receive outbound replies via a callback URL.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebhookChannelConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    /// Shared secret for HMAC-SHA256 signature verification on inbound webhooks.
+    #[serde(default)]
+    pub secret: String,
+    /// URL to POST outbound replies/messages to.
+    #[serde(default)]
+    pub outbound_url: String,
 }
 
 /// MCP server entry — one per [[mcp_servers]] in config.toml.

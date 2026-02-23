@@ -141,6 +141,12 @@ pub async fn get_config(State(state): State<Arc<AppState>>) -> Json<serde_json::
                 "access_token": mask_secret(&w.access_token),
                 "business_id": w.business_id,
             })),
+            "webhook": cfg.channel.webhook.as_ref().map(|wh| serde_json::json!({
+                "enabled": wh.enabled,
+                "secret": mask_secret(&wh.secret),
+                "secret_set": !wh.secret.is_empty(),
+                "outbound_url": wh.outbound_url,
+            })),
         },
     }))
 }
@@ -428,6 +434,20 @@ pub async fn update_channel(
                 business_id: String::new(),
             });
         }
+        "webhook" => {
+            let secret_val = req.get("webhook_secret").and_then(|v| v.as_str()).unwrap_or("");
+            let secret = if secret_val.contains('•') {
+                cfg.channel.webhook.as_ref().map(|wh| wh.secret.clone()).unwrap_or_default()
+            } else {
+                secret_val.to_string()
+            };
+            let outbound_url = req.get("webhook_url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            cfg.channel.webhook = Some(bizclaw_core::config::WebhookChannelConfig {
+                enabled,
+                secret,
+                outbound_url,
+            });
+        }
         _ => {
             return Json(
                 serde_json::json!({"ok": false, "error": format!("Unknown channel: {channel_type}")}),
@@ -473,7 +493,7 @@ pub async fn list_channels(State(state): State<Arc<AppState>>) -> Json<serde_jso
             {"name": "zalo", "type": "messaging", "status": if cfg.channel.zalo.as_ref().map_or(false, |z| z.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.zalo.is_some()},
             {"name": "discord", "type": "messaging", "status": if cfg.channel.discord.as_ref().map_or(false, |d| d.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.discord.is_some()},
             {"name": "email", "type": "messaging", "status": if cfg.channel.email.as_ref().map_or(false, |e| e.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.email.is_some()},
-            {"name": "webhook", "type": "api", "status": "available", "configured": false},
+            {"name": "webhook", "type": "api", "status": if cfg.channel.webhook.as_ref().map_or(false, |wh| wh.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.webhook.is_some()},
             {"name": "whatsapp", "type": "messaging", "status": if cfg.channel.whatsapp.as_ref().map_or(false, |w| w.enabled) { "active" } else { "disabled" }, "configured": cfg.channel.whatsapp.is_some()},
         ]
     }))
@@ -757,6 +777,128 @@ pub async fn whatsapp_webhook(
     }
 
     Json(serde_json::json!({"status": "ok"}))
+}
+
+// ---- Generic Webhook Inbound API ----
+
+/// Generic webhook inbound handler (POST).
+/// Receives messages from external systems (Zapier, n8n, custom apps).
+/// Expected JSON body: {"content": "...", "sender_id": "...", "thread_id": "...", "sender_name": "..."}
+/// Optional header: X-Webhook-Signature (HMAC-SHA256 of body using shared secret)
+pub async fn webhook_inbound(
+    State(state): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    body: String,
+) -> Json<serde_json::Value> {
+    // Check if webhook channel is enabled
+    let (enabled, secret, outbound_url) = {
+        let cfg = state.full_config.lock().unwrap();
+        match cfg.channel.webhook.as_ref() {
+            Some(wh) => (wh.enabled, wh.secret.clone(), wh.outbound_url.clone()),
+            None => {
+                return Json(serde_json::json!({
+                    "ok": false,
+                    "error": "Webhook channel not configured"
+                }));
+            }
+        }
+    };
+
+    if !enabled {
+        return Json(serde_json::json!({
+            "ok": false,
+            "error": "Webhook channel is disabled"
+        }));
+    }
+
+    // Verify signature if secret is configured
+    if !secret.is_empty() {
+        let signature = headers
+            .get("X-Webhook-Signature")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+
+        if signature.is_empty() {
+            return Json(serde_json::json!({
+                "ok": false,
+                "error": "Missing X-Webhook-Signature header"
+            }));
+        }
+
+        // HMAC-SHA256 verification
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(format!("{secret}{body}"));
+        let expected = format!("{:x}", hasher.finalize());
+        if expected != signature {
+            tracing::warn!("[webhook] Invalid signature from inbound request");
+            return Json(serde_json::json!({
+                "ok": false,
+                "error": "Invalid webhook signature"
+            }));
+        }
+    }
+
+    // Parse the JSON body
+    let payload: serde_json::Value = match serde_json::from_str(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            return Json(serde_json::json!({
+                "ok": false,
+                "error": format!("Invalid JSON: {e}")
+            }));
+        }
+    };
+
+    let content = payload["content"].as_str().unwrap_or("").to_string();
+    let sender_id = payload["sender_id"].as_str().unwrap_or("webhook-user").to_string();
+    let thread_id = payload["thread_id"].as_str().unwrap_or("webhook").to_string();
+
+    if content.is_empty() {
+        return Json(serde_json::json!({
+            "ok": false,
+            "error": "Missing 'content' field in webhook payload"
+        }));
+    }
+
+    tracing::info!("[webhook] Inbound from {sender_id} (thread={thread_id}): {content}");
+
+    // Process through Agent Engine
+    let response = {
+        let mut agent = state.agent.lock().await;
+        if let Some(agent) = agent.as_mut() {
+            match agent.process(&content).await {
+                Ok(r) => r,
+                Err(e) => format!("Error: {e}"),
+            }
+        } else {
+            "Agent not available".to_string()
+        }
+    };
+
+    // Optionally send reply to outbound URL
+    if !outbound_url.is_empty() {
+        let reply = serde_json::json!({
+            "thread_id": thread_id,
+            "sender_id": sender_id,
+            "content": response,
+            "channel": "webhook",
+        });
+        let client = reqwest::Client::new();
+        tokio::spawn(async move {
+            if let Err(e) = client.post(&outbound_url).json(&reply).send().await {
+                tracing::error!("[webhook] Outbound reply failed: {e}");
+            } else {
+                tracing::info!("[webhook] Outbound reply sent to {outbound_url}");
+            }
+        });
+    }
+
+    Json(serde_json::json!({
+        "ok": true,
+        "response": response,
+        "thread_id": thread_id,
+    }))
 }
 
 // ---- Scheduler API ----
