@@ -396,7 +396,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         }
     }
 
-    // Restore agents from DB (not flat file)
+    // Restore agents from DB (using sync Agent::new — no MCP to avoid startup hang)
     let db_agents = gateway_db.list_agents().unwrap_or_default();
     if !db_agents.is_empty() {
         tracing::info!(
@@ -415,7 +415,8 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
                 agent_cfg.identity.system_prompt = agent_rec.system_prompt.clone();
             }
             agent_cfg.identity.name = agent_rec.name.clone();
-            match bizclaw_agent::Agent::new_with_mcp(agent_cfg).await {
+            // Use sync Agent::new() for fast startup — MCP tools loaded lazily on first chat
+            match bizclaw_agent::Agent::new(agent_cfg) {
                 Ok(agent) => {
                     orchestrator.add_agent(&agent_rec.name, &agent_rec.role, &agent_rec.description, agent);
                     tracing::info!("  ✅ Agent '{}' restored ({})", agent_rec.name, agent_rec.role);

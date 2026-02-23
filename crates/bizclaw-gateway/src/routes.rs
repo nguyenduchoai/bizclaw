@@ -1406,16 +1406,9 @@ pub async fn create_agent(
     }
     agent_config.identity.name = name.to_string();
 
-    // CRITICAL: timeout to prevent deadlock — if Agent::new_with_mcp hangs
-    // (e.g., MCP server unreachable, brain GGUF loading), it blocks ALL orchestrator
-    // operations because the async Mutex is held by create→lock sequence.
-    let agent_result = tokio::time::timeout(
-        std::time::Duration::from_secs(30),
-        bizclaw_agent::Agent::new_with_mcp(agent_config),
-    ).await;
-
-    match agent_result {
-        Ok(Ok(agent)) => {
+    // Use sync Agent::new() — MCP tools are shared at orchestrator level
+    match bizclaw_agent::Agent::new(agent_config) {
+        Ok(agent) => {
             let provider = agent.provider_name().to_string();
             let model = agent.model_name().to_string();
             let system_prompt = agent.system_prompt().to_string();
@@ -1438,13 +1431,9 @@ pub async fn create_agent(
                 "total_agents": orch.agent_count(),
             }))
         }
-        Ok(Err(e)) => Json(serde_json::json!({
+        Err(e) => Json(serde_json::json!({
             "ok": false,
             "error": format!("Failed to create agent: {e}"),
-        })),
-        Err(_) => Json(serde_json::json!({
-            "ok": false,
-            "error": "Agent creation timed out (30s). Check provider/MCP connectivity.",
         })),
     }
 }
@@ -1530,16 +1519,10 @@ pub async fn update_agent(
         }
         agent_config.identity.name = name.clone();
 
-        // Create new agent WITH TIMEOUT — no lock held during this await
-        let agent_result = tokio::time::timeout(
-            std::time::Duration::from_secs(30),
-            bizclaw_agent::Agent::new_with_mcp(agent_config),
-        ).await;
-
-        // Re-acquire lock to swap agent
-        let mut orch = state.orchestrator.lock().await;
-        match agent_result {
-            Ok(Ok(new_agent)) => {
+        // Re-create agent with sync Agent::new() — fast, no MCP hang
+        match bizclaw_agent::Agent::new(agent_config) {
+            Ok(new_agent) => {
+                let mut orch = state.orchestrator.lock().await;
                 let role_str = role.unwrap_or("assistant").to_string();
                 let desc_str = description.unwrap_or("").to_string();
                 let agents_list = orch.list_agents();
@@ -1554,11 +1537,8 @@ pub async fn update_agent(
                 orch.add_agent(&name, &final_role, &final_desc, new_agent);
                 tracing::info!("🔄 Agent '{}' re-created with new provider/model", name);
             }
-            Ok(Err(e)) => {
+            Err(e) => {
                 tracing::warn!("⚠️ Agent '{}' re-create failed: {}", name, e);
-            }
-            Err(_) => {
-                tracing::warn!("⚠️ Agent '{}' re-create timed out (30s)", name);
             }
         }
     }
