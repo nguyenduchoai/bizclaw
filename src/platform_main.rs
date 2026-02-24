@@ -107,7 +107,7 @@ async fn main() -> Result<()> {
             _ => {
                 let hash = bizclaw_platform::auth::hash_password(&cli.admin_password)
                     .map_err(|e| anyhow::anyhow!("{e}"))?;
-                let id = db.create_user(&cli.admin_email, &hash, "admin")?;
+                let id = db.create_user(&cli.admin_email, &hash, "admin", None)?;
                 db.log_event(
                     "admin_created",
                     "system",
@@ -130,7 +130,7 @@ async fn main() -> Result<()> {
         println!("📝 No admin users found. Creating default admin...");
         let hash = bizclaw_platform::auth::hash_password("BizClaw@2026")
             .map_err(|e| anyhow::anyhow!("{e}"))?;
-        db.create_user("admin@bizclaw.vn", &hash, "admin")?;
+        db.create_user("admin@bizclaw.vn", &hash, "admin", None)?;
         println!("   Email:    admin@bizclaw.vn");
         println!("   Password: BizClaw@2026");
         println!("   ⚠️  Change this password after first login!\n");
