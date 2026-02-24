@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BizClaw — Admin Platform</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2312161e'/%3E%3Ctext x='50' y='70' font-size='55' text-anchor='middle'%3E%F0%9F%8F%A2%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -348,13 +349,32 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
   </div>
   <!-- Users -->
   <div id="page-users" class="hidden">
-    <h1>👥 Users</h1>
-    <div id="users-list"></div>
+    <h1>👥 Users <button class="btn btn-primary" onclick="showCreateUserModal()" style="margin-left:auto">+ Add User</button></h1>
+    <div id="users-list"><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div></div>
   </div>
   <!-- Audit -->
   <div id="page-audit" class="hidden">
     <h1>📋 Audit Log</h1>
-    <div id="audit-full"></div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="audit-filter-type" onchange="filterAuditEvents()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+        <option value="">All Events</option>
+        <option value="login_success">Login</option>
+        <option value="tenant_created">Tenant Created</option>
+        <option value="tenant_started">Tenant Started</option>
+        <option value="tenant_stopped">Tenant Stopped</option>
+        <option value="tenant_deleted">Tenant Deleted</option>
+        <option value="channel_configured">Channel Config</option>
+        <option value="config_updated">Config Updated</option>
+        <option value="agent_upserted">Agent Upserted</option>
+        <option value="agent_deleted">Agent Deleted</option>
+        <option value="user_created">User Created</option>
+        <option value="user_deleted">User Deleted</option>
+      </select>
+      <input type="date" id="audit-filter-date" onchange="filterAuditEvents()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;color-scheme:dark">
+      <button class="btn btn-outline btn-sm" onclick="clearAuditFilters()" style="align-self:center">✕ Clear</button>
+      <span id="audit-count" style="align-self:center;font-size:12px;color:var(--muted);margin-left:auto"></span>
+    </div>
+    <div id="audit-full"><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div></div>
   </div>
   <!-- Ollama / Brain Engine -->
   <div id="page-ollama" class="hidden">
@@ -446,6 +466,24 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
     <div class="actions">
       <button class="btn btn-outline" onclick="hideModal('modal-zalo-qr')">Huỷ</button>
       <button class="btn btn-green" onclick="saveZaloCookie()">💾 Lưu Cookie</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="modal-create-user" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>👤 Add User</h2>
+    <label>Email</label><input id="fu-email" type="email" placeholder="user@example.com">
+    <label>Password</label><input id="fu-password" type="password" placeholder="Minimum 8 characters">
+    <label>Role</label>
+    <select id="fu-role">
+      <option value="admin">Admin</option>
+      <option value="viewer">Viewer</option>
+    </select>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="hideModal('modal-create-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create</button>
     </div>
   </div>
 </div>
@@ -688,8 +726,133 @@ function esc(s){return (s||"").replace(/'/g,"\\'");}
 
 
 // ── Users & Audit ──────────────────────────────────
-async function loadUsers(){const d=await(await authFetch(API+'/users')).json();document.getElementById('users-list').innerHTML=(d.users||[]).map(u=>`<div class="card" style="margin-bottom:8px"><strong>${u.email}</strong> · ${u.role} · ${u.created_at}</div>`).join('')||'<p style="color:var(--muted)">No users yet</p>'}
-async function loadAudit(){const d=await(await authFetch(API+'/activity')).json();document.getElementById('audit-full').innerHTML=(d.events||[]).map(e=>`<div class="event"><div><div class="type">${e.event_type}</div><div class="meta">${e.actor_type} · ${e.actor_id}</div></div><div class="time">${e.created_at}</div></div>`).join('')}
+// ── Users (full CRUD) ──────────────────────────────────
+async function loadUsers(){
+  try {
+    const d=await(await authFetch(API+'/users')).json();
+    const users = d.users || [];
+    if(!users.length) {
+      document.getElementById('users-list').innerHTML=`
+        <div style="text-align:center;padding:40px;color:var(--muted)">
+          <p style="font-size:40px;margin-bottom:12px">👤</p>
+          <p style="font-size:16px;margin-bottom:8px">No users yet</p>
+          <p style="font-size:13px;margin-bottom:16px">Create the first admin user to get started.</p>
+          <button class="btn btn-primary" onclick="showCreateUserModal()">+ Add First User</button>
+        </div>`;
+      return;
+    }
+    document.getElementById('users-list').innerHTML=users.map(u => `
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong style="color:var(--accent)">${escapeHtml(u.email)}</strong>
+            <span class="badge ${u.role==='admin'?'running':'stopped'}" style="margin-left:8px">${escapeHtml(u.role)}</span>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">
+              Created: ${timeAgo(u.created_at)} · ID: <code style="font-size:10px">${(u.id||'').slice(0,8)}…</code>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-danger btn-sm" onclick="deleteUser('${esc(u.id)}','${esc(u.email)}')" title="Delete User">✕</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('users-list').innerHTML='<p style="color:var(--red);font-size:13px">❌ Failed to load users</p>';
+  }
+}
+function showCreateUserModal(){ document.getElementById('modal-create-user').classList.remove('hidden'); }
+async function createUser(){
+  const email=document.getElementById('fu-email').value.trim();
+  const password=document.getElementById('fu-password').value;
+  const role=document.getElementById('fu-role').value;
+  if(!email||!password){toast('Email and password required','error');return;}
+  if(password.length<8){toast('Password must be at least 8 characters','error');return;}
+  try{
+    const r=await(await authFetch(API+'/users',{method:'POST',body:JSON.stringify({email,password,role})})).json();
+    if(r.ok){hideModal('modal-create-user');toast('✅ User created');document.getElementById('fu-email').value='';document.getElementById('fu-password').value='';loadUsers();}
+    else{toast('❌ '+r.error,'error');}
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+async function deleteUser(id,email){
+  if(!confirm('Delete user "'+email+'"? This cannot be undone.'))return;
+  try{
+    const r=await(await authFetch(API+'/users/'+id,{method:'DELETE'})).json();
+    if(r.ok){toast('✅ User deleted');loadUsers();}
+    else{toast('❌ '+r.error,'error');}
+  }catch(e){toast('❌ '+e.message,'error');}
+}
+
+// ── Audit (with filters) ──────────────────────────────────
+let allAuditEvents = [];
+async function loadAudit(){
+  try {
+    const d=await(await authFetch(API+'/activity')).json();
+    allAuditEvents = d.events || [];
+    filterAuditEvents();
+  } catch(e) {
+    document.getElementById('audit-full').innerHTML='<p style="color:var(--red);font-size:13px">❌ Failed to load audit log</p>';
+  }
+}
+function filterAuditEvents(){
+  const typeFilter = document.getElementById('audit-filter-type')?.value || '';
+  const dateFilter = document.getElementById('audit-filter-date')?.value || '';
+  let filtered = allAuditEvents;
+  if(typeFilter) filtered = filtered.filter(e => e.event_type === typeFilter);
+  if(dateFilter) filtered = filtered.filter(e => (e.created_at||'').startsWith(dateFilter));
+  const countEl = document.getElementById('audit-count');
+  if(countEl) countEl.textContent = filtered.length + ' of ' + allAuditEvents.length + ' events';
+  if(!filtered.length) {
+    document.getElementById('audit-full').innerHTML=`
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <p style="font-size:40px;margin-bottom:12px">📋</p>
+        <p style="font-size:16px;margin-bottom:8px">${allAuditEvents.length ? 'No matching events' : 'No audit events yet'}</p>
+        <p style="font-size:13px">${allAuditEvents.length ? 'Try adjusting your filters.' : 'Events will appear as you use the platform.'}</p>
+      </div>`;
+    return;
+  }
+  document.getElementById('audit-full').innerHTML=filtered.map(e => {
+    const tb = eventTypeBadge(e.event_type);
+    return `<div class="event" style="padding:10px 0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">${tb.icon}</span>
+        <div>
+          <div class="type" style="display:flex;align-items:center;gap:6px">
+            ${escapeHtml(e.event_type)}
+            <span class="badge ${tb.cls}" style="font-size:9px">${tb.label}</span>
+          </div>
+          <div class="meta">${escapeHtml(e.actor_type)} · <code style="font-size:10px">${(e.actor_id||'').slice(0,12)}…</code>${e.details ? ' · '+escapeHtml(e.details) : ''}</div>
+        </div>
+      </div>
+      <div class="time">${timeAgo(e.created_at)}</div>
+    </div>`;
+  }).join('');
+}
+function clearAuditFilters(){
+  document.getElementById('audit-filter-type').value='';
+  document.getElementById('audit-filter-date').value='';
+  filterAuditEvents();
+}
+function eventTypeBadge(type){
+  const map = {
+    login_success: {icon:'🔑',label:'auth',cls:'running'},
+    tenant_created: {icon:'➕',label:'create',cls:'running'},
+    tenant_started: {icon:'▶️',label:'action',cls:'running'},
+    tenant_stopped: {icon:'⏹️',label:'action',cls:'stopped'},
+    tenant_deleted: {icon:'🗑️',label:'delete',cls:'error'},
+    tenant_restarted: {icon:'🔄',label:'action',cls:'running'},
+    tenant_pairing_reset: {icon:'🔑',label:'security',cls:'running'},
+    channel_configured: {icon:'📱',label:'channel',cls:'running'},
+    channel_deleted: {icon:'📱',label:'channel',cls:'error'},
+    config_updated: {icon:'⚙️',label:'config',cls:'running'},
+    agent_upserted: {icon:'🤖',label:'agent',cls:'running'},
+    agent_deleted: {icon:'🤖',label:'agent',cls:'error'},
+    user_created: {icon:'👤',label:'user',cls:'running'},
+    user_deleted: {icon:'👤',label:'user',cls:'error'},
+    pairing_success: {icon:'🔗',label:'pairing',cls:'running'},
+  };
+  return map[type] || {icon:'📝',label:'event',cls:'stopped'};
+}
 
 // ── Modals ──────────────────────────────────
 function showCreateModal(){document.getElementById('modal-create').classList.remove('hidden')}
@@ -703,14 +866,27 @@ async function createTenant(){
     model:document.getElementById('f-model').value,
     plan:document.getElementById('f-plan').value
   })});
-  hideModal('modal-create');toast('Tenant created!');loadPage();
+  hideModal('modal-create');toast('✅ Tenant created!');loadPage();
 }
 
 async function tenantAction(id,action){
-  if(action==='delete'&&!confirm('Delete this tenant?'))return;
+  const confirms = {
+    delete: 'Delete this tenant permanently? All data will be lost.',
+    stop: 'Stop this tenant? Connected channels will disconnect.',
+    restart: 'Restart this tenant? Brief downtime expected.',
+  };
+  if(confirms[action] && !confirm(confirms[action])) return;
   const method=action==='delete'?'DELETE':'POST';
   const url=action==='delete'?`${API}/tenants/${id}`:`${API}/tenants/${id}/${action}`;
-  await authFetch(url,{method});toast(`Tenant ${action}ed`);loadPage();
+  try {
+    const r=await(await authFetch(url,{method})).json();
+    if(r.ok){
+      toast('✅ Tenant '+action+'ed');
+      setTimeout(()=>loadPage(), 300);
+    } else {
+      toast('❌ '+(r.error||'Failed'), 'error');
+    }
+  } catch(e) { toast('❌ '+e.message, 'error'); }
 }
 function logout(){localStorage.removeItem('bizclaw_admin_token');authToken='';showLogin();}
 
