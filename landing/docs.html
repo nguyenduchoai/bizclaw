@@ -3,78 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hướng dẫn cài đặt BizClaw — Installation Guide</title>
-<meta name="description" content="Hướng dẫn cài đặt và cấu hình BizClaw — AI Agent mã nguồn mở cho doanh nghiệp Việt Nam.">
+<title>Hướng dẫn sử dụng BizClaw — Documentation</title>
+<meta name="description" content="Hướng dẫn cài đặt, cấu hình và sử dụng BizClaw — AI Agent Platform mã nguồn mở cho doanh nghiệp.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#08090d;--bg2:#0d1017;--surface:#12151e;--card:#161a26;--border:#1e2433;
   --text:#e8ecf4;--muted:#7c8599;--accent:#6366f1;--accent2:#818cf8;--accent-glow:rgba(99,102,241,.15);
-  --green:#34d399;--cyan:#22d3ee;--pink:#f472b6;--orange:#fb923c;
+  --green:#34d399;--cyan:#22d3ee;--pink:#f472b6;--orange:#fb923c;--red:#f85149;
+  --sidebar-w:280px;
 }
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
 
 /* NAV */
-.doc-nav{position:fixed;top:0;width:100%;z-index:100;padding:16px 0;background:rgba(8,9,13,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.doc-nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.doc-nav{position:fixed;top:0;width:100%;z-index:100;padding:14px 0;background:rgba(8,9,13,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.doc-nav-inner{max-width:1400px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
 .doc-nav a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s}
 .doc-nav a:hover{color:var(--accent2)}
-.doc-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--accent2)!important;text-decoration:none!important}
+.doc-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:var(--accent2)!important}
+.nav-right{display:flex;gap:16px;align-items:center}
+.lang-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:16px;cursor:pointer;font-size:12px;transition:.2s}
+.lang-btn:hover{border-color:var(--accent);color:var(--accent)}
 
 /* LAYOUT */
-.doc-wrapper{max-width:900px;margin:0 auto;padding:100px 24px 60px}
-.doc-hero{text-align:center;margin-bottom:48px}
-.doc-hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,5vw,42px);font-weight:800;line-height:1.2;margin-bottom:12px}
-.doc-hero h1 span{background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.doc-hero p{color:var(--muted);font-size:16px;max-width:600px;margin:0 auto}
+.doc-layout{display:flex;margin-top:56px;min-height:calc(100vh - 56px)}
 
-/* TOC */
-.toc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin-bottom:40px}
-.toc h3{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--accent2)}
-.toc ol{padding-left:20px}
-.toc li{margin-bottom:6px}
-.toc a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s}
-.toc a:hover{color:var(--accent2)}
+/* SIDEBAR */
+.doc-sidebar{position:fixed;top:56px;left:0;width:var(--sidebar-w);height:calc(100vh - 56px);overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;z-index:50}
+.doc-sidebar::-webkit-scrollbar{width:4px}
+.doc-sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.sidebar-group{margin-bottom:16px}
+.sidebar-label{padding:6px 20px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.sidebar-link{display:block;padding:6px 20px 6px 24px;font-size:13px;color:var(--muted);text-decoration:none;transition:all .15s;border-left:2px solid transparent}
+.sidebar-link:hover,.sidebar-link.active{color:var(--accent2);background:var(--accent-glow);border-left-color:var(--accent)}
 
-/* SECTIONS */
-.doc-section{margin-bottom:48px}
-.doc-section h2{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;margin-bottom:16px;padding-top:16px;border-top:1px solid var(--border);color:var(--text)}
-.doc-section h2:first-child{border-top:none;padding-top:0}
-.doc-section h3{font-size:18px;font-weight:600;margin:20px 0 10px;color:var(--accent2)}
-.doc-section p{color:var(--muted);margin-bottom:12px;font-size:15px}
-.doc-section ul,.doc-section ol{color:var(--muted);padding-left:20px;margin-bottom:12px;font-size:15px}
-.doc-section li{margin-bottom:4px}
+/* CONTENT */
+.doc-content{margin-left:var(--sidebar-w);flex:1;max-width:860px;padding:40px 48px 80px}
+.doc-content h1{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;margin-bottom:8px;letter-spacing:-1px}
+.doc-content h1 span{background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.doc-content>p.hero-sub{color:var(--muted);font-size:16px;margin-bottom:32px}
+.doc-content h2{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin:48px 0 16px;padding-top:20px;border-top:1px solid var(--border);color:var(--text);scroll-margin-top:72px}
+.doc-content h2:first-of-type{border-top:none;margin-top:24px}
+.doc-content h3{font-size:17px;font-weight:600;margin:24px 0 10px;color:var(--accent2);scroll-margin-top:72px}
+.doc-content p{color:var(--muted);margin-bottom:12px;font-size:15px}
+.doc-content ul,.doc-content ol{color:var(--muted);padding-left:20px;margin-bottom:12px;font-size:15px}
+.doc-content li{margin-bottom:4px}
+.doc-content a{color:var(--accent2);text-decoration:none}
+.doc-content a:hover{text-decoration:underline}
+.doc-content strong{color:var(--text)}
 
 /* CODE */
-pre{background:#0d1117;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:12px 0 20px;overflow-x:auto;font-family:'Space Grotesk',monospace;font-size:14px;line-height:1.6;color:#c9d1d9}
-pre .comment{color:#8b949e}
-pre .key{color:#79c0ff}
-pre .value{color:#a5d6ff}
-pre .string{color:#a5d6ff}
-pre .cmd{color:#58a6ff}
-pre .output{color:#8b949e}
-code{background:var(--surface);padding:2px 8px;border-radius:6px;font-family:'Space Grotesk',monospace;font-size:13px;color:var(--cyan)}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:12px 0 20px;overflow-x:auto;font-family:'JetBrains Mono','Space Grotesk',monospace;font-size:13px;line-height:1.65;color:#c9d1d9}
+code{background:var(--surface);padding:2px 7px;border-radius:5px;font-family:'JetBrains Mono','Space Grotesk',monospace;font-size:12.5px;color:var(--cyan)}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+.cm{color:#8b949e}.ky{color:#ff7b72}.st{color:#a5d6ff}.fn{color:#d2a8ff}.vl{color:#79c0ff}
 
-/* NOTE/TIP */
-.note{background:rgba(99,102,241,.08);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:var(--muted)}
-.note strong{color:var(--accent2)}
-.tip{background:rgba(52,211,153,.08);border-left:3px solid var(--green);border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:var(--muted)}
-.tip strong{color:var(--green)}
-.warn{background:rgba(251,146,60,.08);border-left:3px solid var(--orange);border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:var(--muted)}
-.warn strong{color:var(--orange)}
+/* NOTE/TIP/WARN */
+.note,.tip,.warn{border-radius:10px;padding:14px 18px;margin:14px 0;font-size:14px;color:var(--muted)}
+.note{background:rgba(99,102,241,.06);border-left:3px solid var(--accent)}.note strong{color:var(--accent2)}
+.tip{background:rgba(52,211,153,.06);border-left:3px solid var(--green)}.tip strong{color:var(--green)}
+.warn{background:rgba(251,146,60,.06);border-left:3px solid var(--orange)}.warn strong{color:var(--orange)}
 
 /* TABLE */
-table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:14px}
-th{text-align:left;padding:10px 14px;color:var(--accent2);border-bottom:2px solid var(--border);font-weight:600}
-td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13.5px}
+th{text-align:left;padding:10px 12px;color:var(--accent2);border-bottom:2px solid var(--border);font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--muted)}
 
 /* FOOTER */
-.doc-footer{text-align:center;padding:32px 0;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+.doc-footer{margin-left:var(--sidebar-w);text-align:center;padding:32px 24px;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
 .doc-footer a{color:var(--accent2);text-decoration:none}
+
+/* MOBILE */
+.menu-toggle{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer}
+@media(max-width:900px){
+  .doc-sidebar{transform:translateX(-100%);transition:transform .3s}
+  .doc-sidebar.open{transform:translateX(0)}
+  .doc-content,.doc-footer{margin-left:0}
+  .doc-content{padding:28px 20px 60px}
+  .menu-toggle{display:block}
+}
 </style>
 </head>
 <body>
@@ -82,436 +93,469 @@ td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--muted)}
 <!-- NAV -->
 <nav class="doc-nav">
   <div class="doc-nav-inner">
-    <a href="/" class="doc-logo">⚡ BizClaw</a>
-    <div style="display:flex;gap:20px;align-items:center">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="menu-toggle" onclick="document.querySelector('.doc-sidebar').classList.toggle('open')">☰</button>
+      <a href="/" class="doc-logo">⚡ BizClaw</a>
+      <span style="font-size:12px;color:var(--muted);background:var(--surface);padding:2px 8px;border-radius:6px">v0.2.0</span>
+    </div>
+    <div class="nav-right">
       <a href="/">Trang chủ</a>
       <a href="/docs.html" style="color:var(--accent2)">Hướng dẫn</a>
       <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank">GitHub</a>
+      <button class="lang-btn" onclick="toggleLang()">🌐 EN</button>
     </div>
   </div>
 </nav>
 
-<div class="doc-wrapper">
+<div class="doc-layout">
 
-<!-- HERO -->
-<div class="doc-hero">
-  <h1>📖 Hướng dẫn cài đặt <span>BizClaw</span></h1>
-  <p>Từ clone repo đến chạy AI Agent đầu tiên — chỉ mất 5 phút.</p>
-</div>
+<!-- SIDEBAR -->
+<aside class="doc-sidebar" id="sidebar">
+  <div class="sidebar-group">
+    <div class="sidebar-label" data-vi="Bắt đầu" data-en="Getting Started">Bắt đầu</div>
+    <a href="#overview" class="sidebar-link active" data-vi="Giới thiệu" data-en="Overview">Giới thiệu</a>
+    <a href="#requirements" class="sidebar-link" data-vi="Yêu cầu hệ thống" data-en="Requirements">Yêu cầu hệ thống</a>
+    <a href="#install" class="sidebar-link" data-vi="Cài đặt" data-en="Installation">Cài đặt</a>
+    <a href="#first-run" class="sidebar-link" data-vi="Chạy lần đầu" data-en="First Run">Chạy lần đầu</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-label" data-vi="Sử dụng" data-en="Usage">Sử dụng</div>
+    <a href="#dashboard" class="sidebar-link" data-vi="Web Dashboard" data-en="Web Dashboard">Web Dashboard</a>
+    <a href="#providers" class="sidebar-link" data-vi="AI Providers" data-en="AI Providers">AI Providers</a>
+    <a href="#agents" class="sidebar-link" data-vi="Agents & Gallery" data-en="Agents & Gallery">Agents & Gallery</a>
+    <a href="#group-chat" class="sidebar-link" data-vi="Group Chat" data-en="Group Chat">Group Chat</a>
+    <a href="#channels" class="sidebar-link" data-vi="Channels" data-en="Channels">Channels</a>
+    <a href="#knowledge" class="sidebar-link" data-vi="Knowledge RAG" data-en="Knowledge RAG">Knowledge RAG</a>
+    <a href="#scheduler" class="sidebar-link" data-vi="Scheduler" data-en="Scheduler">Scheduler</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-label" data-vi="Cấu hình" data-en="Configuration">Cấu hình</div>
+    <a href="#config" class="sidebar-link" data-vi="config.toml" data-en="config.toml">config.toml</a>
+    <a href="#identity" class="sidebar-link" data-vi="Identity (Nhân cách)" data-en="Identity">Identity (Nhân cách)</a>
+    <a href="#brain" class="sidebar-link" data-vi="Brain Engine" data-en="Brain Engine">Brain Engine</a>
+    <a href="#mcp" class="sidebar-link" data-vi="MCP Servers" data-en="MCP Servers">MCP Servers</a>
+    <a href="#security" class="sidebar-link" data-vi="Bảo mật" data-en="Security">Bảo mật</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-label" data-vi="Triển khai" data-en="Deployment">Triển khai</div>
+    <a href="#multitenant" class="sidebar-link" data-vi="Multi-Tenant" data-en="Multi-Tenant">Multi-Tenant</a>
+    <a href="#docker" class="sidebar-link" data-vi="Docker" data-en="Docker">Docker</a>
+    <a href="#raspberry" class="sidebar-link" data-vi="Raspberry Pi" data-en="Raspberry Pi">Raspberry Pi</a>
+    <a href="#systemd" class="sidebar-link" data-vi="Systemd Service" data-en="Systemd Service">Systemd Service</a>
+    <a href="#nginx" class="sidebar-link" data-vi="Nginx Reverse Proxy" data-en="Nginx Reverse Proxy">Nginx Reverse Proxy</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-label" data-vi="Tham khảo" data-en="Reference">Tham khảo</div>
+    <a href="#api" class="sidebar-link" data-vi="API Reference" data-en="API Reference">API Reference</a>
+    <a href="#env-vars" class="sidebar-link" data-vi="Biến môi trường" data-en="Environment Vars">Biến môi trường</a>
+    <a href="#crate-map" class="sidebar-link" data-vi="Crate Map" data-en="Crate Map">Crate Map</a>
+    <a href="#faq" class="sidebar-link" data-vi="FAQ" data-en="FAQ">FAQ</a>
+    <a href="#troubleshooting" class="sidebar-link" data-vi="Xử lý lỗi" data-en="Troubleshooting">Xử lý lỗi</a>
+  </div>
+</aside>
 
-<!-- TOC -->
-<div class="toc">
-  <h3>📋 Mục lục</h3>
-  <ol>
-    <li><a href="#requirements">Yêu cầu hệ thống</a></li>
-    <li><a href="#install">Cài đặt</a></li>
-    <li><a href="#config">Cấu hình (config.toml)</a></li>
-    <li><a href="#identity">Thiết lập Identity (nhân cách AI)</a></li>
-    <li><a href="#providers">Cấu hình AI Provider</a></li>
-    <li><a href="#brain">Brain Engine (LLM Offline)</a></li>
-    <li><a href="#channels">Kết nối Channels (Zalo, Telegram, Discord, Email)</a></li>
-    <li><a href="#mcp">MCP Servers (mở rộng Agent)</a></li>
-    <li><a href="#gateway">Gateway & Web Dashboard</a></li>
-    <li><a href="#security">Bảo mật & Autonomy</a></li>
-    <li><a href="#multitenant">Multi-Tenant Platform</a></li>
-    <li><a href="#docker">Docker</a></li>
-    <li><a href="#raspberry">Raspberry Pi</a></li>
-    <li><a href="#faq">FAQ</a></li>
-  </ol>
-</div>
+<!-- CONTENT -->
+<main class="doc-content">
 
-<!-- 1. REQUIREMENTS -->
-<div class="doc-section" id="requirements">
-  <h2>1. Yêu cầu hệ thống</h2>
-  <table>
-    <tr><th>Thành phần</th><th>Tối thiểu</th><th>Khuyến nghị</th></tr>
-    <tr><td>RAM</td><td>512MB</td><td>2GB+</td></tr>
-    <tr><td>Disk</td><td>100MB (binary)</td><td>2GB+ (có model LLM)</td></tr>
-    <tr><td>OS</td><td>Linux x64 / ARM64</td><td>Ubuntu 22.04+</td></tr>
-    <tr><td>Rust</td><td>1.75+</td><td>Stable mới nhất</td></tr>
-    <tr><td>Thiết bị</td><td>Raspberry Pi 3B+</td><td>VPS 1GB RAM</td></tr>
-  </table>
-  <div class="tip"><strong>💡 Tip:</strong> BizClaw là 1 file binary duy nhất, không cần runtime như Python/Node. Chỉ cần Rust compiler để build.</div>
-</div>
+<h1>📖 <span data-vi="Hướng dẫn sử dụng" data-en="Documentation">Hướng dẫn sử dụng</span> <span>BizClaw</span></h1>
+<p class="hero-sub" data-vi="Tài liệu đầy đủ từ cài đặt đến vận hành — AI Agent Platform mã nguồn mở cho doanh nghiệp." data-en="Complete guide from installation to production — Open-source AI Agent Platform for business.">Tài liệu đầy đủ từ cài đặt đến vận hành — AI Agent Platform mã nguồn mở cho doanh nghiệp.</p>
 
-<!-- 2. INSTALL -->
-<div class="doc-section" id="install">
-  <h2>2. Cài đặt</h2>
+<!-- OVERVIEW -->
+<h2 id="overview" data-vi="1. Giới thiệu" data-en="1. Overview">1. Giới thiệu</h2>
+<p data-vi="BizClaw là nền tảng AI Agent viết 100% bằng Rust, tự host hoàn toàn — dữ liệu không rời khỏi máy bạn. Hỗ trợ 15 AI providers, 9 kênh giao tiếp, 15 công cụ, MCP mở rộng vô hạn." data-en="BizClaw is an AI Agent platform built 100% in Rust, fully self-hosted — your data never leaves your machine. Supports 15 AI providers, 9 channels, 15 tools, unlimited MCP extensions.">BizClaw là nền tảng AI Agent viết 100% bằng Rust, tự host hoàn toàn — dữ liệu không rời khỏi máy bạn. Hỗ trợ 15 AI providers, 9 kênh giao tiếp, 15 công cụ, MCP mở rộng vô hạn.</p>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Language</td><td>100% Rust</td></tr>
+<tr><td>Crates</td><td>14</td></tr>
+<tr><td>Tests</td><td>115 passing</td></tr>
+<tr><td>Providers</td><td>15 + custom endpoint</td></tr>
+<tr><td>Channels</td><td>9 types</td></tr>
+<tr><td>Tools</td><td>15 native + MCP</td></tr>
+<tr><td>Agent Templates</td><td>51 business agents</td></tr>
+<tr><td>Dashboard</td><td>12 pages, bilingual VI/EN</td></tr>
+<tr><td>Binary Size</td><td>bizclaw ~13MB, platform ~7.9MB</td></tr>
+<tr><td>Security Score</td><td>Gateway 92/100, Platform 88/100</td></tr>
+</table>
 
-  <h3>2.1 Cài Rust (nếu chưa có)</h3>
-<pre><span class="cmd">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</span>
-<span class="cmd">source $HOME/.cargo/env</span>
-<span class="cmd">rustc --version</span>
-<span class="output"># rustc 1.82.0 (f6e511eec 2024-10-15)</span></pre>
+<!-- REQUIREMENTS -->
+<h2 id="requirements" data-vi="2. Yêu cầu hệ thống" data-en="2. System Requirements">2. Yêu cầu hệ thống</h2>
+<table>
+<tr><th data-vi="Thành phần" data-en="Component">Thành phần</th><th data-vi="Tối thiểu" data-en="Minimum">Tối thiểu</th><th data-vi="Khuyến nghị" data-en="Recommended">Khuyến nghị</th></tr>
+<tr><td>RAM</td><td>512MB</td><td>2GB+</td></tr>
+<tr><td>Disk</td><td>100MB</td><td>2GB+ (có model LLM)</td></tr>
+<tr><td>OS</td><td>Linux x64 / ARM64</td><td>Ubuntu 22.04+</td></tr>
+<tr><td>Rust</td><td>1.75+</td><td>Stable mới nhất</td></tr>
+<tr><td data-vi="Thiết bị" data-en="Device">Thiết bị</td><td>Raspberry Pi 3B+</td><td>VPS 1GB RAM</td></tr>
+</table>
+<div class="tip"><strong>💡 Tip:</strong> <span data-vi="BizClaw là 1 file binary duy nhất ~13MB. Không cần runtime Python/Node." data-en="BizClaw is a single ~13MB binary. No Python/Node runtime needed.">BizClaw là 1 file binary duy nhất ~13MB. Không cần runtime Python/Node.</span></div>
 
-  <h3>2.2 Clone & Build</h3>
-<pre><span class="cmd">git clone https://github.com/nguyenduchoai/bizclaw.git</span>
-<span class="cmd">cd bizclaw</span>
-<span class="cmd">cargo build --release</span>
-<span class="output"># Building... xong trong 2-5 phút tuỳ máy</span></pre>
+<!-- INSTALL -->
+<h2 id="install" data-vi="3. Cài đặt" data-en="3. Installation">3. Cài đặt</h2>
 
-  <h3>2.3 Chạy lần đầu</h3>
-<pre><span class="cmd">./target/release/bizclaw</span>
-<span class="output"># BizClaw v0.1.0 starting...</span>
-<span class="output"># Config: ~/.bizclaw/config.toml</span>
-<span class="output"># Gateway: http://127.0.0.1:3000</span></pre>
+<h3 data-vi="3.1 One-Click Install (Khuyến nghị)" data-en="3.1 One-Click Install (Recommended)">3.1 One-Click Install (Khuyến nghị)</h3>
+<pre>curl -sSL https://bizclaw.vn/install.sh | sudo bash</pre>
+<p data-vi="Script tự động: cài Rust, clone repo, build release, tạo systemd service, khởi chạy." data-en="Auto: install Rust, clone repo, build release, create systemd service, start.">Script tự động: cài Rust, clone repo, build release, tạo systemd service, khởi chạy.</p>
 
-  <div class="note"><strong>📝 Lần chạy đầu tiên:</strong> BizClaw sẽ tự tạo file <code>~/.bizclaw/config.toml</code> với cấu hình mặc định. Bạn có thể chỉnh sửa file này để tuỳ chỉnh.</div>
+<h3 data-vi="3.2 Docker Compose" data-en="3.2 Docker Compose">3.2 Docker Compose</h3>
+<pre>git clone https://github.com/nguyenduchoai/bizclaw.git
+cd bizclaw
+docker-compose up -d</pre>
 
-  <h3>2.4 Chạy với cấu hình tùy chỉnh</h3>
-<pre><span class="comment"># Dùng biến môi trường</span>
-<span class="cmd">BIZCLAW_CONFIG=/path/to/config.toml ./target/release/bizclaw</span>
+<h3 data-vi="3.3 Build from Source" data-en="3.3 Build from Source">3.3 Build from Source</h3>
+<pre><span class="cm"># Cài Rust (nếu chưa có)</span>
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
 
-<span class="comment"># Hoặc chạy ở chế độ serve (cho VPS)</span>
-<span class="cmd">./target/release/bizclaw serve --port 3000</span></pre>
-</div>
+<span class="cm"># Clone & build</span>
+git clone https://github.com/nguyenduchoai/bizclaw.git
+cd bizclaw
+cargo build --release
 
-<!-- 3. CONFIG -->
-<div class="doc-section" id="config">
-  <h2>3. Cấu hình (config.toml)</h2>
-  <p>File cấu hình chính nằm tại <code>~/.bizclaw/config.toml</code>. Dưới đây là cấu hình đầy đủ:</p>
+<span class="cm"># Chạy Gateway (standalone)</span>
+./target/release/bizclaw serve --port 3000
 
-<pre><span class="comment"># ═══ BizClaw Configuration ═══</span>
-<span class="comment"># Đường dẫn: ~/.bizclaw/config.toml</span>
+<span class="cm"># Hoặc chạy Platform (multi-tenant)</span>
+./target/release/bizclaw-platform --port 3001</pre>
 
-<span class="comment"># --- AI Provider mặc định ---</span>
-<span class="key">api_key</span> = <span class="string">"sk-your-openai-key"</span>
-<span class="key">default_provider</span> = <span class="string">"openai"</span>       <span class="comment"># openai | anthropic | gemini | deepseek | groq | ollama | brain</span>
-<span class="key">default_model</span> = <span class="string">"gpt-4o-mini"</span>
-<span class="key">default_temperature</span> = <span class="value">0.7</span>
+<!-- FIRST RUN -->
+<h2 id="first-run" data-vi="4. Chạy lần đầu" data-en="4. First Run">4. Chạy lần đầu</h2>
+<p data-vi="Sau khi cài đặt, truy cập Dashboard:" data-en="After installation, access the Dashboard:">Sau khi cài đặt, truy cập Dashboard:</p>
+<pre><span class="cm"># Platform mode</span>
+http://your-ip:3001
 
-<span class="comment"># --- Identity (Nhân cách AI) ---</span>
-[<span class="key">identity</span>]
-<span class="key">name</span> = <span class="string">"BizClaw"</span>
-<span class="key">persona</span> = <span class="string">"Trợ lý AI cho doanh nghiệp Việt Nam"</span>
-<span class="key">system_prompt</span> = <span class="string">"Bạn là trợ lý AI thông minh, trả lời bằng tiếng Việt."</span>
+<span class="cm"># Default Admin credentials</span>
+Email:    admin@bizclaw.vn
+Password: BizClaw@2026</pre>
+<div class="warn"><strong>⚠️</strong> <span data-vi="Đổi mật khẩu ngay sau lần đăng nhập đầu tiên!" data-en="Change password immediately after first login!">Đổi mật khẩu ngay sau lần đăng nhập đầu tiên!</span></div>
 
-<span class="comment"># --- Brain Engine (LLM Offline) ---</span>
-[<span class="key">brain</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-<span class="key">model_path</span> = <span class="string">"~/.bizclaw/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"</span>
-<span class="key">threads</span> = <span class="value">4</span>
-<span class="key">max_tokens</span> = <span class="value">256</span>
-<span class="key">context_length</span> = <span class="value">2048</span>
-<span class="key">cache_dir</span> = <span class="string">"~/.bizclaw/cache"</span>
-<span class="key">auto_download</span> = <span class="value">true</span>
-<span class="key">temperature</span> = <span class="value">0.7</span>
-<span class="key">top_p</span> = <span class="value">0.9</span>
-<span class="key">json_mode</span> = <span class="value">false</span>
+<p data-vi="Các bước tiếp theo:" data-en="Next steps:">Các bước tiếp theo:</p>
+<ol>
+<li data-vi="Vào Providers → nhập API Key (OpenAI, Gemini, Ollama...)" data-en="Go to Providers → enter API Key (OpenAI, Gemini, Ollama...)">Vào <strong>Providers</strong> → nhập API Key (OpenAI, Gemini, Ollama...)</li>
+<li data-vi="Vào Agents → tạo agent hoặc cài từ Gallery (51 mẫu)" data-en="Go to Agents → create an agent or install from Gallery (51 templates)">Vào <strong>Agents</strong> → tạo agent hoặc cài từ Gallery (51 mẫu)</li>
+<li data-vi="Vào Chat → bắt đầu trò chuyện real-time" data-en="Go to Chat → start chatting real-time">Vào <strong>Chat</strong> → bắt đầu trò chuyện real-time</li>
+<li data-vi="(Tùy chọn) Vào Channels → kết nối Telegram, Zalo, Discord..." data-en="(Optional) Go to Channels → connect Telegram, Zalo, Discord...">(Tùy chọn) Vào <strong>Channels</strong> → kết nối Telegram, Zalo, Discord...</li>
+</ol>
 
-<span class="comment"># Fallback khi brain không đủ sức</span>
-[<span class="key">brain.fallback</span>]
-<span class="key">provider</span> = <span class="string">"openai"</span>
-<span class="key">model</span> = <span class="string">"gpt-4o-mini"</span>
+<!-- DASHBOARD -->
+<h2 id="dashboard" data-vi="5. Web Dashboard" data-en="5. Web Dashboard">5. Web Dashboard</h2>
+<p data-vi="Dashboard 12 trang, song ngữ VI/EN, WebSocket real-time:" data-en="12-page dashboard, bilingual VI/EN, WebSocket real-time:">Dashboard 12 trang, song ngữ VI/EN, WebSocket real-time:</p>
+<table>
+<tr><th data-vi="Trang" data-en="Page">Trang</th><th data-vi="Mô tả" data-en="Description">Mô tả</th></tr>
+<tr><td>📊 Dashboard</td><td data-vi="Tổng quan hệ thống, server status, uptime" data-en="System overview, server status, uptime">Tổng quan hệ thống, server status, uptime</td></tr>
+<tr><td>💬 Chat</td><td data-vi="Trò chuyện real-time, chọn agent, WebSocket" data-en="Real-time chat, select agent, WebSocket">Trò chuyện real-time, chọn agent, WebSocket</td></tr>
+<tr><td>🤖 AI Agents</td><td data-vi="Tạo/sửa/xoá agent, chọn provider & model riêng" data-en="Create/edit/delete agents, per-agent provider & model">Tạo/sửa/xoá agent, chọn provider & model riêng</td></tr>
+<tr><td>🔌 Providers</td><td data-vi="Nhập API key, test kết nối, chọn model" data-en="Enter API key, test connection, select model">Nhập API key, test kết nối, chọn model</td></tr>
+<tr><td>📱 Channels</td><td data-vi="Cấu hình Telegram, Discord, Zalo, Webhook, Email" data-en="Configure Telegram, Discord, Zalo, Webhook, Email">Cấu hình Telegram, Discord, Zalo, Webhook, Email</td></tr>
+<tr><td>🛠️ Tools</td><td data-vi="15 built-in tools, bật/tắt theo nhu cầu" data-en="15 built-in tools, enable/disable as needed">15 built-in tools, bật/tắt theo nhu cầu</td></tr>
+<tr><td>🔗 MCP Servers</td><td data-vi="Thêm/xoá/bật/tắt MCP servers" data-en="Add/remove/toggle MCP servers">Thêm/xoá/bật/tắt MCP servers</td></tr>
+<tr><td>📚 Knowledge</td><td data-vi="Upload tài liệu, search RAG" data-en="Upload documents, RAG search">Upload tài liệu, search RAG</td></tr>
+<tr><td>🧠 Brain</td><td data-vi="Cấu hình Brain Engine, scan model GGUF" data-en="Configure Brain Engine, scan GGUF models">Cấu hình Brain Engine, scan model GGUF</td></tr>
+<tr><td>⏰ Scheduler</td><td data-vi="Tạo task chạy tự động theo lịch" data-en="Create automated scheduled tasks">Tạo task chạy tự động theo lịch</td></tr>
+<tr><td>📄 Settings</td><td data-vi="Provider mặc định, model, system prompt" data-en="Default provider, model, system prompt">Provider mặc định, model, system prompt</td></tr>
+<tr><td>🎨 Gallery</td><td data-vi="51 mẫu agent nghiệp vụ, cài 1 click" data-en="51 business agent templates, 1-click install">51 mẫu agent nghiệp vụ, cài 1 click</td></tr>
+</table>
 
-<span class="comment"># --- Memory ---</span>
-[<span class="key">memory</span>]
-<span class="key">backend</span> = <span class="string">"sqlite"</span>               <span class="comment"># sqlite | memory</span>
-<span class="key">auto_save</span> = <span class="value">true</span>
-<span class="key">embedding_provider</span> = <span class="string">"none"</span>    <span class="comment"># none | openai | local</span>
-<span class="key">vector_weight</span> = <span class="value">0.7</span>
-<span class="key">keyword_weight</span> = <span class="value">0.3</span>
+<!-- PROVIDERS -->
+<h2 id="providers" data-vi="6. AI Providers" data-en="6. AI Providers">6. AI Providers</h2>
+<p data-vi="BizClaw hỗ trợ 15 AI providers. Mỗi agent có thể chọn provider riêng → tiết kiệm 60-80% chi phí:" data-en="BizClaw supports 15 AI providers. Each agent can pick its own provider → save 60-80% on costs:">BizClaw hỗ trợ 15 providers. Mỗi agent chọn provider riêng → tiết kiệm 60-80% chi phí:</p>
+<table>
+<tr><th>Provider</th><th data-vi="Giá trị" data-en="Value">Giá trị</th><th data-vi="Ghi chú" data-en="Notes">Ghi chú</th></tr>
+<tr><td>OpenAI</td><td><code>openai</code></td><td>GPT-4o, GPT-4o-mini</td></tr>
+<tr><td>Anthropic</td><td><code>anthropic</code></td><td>Claude Sonnet, Haiku</td></tr>
+<tr><td>Google Gemini</td><td><code>gemini</code></td><td>Gemini Pro, Flash</td></tr>
+<tr><td>DeepSeek</td><td><code>deepseek</code></td><td data-vi="Giá rẻ, chất lượng cao" data-en="Cheap, high quality">Giá rẻ, chất lượng cao</td></tr>
+<tr><td>Groq</td><td><code>groq</code></td><td data-vi="Tốc độ cao (Llama 3)" data-en="High speed (Llama 3)">Tốc độ cao (Llama 3)</td></tr>
+<tr><td>Ollama</td><td><code>ollama</code></td><td data-vi="LLM local, miễn phí" data-en="Local LLM, free">LLM local, miễn phí</td></tr>
+<tr><td>Brain Engine</td><td><code>brain</code></td><td data-vi="GGUF offline, không cần internet" data-en="GGUF offline, no internet needed">GGUF offline, không cần internet</td></tr>
+<tr><td>OpenRouter</td><td><code>openrouter</code></td><td data-vi="Gateway cho nhiều model" data-en="Gateway for many models">Gateway cho nhiều model</td></tr>
+<tr><td>Together</td><td><code>together</code></td><td>Open-source models</td></tr>
+<tr><td>MiniMax</td><td><code>minimax</code></td><td data-vi="Model Trung Quốc" data-en="Chinese model">Model Trung Quốc</td></tr>
+<tr><td>xAI (Grok)</td><td><code>xai</code></td><td>Grok models</td></tr>
+<tr><td>Mistral</td><td><code>mistral</code></td><td>Mistral, Mixtral</td></tr>
+<tr><td>llama.cpp</td><td><code>llamacpp</code></td><td>Direct GGUF</td></tr>
+<tr><td>CLIProxy</td><td><code>cliproxy</code></td><td>CLI forwarding</td></tr>
+<tr><td>vLLM</td><td><code>vllm</code></td><td>High-throughput server</td></tr>
+</table>
+<div class="note"><strong>📝</strong> <span data-vi="API Key: đặt trong Dashboard (Providers) hoặc config.toml. Brain Engine/Ollama không cần API key." data-en="API Key: set in Dashboard (Providers) or config.toml. Brain Engine/Ollama don't need API keys.">API Key: đặt trong Dashboard (Providers) hoặc config.toml. Brain Engine/Ollama không cần API key.</span></div>
 
-<span class="comment"># --- Gateway (Web Server) ---</span>
-[<span class="key">gateway</span>]
-<span class="key">port</span> = <span class="value">3000</span>
-<span class="key">host</span> = <span class="string">"127.0.0.1"</span>              <span class="comment"># Đổi thành "0.0.0.0" cho VPS</span>
-<span class="key">require_pairing</span> = <span class="value">true</span>
+<!-- AGENTS -->
+<h2 id="agents" data-vi="7. Agents & Gallery" data-en="7. Agents & Gallery">7. Agents & Gallery</h2>
+<p data-vi="51 mẫu agent nghiệp vụ, 13 danh mục. Cài 1 click với system prompt chuyên sâu:" data-en="51 business agent templates, 13 categories. 1-click install with professional system prompts:">51 mẫu agent, 13 danh mục. Cài 1 click:</p>
+<p data-vi="HR (5) · Sales (5) · Finance (5) · Operations (5) · Legal (4) · Customer Service (3) · Marketing (5) · E-commerce (3) · Management (5) · Admin (3) · IT (3) · Business (3) · Training (2)" data-en="HR (5) · Sales (5) · Finance (5) · Operations (5) · Legal (4) · Customer Service (3) · Marketing (5) · E-commerce (3) · Management (5) · Admin (3) · IT (3) · Business (3) · Training (2)"><strong>HR</strong> (5) · <strong>Sales</strong> (5) · <strong>Finance</strong> (5) · <strong>Operations</strong> (5) · <strong>Legal</strong> (4) · <strong>Customer Service</strong> (3) · <strong>Marketing</strong> (5) · <strong>E-commerce</strong> (3) · <strong>Management</strong> (5) · <strong>Admin</strong> (3) · <strong>IT</strong> (3) · <strong>Business</strong> (3) · <strong>Training</strong> (2)</p>
 
-<span class="comment"># --- Autonomy (Bảo mật) ---</span>
-[<span class="key">autonomy</span>]
-<span class="key">level</span> = <span class="string">"supervised"</span>            <span class="comment"># supervised | autonomous | locked</span>
-<span class="key">workspace_only</span> = <span class="value">true</span>
-<span class="key">allowed_commands</span> = [<span class="string">"git"</span>, <span class="string">"npm"</span>, <span class="string">"cargo"</span>, <span class="string">"ls"</span>, <span class="string">"cat"</span>, <span class="string">"grep"</span>]
-<span class="key">forbidden_paths</span> = [<span class="string">"/etc"</span>, <span class="string">"/root"</span>, <span class="string">"/proc"</span>, <span class="string">"~/.ssh"</span>, <span class="string">"~/.gnupg"</span>, <span class="string">"~/.aws"</span>]
+<!-- GROUP CHAT -->
+<h2 id="group-chat" data-vi="8. Group Chat" data-en="8. Group Chat">8. Group Chat</h2>
+<p data-vi="Tạo nhóm nhiều agent, mỗi agent dùng provider khác nhau. Gửi 1 câu hỏi → tất cả phản hồi:" data-en="Create groups of agents with different providers. Send 1 question → all respond:">Tạo nhóm nhiều agent, mỗi agent dùng provider khác nhau. Gửi 1 câu hỏi → tất cả phản hồi:</p>
+<pre><span class="cm"># Ví dụ: Pitch nhà đầu tư</span>
+Bạn: "Chuẩn bị pitch cho Series A"
+  ├── 🧑‍💼 Chiến lược (Claude)  → TAM/SAM/SOM, moat
+  ├── 📊 Tài chính (DeepSeek)  → Unit economics
+  ├── 📣 Marketing (Gemini)    → Brand story
+  └── ⚖️ Pháp lý (Groq)       → Term sheet</pre>
 
-<span class="comment"># --- Runtime ---</span>
-[<span class="key">runtime</span>]
-<span class="key">kind</span> = <span class="string">"native"</span>                <span class="comment"># native | docker</span>
+<!-- CHANNELS -->
+<h2 id="channels" data-vi="9. Kết nối Channels" data-en="9. Channels">9. Kết nối Channels</h2>
 
-<span class="comment"># --- Tunnel ---</span>
-[<span class="key">tunnel</span>]
-<span class="key">provider</span> = <span class="string">"none"</span>               <span class="comment"># none | cloudflared | ngrok</span>
+<h3>Telegram</h3>
+<pre>[channel.telegram]
+enabled = true
+bot_token = "123456789:ABCdef..."
+allowed_chat_ids = [12345678]</pre>
 
-<span class="comment"># --- Secrets ---</span>
-[<span class="key">secrets</span>]
-<span class="key">encrypt</span> = <span class="value">true</span>                  <span class="comment"># Mã hoá AES-256 cho API keys</span></pre>
-</div>
+<h3>Discord</h3>
+<pre>[channel.discord]
+enabled = true
+bot_token = "your-discord-bot-token"
+allowed_channel_ids = [1234567890]</pre>
 
-<!-- 4. IDENTITY -->
-<div class="doc-section" id="identity">
-  <h2>4. Thiết lập Identity (Nhân cách AI)</h2>
-  <p>BizClaw cho phép bạn tạo nhân cách riêng cho AI — tên, cách nói, vai trò:</p>
-<pre>[<span class="key">identity</span>]
-<span class="key">name</span> = <span class="string">"Linh"</span>
-<span class="key">persona</span> = <span class="string">"Nhân viên tư vấn bất động sản chuyên nghiệp"</span>
-<span class="key">system_prompt</span> = <span class="string">"""
-Bạn là Linh, nhân viên tư vấn bất động sản của công ty ABC.
+<h3 data-vi="Zalo (Cá nhân + OA)" data-en="Zalo (Personal + OA)">Zalo (Cá nhân + OA)</h3>
+<pre>[channel.zalo]
+enabled = true
+mode = "personal"    <span class="cm"># personal | official</span>
+
+[channel.zalo.personal]
+cookie_path = "~/.bizclaw/zalo/cookie.json"
+imei = "your-device-imei"</pre>
+
+<h3>Webhook</h3>
+<p data-vi="Nhận HTTP POST từ bất kỳ hệ thống nào → AI xử lý → trả response." data-en="Receive HTTP POST from any system → AI processes → returns response.">Nhận HTTP POST từ bất kỳ hệ thống nào → AI xử lý → trả response.</p>
+
+<h3>Email (IMAP/SMTP)</h3>
+<p data-vi="Tự động đọc email qua IMAP polling, trả lời qua SMTP." data-en="Auto-read email via IMAP polling, reply via SMTP.">Tự động đọc email qua IMAP polling, trả lời qua SMTP.</p>
+
+<!-- KNOWLEDGE -->
+<h2 id="knowledge" data-vi="10. Knowledge RAG" data-en="10. Knowledge RAG">10. Knowledge RAG</h2>
+<p data-vi="Upload tài liệu (.md, .txt, .pdf, .docx, .csv) → hệ thống tự chunk, index FTS5 → agent tự search khi chat." data-en="Upload documents (.md, .txt, .pdf, .docx, .csv) → auto chunk, FTS5 index → agent auto-searches during chat.">Upload tài liệu → hệ thống chunk, index FTS5 → agent tự search khi chat.</p>
+
+<!-- SCHEDULER -->
+<h2 id="scheduler" data-vi="11. Scheduler" data-en="11. Scheduler">11. Scheduler</h2>
+<p data-vi="Tạo task hẹn giờ. Agent tự chạy background theo lịch." data-en="Create scheduled tasks. Agents run automatically in background.">Tạo task hẹn giờ. Agent tự chạy background theo lịch.</p>
+
+<!-- CONFIG -->
+<h2 id="config" data-vi="12. Cấu hình (config.toml)" data-en="12. Configuration (config.toml)">12. Cấu hình (config.toml)</h2>
+<p data-vi="File cấu hình chính tại" data-en="Main config file at">File cấu hình chính tại <code>~/.bizclaw/config.toml</code>:</p>
+<pre><span class="cm"># AI Provider mặc định</span>
+<span class="ky">api_key</span> = <span class="st">"sk-your-key"</span>
+<span class="ky">default_provider</span> = <span class="st">"openai"</span>
+<span class="ky">default_model</span> = <span class="st">"gpt-4o-mini"</span>
+
+[<span class="ky">identity</span>]
+<span class="ky">name</span> = <span class="st">"BizClaw"</span>
+<span class="ky">system_prompt</span> = <span class="st">"Bạn là trợ lý AI thông minh."</span>
+
+[<span class="ky">brain</span>]
+<span class="ky">enabled</span> = <span class="vl">true</span>
+<span class="ky">model_path</span> = <span class="st">"~/.bizclaw/models/tinyllama.gguf"</span>
+<span class="ky">threads</span> = <span class="vl">4</span>
+
+[<span class="ky">gateway</span>]
+<span class="ky">port</span> = <span class="vl">3000</span>
+<span class="ky">host</span> = <span class="st">"127.0.0.1"</span>
+
+[<span class="ky">autonomy</span>]
+<span class="ky">level</span> = <span class="st">"supervised"</span>
+<span class="ky">allowed_commands</span> = [<span class="st">"git"</span>, <span class="st">"npm"</span>, <span class="st">"cargo"</span>]
+
+[<span class="ky">secrets</span>]
+<span class="ky">encrypt</span> = <span class="vl">true</span></pre>
+
+<!-- IDENTITY -->
+<h2 id="identity" data-vi="13. Identity (Nhân cách AI)" data-en="13. Identity">13. Identity (Nhân cách AI)</h2>
+<pre>[<span class="ky">identity</span>]
+<span class="ky">name</span> = <span class="st">"Linh"</span>
+<span class="ky">persona</span> = <span class="st">"Nhân viên tư vấn bất động sản"</span>
+<span class="ky">system_prompt</span> = <span class="st">"""
+Bạn là Linh, nhân viên tư vấn BĐS công ty ABC.
 Luôn trả lời lịch sự, chuyên nghiệp, bằng tiếng Việt.
-Khi khách hỏi giá, hãy hỏi khu vực và ngân sách trước.
 """</span></pre>
-  <div class="tip"><strong>💡 Mẹo:</strong> Viết system prompt càng chi tiết, AI càng trả lời đúng phong cách bạn muốn.</div>
-</div>
+<div class="tip"><strong>💡</strong> <span data-vi="System prompt càng chi tiết, AI càng đúng phong cách. Dùng 3-Tier Memory: SOUL.md, MEMORY.md, USER.md." data-en="More detailed system prompt = better AI style. Use 3-Tier Memory: SOUL.md, MEMORY.md, USER.md.">System prompt càng chi tiết, AI càng đúng phong cách.</span></div>
 
-<!-- 5. PROVIDERS -->
-<div class="doc-section" id="providers">
-  <h2>5. Cấu hình AI Provider</h2>
-  <p>BizClaw hỗ trợ 8 AI providers. Chỉ cần đổi <code>default_provider</code> và <code>api_key</code>:</p>
-  <table>
-    <tr><th>Provider</th><th>Giá trị</th><th>Ghi chú</th></tr>
-    <tr><td>OpenAI</td><td><code>openai</code></td><td>GPT-4o, GPT-4o-mini</td></tr>
-    <tr><td>Anthropic</td><td><code>anthropic</code></td><td>Claude 3.5 Sonnet</td></tr>
-    <tr><td>Google Gemini</td><td><code>gemini</code></td><td>Gemini Pro, Flash</td></tr>
-    <tr><td>DeepSeek</td><td><code>deepseek</code></td><td>DeepSeek V3 (giá rẻ)</td></tr>
-    <tr><td>Groq</td><td><code>groq</code></td><td>Llama3 tốc độ cao</td></tr>
-    <tr><td>Ollama (local)</td><td><code>ollama</code></td><td>Chạy trên máy qua Ollama</td></tr>
-    <tr><td>Brain Engine</td><td><code>brain</code></td><td>LLM offline, GGUF format</td></tr>
-  </table>
-  <div class="note"><strong>📝 API Key:</strong> Đặt trong <code>config.toml</code> hoặc biến môi trường <code>BIZCLAW_API_KEY</code>. Nếu dùng Brain Engine (offline), không cần API key.</div>
-</div>
+<!-- BRAIN -->
+<h2 id="brain" data-vi="14. Brain Engine (LLM Offline)" data-en="14. Brain Engine (Offline LLM)">14. Brain Engine (LLM Offline)</h2>
+<pre><span class="cm"># Tải model GGUF</span>
+mkdir -p ~/.bizclaw/models
+wget -O ~/.bizclaw/models/tinyllama.gguf \
+  https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
 
-<!-- 6. BRAIN -->
-<div class="doc-section" id="brain">
-  <h2>6. Brain Engine (LLM Offline)</h2>
-  <p>Brain Engine cho phép chạy AI hoàn toàn offline. BizClaw dùng format <strong>GGUF</strong> (Rust native, không cần Python).</p>
+<span class="cm"># Hoặc dùng Ollama (đơn giản hơn)</span>
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama pull llama3.2
+ollama pull qwen3</pre>
+<div class="warn"><strong>⚠️ RAM:</strong> TinyLlama 1.1B Q4 ≈ 700MB. Qwen 3B Q4 ≈ 2GB.</div>
 
-  <h3>6.1 Tải model</h3>
-<pre><span class="comment"># Tạo thư mục models</span>
-<span class="cmd">mkdir -p ~/.bizclaw/models</span>
+<!-- MCP -->
+<h2 id="mcp" data-vi="15. MCP Servers" data-en="15. MCP Servers">15. MCP Servers</h2>
+<pre>[[<span class="ky">mcp_servers</span>]]
+<span class="ky">name</span> = <span class="st">"github"</span>
+<span class="ky">command</span> = <span class="st">"npx"</span>
+<span class="ky">args</span> = [<span class="st">"-y"</span>, <span class="st">"@modelcontextprotocol/server-github"</span>]
+[<span class="ky">mcp_servers.env</span>]
+<span class="ky">GITHUB_TOKEN</span> = <span class="st">"ghp_xxx"</span></pre>
+<table>
+<tr><th>Server</th><th data-vi="Mô tả" data-en="Description">Mô tả</th></tr>
+<tr><td>Filesystem</td><td data-vi="Đọc/ghi file" data-en="Read/write files">Đọc/ghi file</td></tr>
+<tr><td>GitHub</td><td>Issues, PRs, repos</td></tr>
+<tr><td>Memory</td><td data-vi="Bộ nhớ lâu dài" data-en="Long-term memory">Bộ nhớ lâu dài</td></tr>
+<tr><td>Brave Search</td><td data-vi="Tìm kiếm web" data-en="Web search">Tìm kiếm web</td></tr>
+<tr><td>Postgres</td><td data-vi="Truy vấn database" data-en="Database queries">Truy vấn database</td></tr>
+<tr><td>Puppeteer</td><td>Browser automation</td></tr>
+</table>
 
-<span class="comment"># Tải TinyLlama (1.1B, nhẹ, chạy trên Pi)</span>
-<span class="cmd">wget -O ~/.bizclaw/models/tinyllama.gguf \
-  https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf</span>
+<!-- SECURITY -->
+<h2 id="security" data-vi="16. Bảo mật" data-en="16. Security">16. Bảo mật</h2>
+<table>
+<tr><th data-vi="Tính năng" data-en="Feature">Tính năng</th><th data-vi="Chi tiết" data-en="Details">Chi tiết</th></tr>
+<tr><td>🔐 Mã hoá</td><td>AES-256 cho API keys, HMAC-SHA256</td></tr>
+<tr><td>🔑 Xác thực</td><td>JWT + bcrypt password hashing</td></tr>
+<tr><td>🛡️ Rate Limiting</td><td data-vi="5 lần/email/5 phút" data-en="5 attempts/email/5 min">5 lần/email/5 phút</td></tr>
+<tr><td>🧱 Sandbox</td><td>Command allowlist, workspace isolation</td></tr>
+<tr><td>🔒 Headers</td><td>HSTS, CSP, X-Frame-Options</td></tr>
+<tr><td>📋 Audit Log</td><td data-vi="Ghi nhận mọi thao tác admin" data-en="Logs all admin actions">Ghi nhận mọi thao tác admin</td></tr>
+</table>
 
-<span class="comment"># Hoặc dùng Qwen2.5 3B cho chất lượng tốt hơn</span>
-<span class="cmd">wget -O ~/.bizclaw/models/qwen2.5-3b.gguf \
-  https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf</span></pre>
+<!-- MULTITENANT -->
+<h2 id="multitenant" data-vi="17. Multi-Tenant Platform" data-en="17. Multi-Tenant Platform">17. Multi-Tenant Platform</h2>
+<table>
+<tr><th>Mode</th><th>Binary</th><th>Use Case</th></tr>
+<tr><td>Standalone</td><td><code>bizclaw</code></td><td data-vi="1 bot, cá nhân, test" data-en="1 bot, personal, test">1 bot, cá nhân, test</td></tr>
+<tr><td>Platform</td><td><code>bizclaw-platform</code></td><td data-vi="Nhiều bots, agency, production" data-en="Multiple bots, agency, production">Nhiều bots, agency, production</td></tr>
+</table>
+<pre>./target/release/bizclaw-platform --port 3001</pre>
 
-  <h3>6.2 Cấu hình brain</h3>
-<pre>[<span class="key">brain</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-<span class="key">model_path</span> = <span class="string">"~/.bizclaw/models/tinyllama.gguf"</span>
-<span class="key">threads</span> = <span class="value">4</span>            <span class="comment"># Số CPU cores (Pi 4 = 4)</span>
-<span class="key">max_tokens</span> = <span class="value">256</span>       <span class="comment"># Giới hạn output</span>
-<span class="key">context_length</span> = <span class="value">2048</span>  <span class="comment"># Ngữ cảnh tối đa</span>
-<span class="key">temperature</span> = <span class="value">0.7</span>
-<span class="key">auto_download</span> = <span class="value">true</span>   <span class="comment"># Tự tải model nếu chưa có</span></pre>
+<!-- DOCKER -->
+<h2 id="docker" data-vi="18. Docker" data-en="18. Docker">18. Docker</h2>
+<pre>docker-compose up -d
+<span class="cm"># Dashboard: http://localhost:3001</span></pre>
 
-  <div class="warn"><strong>⚠️ Lưu ý RAM:</strong> TinyLlama 1.1B Q4 ≈ 700MB RAM. Qwen 3B Q4 ≈ 2GB RAM. Chọn model phù hợp thiết bị.</div>
-</div>
+<!-- RASPBERRY -->
+<h2 id="raspberry" data-vi="19. Raspberry Pi" data-en="19. Raspberry Pi">19. Raspberry Pi</h2>
+<pre>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+git clone https://github.com/nguyenduchoai/bizclaw.git
+cd bizclaw && cargo build --release  <span class="cm"># ~5-10 phút trên Pi 4</span>
+./target/release/bizclaw serve</pre>
 
-<!-- 7. CHANNELS -->
-<div class="doc-section" id="channels">
-  <h2>7. Kết nối Channels</h2>
-  <p>BizClaw hỗ trợ 3 channels liên lạc. Bật channel nào thì AI sẽ tự trả lời trên kênh đó.</p>
-
-  <h3>7.1 Zalo (Unique cho Việt Nam 🇻🇳)</h3>
-<pre>[<span class="key">channel.zalo</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-<span class="key">mode</span> = <span class="string">"personal"</span>      <span class="comment"># personal | official</span>
-
-[<span class="key">channel.zalo.personal</span>]
-<span class="key">cookie_path</span> = <span class="string">"~/.bizclaw/zalo/cookie.json"</span>
-<span class="key">imei</span> = <span class="string">"your-device-imei"</span>
-<span class="key">self_listen</span> = <span class="value">false</span>
-<span class="key">auto_reconnect</span> = <span class="value">true</span>
-<span class="key">reconnect_delay_ms</span> = <span class="value">5000</span>
-
-<span class="comment"># Rate Limit (tránh bị khoá)</span>
-[<span class="key">channel.zalo.rate_limit</span>]
-<span class="key">max_messages_per_minute</span> = <span class="value">20</span>
-<span class="key">max_messages_per_hour</span> = <span class="value">200</span>
-<span class="key">cooldown_on_error_ms</span> = <span class="value">30000</span>
-
-<span class="comment"># Allowlist (chỉ trả lời người cho phép)</span>
-[<span class="key">channel.zalo.allowlist</span>]
-<span class="key">block_strangers</span> = <span class="value">true</span>
-<span class="key">user_ids</span> = [<span class="string">"friend-id-1"</span>, <span class="string">"friend-id-2"</span>]
-<span class="key">group_ids</span> = [<span class="string">"group-id-1"</span>]</pre>
-
-  <h3>7.2 Telegram</h3>
-<pre>[<span class="key">channel.telegram</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-<span class="key">bot_token</span> = <span class="string">"123456789:ABCdef..."</span>
-<span class="key">allowed_chat_ids</span> = [<span class="value">12345678</span>, <span class="value">87654321</span>]</pre>
-
-  <h3>7.3 Discord</h3>
-<pre>[<span class="key">channel.discord</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-<span class="key">bot_token</span> = <span class="string">"your-discord-bot-token"</span>
-<span class="key">allowed_channel_ids</span> = [<span class="value">1234567890</span>]</pre>
-</div>
-
-<!-- 8. MCP SERVERS -->
-<div class="doc-section" id="mcp">
-  <h2>8. MCP Servers (mở rộng Agent)</h2>
-  <p>BizClaw hỗ trợ <strong>Model Context Protocol (MCP)</strong> — chuẩn mở cho phép kết nối hàng trăm công cụ bên ngoài vào Agent: GitHub, Postgres, Brave Search, Browser automation, Memory...</p>
-
-  <h3>8.1 Cấu hình qua config.toml</h3>
-<pre><span class="comment"># Thêm MCP server vào config.toml</span>
-[[<span class="key">mcp_servers</span>]]
-<span class="key">name</span> = <span class="string">"filesystem"</span>
-<span class="key">command</span> = <span class="string">"npx"</span>
-<span class="key">args</span> = [<span class="string">"-y"</span>, <span class="string">"@modelcontextprotocol/server-filesystem"</span>, <span class="string">"/home"</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-
-[[<span class="key">mcp_servers</span>]]
-<span class="key">name</span> = <span class="string">"github"</span>
-<span class="key">command</span> = <span class="string">"npx"</span>
-<span class="key">args</span> = [<span class="string">"-y"</span>, <span class="string">"@modelcontextprotocol/server-github"</span>]
-<span class="key">enabled</span> = <span class="value">true</span>
-[<span class="key">mcp_servers.env</span>]
-<span class="key">GITHUB_TOKEN</span> = <span class="string">"ghp_xxx"</span></pre>
-
-  <h3>8.2 Quản lý qua Dashboard</h3>
-  <p>Vào <strong>🔗 MCP Servers</strong> trên sidebar → <strong>+ Add Server</strong> → Nhập name, command, args, env → Save. Bật/tắt và xoá server trực tiếp trên giao diện.</p>
-
-  <h3>8.3 MCP Servers phổ biến</h3>
-  <table>
-    <tr><th>Server</th><th>Command</th><th>Mô tả</th></tr>
-    <tr><td>Filesystem</td><td><code>npx -y @modelcontextprotocol/server-filesystem /path</code></td><td>Đọc/ghi file</td></tr>
-    <tr><td>GitHub</td><td><code>npx -y @modelcontextprotocol/server-github</code></td><td>Issues, PRs, repos</td></tr>
-    <tr><td>Memory</td><td><code>npx -y @modelcontextprotocol/server-memory</code></td><td>Bộ nhớ lâu dài</td></tr>
-    <tr><td>Brave Search</td><td><code>npx -y @modelcontextprotocol/server-brave-search</code></td><td>Tìm kiếm web</td></tr>
-    <tr><td>Postgres</td><td><code>npx -y @modelcontextprotocol/server-postgres "pg://..."</code></td><td>Truy vấn database</td></tr>
-    <tr><td>Puppeteer</td><td><code>npx -y @modelcontextprotocol/server-puppeteer</code></td><td>Browser automation</td></tr>
-  </table>
-  <div class="tip"><strong>💡 Danh sách đầy đủ:</strong> <a href="https://github.com/modelcontextprotocol/servers" target="_blank" style="color:var(--accent2)">github.com/modelcontextprotocol/servers</a></div>
-</div>
-
-<!-- 9. GATEWAY -->
-<div class="doc-section" id="gateway">
-  <h2>9. Gateway & Web Dashboard</h2>
-  <p>BizClaw đi kèm Web Dashboard để quản lý trực quan.</p>
-<pre>[<span class="key">gateway</span>]
-<span class="key">port</span> = <span class="value">3000</span>
-<span class="key">host</span> = <span class="string">"0.0.0.0"</span>     <span class="comment"># "0.0.0.0" cho VPS, "127.0.0.1" cho local</span>
-<span class="key">require_pairing</span> = <span class="value">true</span></pre>
-
-  <p>Truy cập web dashboard tại: <code>http://your-ip:3000</code></p>
-
-  <h3>8.1 Tunnel (public access)</h3>
-  <p>Nếu cần truy cập từ bên ngoài mạng nội bộ:</p>
-<pre>[<span class="key">tunnel</span>]
-<span class="key">provider</span> = <span class="string">"cloudflared"</span>  <span class="comment"># hoặc "ngrok"</span></pre>
-</div>
-
-<!-- 9. SECURITY -->
-<div class="doc-section" id="security">
-  <h2>10. Bảo mật & Autonomy</h2>
-  <p>BizClaw có 3 mức autonomy để kiểm soát AI chạy lệnh:</p>
-  <table>
-    <tr><th>Mức</th><th>Mô tả</th></tr>
-    <tr><td><code>locked</code></td><td>AI chỉ chat, không chạy lệnh hay truy cập file</td></tr>
-    <tr><td><code>supervised</code></td><td>AI chạy lệnh đã được phê duyệt (mặc định)</td></tr>
-    <tr><td><code>autonomous</code></td><td>AI tự do chạy lệnh (chỉ dùng khi tin tưởng)</td></tr>
-  </table>
-<pre>[<span class="key">autonomy</span>]
-<span class="key">level</span> = <span class="string">"supervised"</span>
-<span class="key">workspace_only</span> = <span class="value">true</span>              <span class="comment"># Chỉ truy cập thư mục workspace</span>
-<span class="key">allowed_commands</span> = [<span class="string">"git"</span>, <span class="string">"npm"</span>, <span class="string">"cargo"</span>]
-<span class="key">forbidden_paths</span> = [<span class="string">"/etc"</span>, <span class="string">"/root"</span>, <span class="string">"~/.ssh"</span>]
-
-[<span class="key">secrets</span>]
-<span class="key">encrypt</span> = <span class="value">true</span>                     <span class="comment"># Mã hoá API keys bằng AES-256</span></pre>
-</div>
-
-<!-- 10. MULTITENANT -->
-<div class="doc-section" id="multitenant">
-  <h2>11. Multi-Tenant Platform</h2>
-  <p>Chạy 50+ AI Agent trên 1 VPS — mỗi agent có config riêng, port riêng:</p>
-<pre><span class="comment"># Chạy BizClaw Platform (quản lý nhiều agent)</span>
-<span class="cmd">./target/release/bizclaw-platform</span>
-
-<span class="comment"># API quản lý tenant</span>
-<span class="cmd">POST /api/tenants         → Tạo tenant mới</span>
-<span class="cmd">GET  /api/tenants         → List tất cả tenants</span>
-<span class="cmd">POST /api/tenants/:id/start  → Khởi động agent</span>
-<span class="cmd">POST /api/tenants/:id/stop   → Dừng agent</span></pre>
-  <div class="note"><strong>📝 Cách hoạt động:</strong> Mỗi tenant là 1 process BizClaw riêng, có config file, database, và port riêng. TenantManager tự quản lý port từ base port.</div>
-</div>
-
-<!-- 11. DOCKER -->
-<div class="doc-section" id="docker">
-  <h2>12. Docker</h2>
-<pre><span class="comment"># Build Docker image</span>
-<span class="cmd">docker build -t bizclaw .</span>
-
-<span class="comment"># Chạy container</span>
-<span class="cmd">docker run -d \
-  --name bizclaw \
-  -p 3000:3000 \
-  -v ~/.bizclaw:/root/.bizclaw \
-  bizclaw</span></pre>
-</div>
-
-<!-- 12. RASPBERRY -->
-<div class="doc-section" id="raspberry">
-  <h2>13. Raspberry Pi</h2>
-  <p>BizClaw được tối ưu cho ARM — chạy mượt trên Pi 3B+ trở lên:</p>
-<pre><span class="comment"># Trên Raspberry Pi (ARM64)</span>
-<span class="cmd">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</span>
-<span class="cmd">git clone https://github.com/nguyenduchoai/bizclaw.git</span>
-<span class="cmd">cd bizclaw</span>
-<span class="cmd">cargo build --release</span>   <span class="comment"># ~5-10 phút trên Pi 4</span>
-
-<span class="comment"># Chạy với TinyLlama (phù hợp 1GB RAM)</span>
-<span class="cmd">./target/release/bizclaw</span></pre>
-
-  <h3>Chạy như service (khởi động tự động)</h3>
-<pre><span class="comment"># Tạo systemd service</span>
-<span class="cmd">sudo nano /etc/systemd/system/bizclaw.service</span>
-
-<span class="comment">[Unit]</span>
+<!-- SYSTEMD -->
+<h2 id="systemd" data-vi="20. Systemd Service" data-en="20. Systemd Service">20. Systemd Service</h2>
+<pre>[Unit]
 Description=BizClaw AI Agent
 After=network.target
 
-<span class="comment">[Service]</span>
+[Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/bizclaw
-ExecStart=/home/pi/bizclaw/target/release/bizclaw
+User=root
+ExecStart=/usr/local/bin/bizclaw-platform --port 3001
 Restart=always
-RestartSec=5
+Environment=RUST_LOG=info
+Environment=JWT_SECRET=your-secret
 
-<span class="comment">[Install]</span>
-WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target</pre>
+<pre>sudo systemctl enable bizclaw-platform
+sudo systemctl start bizclaw-platform</pre>
 
-<span class="comment"># Enable và start</span>
-<span class="cmd">sudo systemctl enable bizclaw</span>
-<span class="cmd">sudo systemctl start bizclaw</span></pre>
-</div>
+<!-- NGINX -->
+<h2 id="nginx" data-vi="21. Nginx Reverse Proxy" data-en="21. Nginx Reverse Proxy">21. Nginx Reverse Proxy</h2>
+<pre>server {
+    server_name apps.bizclaw.vn;
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}</pre>
 
-<!-- 13. FAQ -->
-<div class="doc-section" id="faq">
-  <h2>14. FAQ</h2>
+<!-- API -->
+<h2 id="api" data-vi="22. API Reference" data-en="22. API Reference">22. API Reference</h2>
+<h3>Gateway API</h3>
+<table>
+<tr><th>Method</th><th>Path</th><th>Description</th></tr>
+<tr><td>GET</td><td><code>/api/v1/info</code></td><td>System info</td></tr>
+<tr><td>GET</td><td><code>/api/v1/providers</code></td><td>List providers</td></tr>
+<tr><td>GET</td><td><code>/api/v1/agents</code></td><td>List agents</td></tr>
+<tr><td>POST</td><td><code>/api/v1/agents</code></td><td>Create agent</td></tr>
+<tr><td>POST</td><td><code>/api/v1/agents/{name}/chat</code></td><td>Chat with agent</td></tr>
+<tr><td>WS</td><td><code>/ws</code></td><td>WebSocket chat</td></tr>
+<tr><td>POST</td><td><code>/api/v1/knowledge/search</code></td><td>Search knowledge</td></tr>
+</table>
+<h3>Platform Admin API</h3>
+<table>
+<tr><th>Method</th><th>Path</th><th>Description</th></tr>
+<tr><td>GET</td><td><code>/api/admin/tenants</code></td><td>List tenants</td></tr>
+<tr><td>POST</td><td><code>/api/admin/tenants</code></td><td>Create tenant</td></tr>
+<tr><td>POST</td><td><code>/api/admin/tenants/:id/start</code></td><td>Start tenant</td></tr>
+<tr><td>POST</td><td><code>/api/admin/tenants/:id/stop</code></td><td>Stop tenant</td></tr>
+<tr><td>GET</td><td><code>/api/admin/tenants/:id/configs</code></td><td>Get configs</td></tr>
+<tr><td>POST</td><td><code>/api/admin/tenants/:id/configs</code></td><td>Set configs</td></tr>
+</table>
 
-  <h3>❓ BizClaw có cần internet không?</h3>
-  <p>Không bắt buộc. Nếu dùng Brain Engine (GGUF offline), hoạt động hoàn toàn offline. Nếu dùng cloud providers (OpenAI, Gemini...) thì cần internet.</p>
+<!-- ENV VARS -->
+<h2 id="env-vars" data-vi="23. Biến môi trường" data-en="23. Environment Variables">23. Biến môi trường</h2>
+<table>
+<tr><th data-vi="Biến" data-en="Variable">Biến</th><th data-vi="Mô tả" data-en="Description">Mô tả</th><th data-vi="Mặc định" data-en="Default">Mặc định</th></tr>
+<tr><td><code>BIZCLAW_CONFIG</code></td><td data-vi="Đường dẫn config" data-en="Config path">Đường dẫn config</td><td><code>~/.bizclaw/config.toml</code></td></tr>
+<tr><td><code>JWT_SECRET</code></td><td data-vi="JWT secret (⚠️ BẮT BUỘC production)" data-en="JWT secret (⚠️ REQUIRED for prod)">JWT secret (⚠️ BẮT BUỘC)</td><td>Random 256-bit</td></tr>
+<tr><td><code>RUST_LOG</code></td><td>Log level</td><td><code>info</code></td></tr>
+<tr><td><code>BIZCLAW_CORS_ORIGINS</code></td><td>CORS origins</td><td><code>*</code></td></tr>
+<tr><td><code>BIZCLAW_BIND_ALL</code></td><td>Bind 0.0.0.0</td><td><code>0</code></td></tr>
+</table>
 
-  <h3>❓ Có thể chạy nhiều AI cùng lúc?</h3>
-  <p>Có. Dùng Multi-Tenant Platform để chạy 50+ agent trên 1 VPS, mỗi agent config/port riêng.</p>
+<!-- CRATE MAP -->
+<h2 id="crate-map" data-vi="24. Crate Map" data-en="24. Crate Map">24. Crate Map</h2>
+<table>
+<tr><th>Crate</th><th data-vi="Mô tả" data-en="Description">Mô tả</th></tr>
+<tr><td><code>bizclaw-core</code></td><td>Traits, types, config, errors</td></tr>
+<tr><td><code>bizclaw-brain</code></td><td>GGUF inference + SIMD</td></tr>
+<tr><td><code>bizclaw-providers</code></td><td>15 LLM providers</td></tr>
+<tr><td><code>bizclaw-channels</code></td><td>9 channel types</td></tr>
+<tr><td><code>bizclaw-memory</code></td><td>SQLite + FTS5, Brain workspace</td></tr>
+<tr><td><code>bizclaw-tools</code></td><td>15 native tools + MCP bridge</td></tr>
+<tr><td><code>bizclaw-mcp</code></td><td>MCP client (JSON-RPC 2.0)</td></tr>
+<tr><td><code>bizclaw-security</code></td><td>AES-256, Sandbox</td></tr>
+<tr><td><code>bizclaw-agent</code></td><td>Agent orchestrator</td></tr>
+<tr><td><code>bizclaw-gateway</code></td><td>HTTP + WS + Dashboard</td></tr>
+<tr><td><code>bizclaw-knowledge</code></td><td>Knowledge RAG</td></tr>
+<tr><td><code>bizclaw-scheduler</code></td><td>Scheduled tasks</td></tr>
+<tr><td><code>bizclaw-runtime</code></td><td>Process adapters</td></tr>
+<tr><td><code>bizclaw-platform</code></td><td>Multi-tenant admin</td></tr>
+</table>
 
-  <h3>❓ License là gì?</h3>
-  <p><strong>MIT License</strong> — Tự do sử dụng, chỉnh sửa, phân phối cho mục đích cá nhân và thương mại. Hoàn toàn miễn phí.</p>
+<!-- FAQ -->
+<h2 id="faq" data-vi="25. FAQ" data-en="25. FAQ">25. FAQ</h2>
+<h3 data-vi="❓ Có cần internet không?" data-en="❓ Is internet required?">❓ Có cần internet không?</h3>
+<p data-vi="Không. Brain Engine + Ollama hoạt động hoàn toàn offline. Cloud providers (OpenAI...) cần internet." data-en="No. Brain Engine + Ollama work fully offline. Cloud providers need internet.">Không. Brain Engine + Ollama hoạt động hoàn toàn offline.</p>
 
-  <h3>❓ Làm sao cập nhật phiên bản mới?</h3>
-<pre><span class="cmd">cd bizclaw</span>
-<span class="cmd">git pull origin master</span>
-<span class="cmd">cargo build --release</span>
-<span class="cmd">sudo systemctl restart bizclaw</span>  <span class="comment"># nếu chạy như service</span></pre>
+<h3 data-vi="❓ License?" data-en="❓ License?">❓ License?</h3>
+<p data-vi="MIT — Tự do sử dụng cá nhân và thương mại. Miễn phí vĩnh viễn." data-en="MIT — Free for personal and commercial use. Free forever.">MIT — Miễn phí vĩnh viễn.</p>
 
-  <h3>❓ Gặp lỗi build trên ARM?</h3>
-  <p>Đảm bảo đã cài đầy đủ build tools:</p>
-<pre><span class="cmd">sudo apt-get update</span>
-<span class="cmd">sudo apt-get install -y build-essential pkg-config libssl-dev</span></pre>
-</div>
+<h3 data-vi="❓ Cập nhật phiên bản?" data-en="❓ How to update?">❓ Cập nhật?</h3>
+<pre>cd bizclaw && git pull && cargo build --release
+sudo systemctl restart bizclaw-platform</pre>
 
+<!-- TROUBLESHOOTING -->
+<h2 id="troubleshooting" data-vi="26. Xử lý lỗi" data-en="26. Troubleshooting">26. Xử lý lỗi</h2>
+
+<h3 data-vi="Lỗi build trên ARM" data-en="Build error on ARM">Lỗi build trên ARM</h3>
+<pre>sudo apt-get update
+sudo apt-get install -y build-essential pkg-config libssl-dev</pre>
+
+<h3 data-vi="Cross-compile lỗi" data-en="Cross-compile error">Cross-compile lỗi</h3>
+<p data-vi="⚠️ macOS binary KHÔNG chạy trên Linux VPS. Phải build trực tiếp trên VPS." data-en="⚠️ macOS binaries CANNOT run on Linux VPS. Must build directly on VPS.">⚠️ Phải build trực tiếp trên VPS, không cross-compile từ macOS.</p>
+
+<h3 data-vi="VPS cargo không tìm thấy" data-en="VPS cargo not found">VPS cargo not found</h3>
+<pre>source ~/.cargo/env</pre>
+
+<h3 data-vi="Text file busy" data-en="Text file busy">Text file busy</h3>
+<pre>sudo systemctl stop bizclaw-platform
+<span class="cm"># Rồi copy binary mới</span></pre>
+
+</main>
 </div>
 
 <!-- FOOTER -->
 <div class="doc-footer">
-  <p>⚡ <strong>BizClaw</strong> — Mã nguồn mở 100% — MIT License — Miễn phí mãi mãi</p>
+  <p>⚡ <strong>BizClaw</strong> v0.2.0 — <span data-vi="Mã nguồn mở 100% · MIT License · Miễn phí mãi mãi" data-en="100% Open Source · MIT License · Free forever">Mã nguồn mở 100% · MIT License · Miễn phí mãi mãi</span></p>
   <p style="margin-top:8px">
     <a href="/">Trang chủ</a> ·
     <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank">GitHub</a> ·
@@ -520,5 +564,39 @@ WantedBy=multi-user.target
   </p>
 </div>
 
+<script>
+// Language toggle
+let lang='vi';
+function toggleLang(){
+  lang=lang==='vi'?'en':'vi';
+  document.querySelectorAll('[data-vi]').forEach(el=>{
+    const v=el.getAttribute('data-'+lang);
+    if(v)el.textContent=v;
+  });
+  document.querySelector('.lang-btn').textContent=lang==='vi'?'🌐 EN':'🌐 VI';
+}
+
+// Active sidebar link on scroll
+const sections=document.querySelectorAll('h2[id]');
+const links=document.querySelectorAll('.sidebar-link');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100)cur=s.id;});
+  links.forEach(l=>{
+    l.classList.toggle('active',l.getAttribute('href')==='#'+cur);
+  });
+});
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){t.scrollIntoView({behavior:'smooth',block:'start'});
+      document.querySelector('.doc-sidebar').classList.remove('open');
+    }
+  });
+});
+</script>
 </body>
 </html>

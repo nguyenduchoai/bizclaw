@@ -440,7 +440,8 @@ async fn create_tenant(
     // Owner is the logged-in user (unless super-admin creates for someone else)
     let owner_id = claims.sub.clone();
 
-    match state.db.lock().unwrap().create_tenant(
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let create_result = state.db.lock().unwrap().create_tenant(
         &req.name,
         &slug,
         port,
@@ -448,7 +449,8 @@ async fn create_tenant(
         req.model.as_deref().unwrap_or("gpt-4o-mini"),
         req.plan.as_deref().unwrap_or("free"),
         Some(&owner_id),
-    ) {
+    );
+    match create_result {
         Ok(tenant) => {
             state
                 .db
@@ -514,7 +516,10 @@ async fn delete_tenant(
         return Json(serde_json::json!({"ok": false, "error": "Không có quyền xóa tenant này."}));
     }
     state.manager.lock().unwrap().stop_tenant(&id).ok();
-    match state.db.lock().unwrap().delete_tenant(&id) {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock.
+    // delete_tenant lock must be dropped before log_event acquires it again.
+    let delete_result = state.db.lock().unwrap().delete_tenant(&id);
+    match delete_result {
         Ok(()) => {
             state
                 .db
@@ -613,11 +618,26 @@ async fn restart_tenant(
         Err(e) => return Json(serde_json::json!({"ok": false, "error": e.to_string()})),
     };
 
-    let mut mgr = state.manager.lock().unwrap();
-    let db = state.db.lock().unwrap();
-    match mgr.restart_tenant(&tenant, &state.bizclaw_bin, &db) {
-        Ok(pid) => Json(serde_json::json!({"ok": true, "pid": pid})),
-        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let restart_result = {
+        let mut mgr = state.manager.lock().unwrap();
+        let db = state.db.lock().unwrap();
+        mgr.restart_tenant(&tenant, &state.bizclaw_bin, &db)
+    }; // Both locks dropped here
+    match restart_result {
+        Ok(pid) => {
+            state.db.lock().unwrap()
+                .update_tenant_status(&id, "running", Some(pid)).ok();
+            state.db.lock().unwrap()
+                .log_event("tenant_restarted", "admin", &id, None).ok();
+            sync_nginx_routing(&state);
+            Json(serde_json::json!({"ok": true, "pid": pid}))
+        }
+        Err(e) => {
+            state.db.lock().unwrap()
+                .update_tenant_status(&id, "error", None).ok();
+            Json(serde_json::json!({"ok": false, "error": e.to_string()}))
+        }
     }
 }
 
@@ -629,7 +649,9 @@ async fn reset_pairing(
     if !can_write_tenant(&claims, &id, &state.db.lock().unwrap()) {
         return Json(serde_json::json!({"ok": false, "error": "Không có quyền reset pairing code."}));
     }
-    match state.db.lock().unwrap().reset_pairing_code(&id) {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let reset_result = state.db.lock().unwrap().reset_pairing_code(&id);
+    match reset_result {
         Ok(code) => {
             state
                 .db
@@ -768,12 +790,9 @@ async fn validate_pairing(
     State(state): State<Arc<AdminState>>,
     Json(req): Json<PairingReq>,
 ) -> Json<serde_json::Value> {
-    match state
-        .db
-        .lock()
-        .unwrap()
-        .validate_pairing(&req.slug, &req.code)
-    {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let pairing_result = state.db.lock().unwrap().validate_pairing(&req.slug, &req.code);
+    match pairing_result {
         Ok(Some(tenant)) => {
             // Generate a session token for this tenant
             match crate::auth::create_token(&tenant.id, &tenant.slug, "tenant", Some(&tenant.id), &state.jwt_secret) {
@@ -805,9 +824,14 @@ async fn list_channels(
     Extension(claims): Extension<crate::auth::Claims>,
     Path(id): Path<String>,
 ) -> Json<serde_json::Value> {
-    if !can_access_tenant(&claims, &id, &state.db.lock().unwrap()) {
-        return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
-    }
+    // IMPORTANT: separate lock scopes — can_access_tenant lock must be dropped
+    // before list_channels acquires its own lock, otherwise Mutex deadlock.
+    {
+        let db = state.db.lock().unwrap();
+        if !can_access_tenant(&claims, &id, &db) {
+            return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
+        }
+    } // lock dropped here
     match state.db.lock().unwrap().list_channels(&id) {
         Ok(channels) => Json(serde_json::json!({"ok": true, "channels": channels})),
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
@@ -831,12 +855,10 @@ async fn upsert_channel(
         return Json(serde_json::json!({"ok": false, "error": "Không có quyền cấu hình tenant này."}));
     }
     let config_json = serde_json::to_string(&req.config).unwrap_or_default();
-    match state
-        .db
-        .lock()
-        .unwrap()
-        .upsert_channel(&id, &req.channel_type, req.enabled, &config_json)
-    {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let upsert_result = state.db.lock().unwrap()
+        .upsert_channel(&id, &req.channel_type, req.enabled, &config_json);
+    match upsert_result {
         Ok(channel) => {
             state
                 .db
@@ -866,7 +888,9 @@ async fn delete_channel(
     if !can_write_tenant(&claims, &tenant_id, &state.db.lock().unwrap()) {
         return Json(serde_json::json!({"ok": false, "error": "Không có quyền xóa channel."}));
     }
-    match state.db.lock().unwrap().delete_channel(&channel_id) {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let del_result = state.db.lock().unwrap().delete_channel(&channel_id);
+    match del_result {
         Ok(()) => {
             state
                 .db
@@ -1061,9 +1085,14 @@ async fn list_tenant_configs(
     Extension(claims): Extension<crate::auth::Claims>,
     Path(id): Path<String>,
 ) -> Json<serde_json::Value> {
-    if !can_access_tenant(&claims, &id, &state.db.lock().unwrap()) {
-        return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
-    }
+    // IMPORTANT: separate lock scopes — can_access_tenant lock must be dropped
+    // before list_configs acquires its own lock, otherwise Mutex deadlock.
+    {
+        let db = state.db.lock().unwrap();
+        if !can_access_tenant(&claims, &id, &db) {
+            return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
+        }
+    } // lock dropped here
     match state.db.lock().unwrap().list_configs(&id) {
         Ok(configs) => {
             let mut obj = serde_json::Map::new();
@@ -1132,9 +1161,14 @@ async fn list_tenant_agents(
     Extension(claims): Extension<crate::auth::Claims>,
     Path(id): Path<String>,
 ) -> Json<serde_json::Value> {
-    if !can_access_tenant(&claims, &id, &state.db.lock().unwrap()) {
-        return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
-    }
+    // IMPORTANT: separate lock scopes — can_access_tenant lock must be dropped
+    // before list_agents acquires its own lock, otherwise Mutex deadlock.
+    {
+        let db = state.db.lock().unwrap();
+        if !can_access_tenant(&claims, &id, &db) {
+            return Json(serde_json::json!({"ok": false, "error": "Không có quyền truy cập tenant này."}));
+        }
+    } // lock dropped here
     match state.db.lock().unwrap().list_agents(&id) {
         Ok(agents) => Json(serde_json::json!({"ok": true, "agents": agents})),
         Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
@@ -1200,7 +1234,9 @@ async fn delete_tenant_agent(
     if !can_write_tenant(&claims, &id, &state.db.lock().unwrap()) {
         return Json(serde_json::json!({"ok": false, "error": "Không có quyền xóa agent."}));
     }
-    match state.db.lock().unwrap().delete_agent_by_name(&id, &name) {
+    // IMPORTANT: separate lock scopes to avoid Mutex deadlock
+    let del_result = state.db.lock().unwrap().delete_agent_by_name(&id, &name);
+    match del_result {
         Ok(()) => {
             state.db.lock().unwrap().log_event(
                 "agent_deleted",
