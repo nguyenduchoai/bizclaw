@@ -193,7 +193,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
       <h2 style="color:var(--accent);margin-bottom:6px;font-size:20px">🏢 BizClaw Admin</h2>
       <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Đăng nhập để quản lý hệ thống</p>
       <div id="login-error" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
-      <input id="login-email" type="email" placeholder="Email" style="width:100%;padding:10px 14px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">
+      <input id="login-email" type="text" inputmode="email" autocomplete="email" placeholder="Email" style="width:100%;padding:10px 14px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">
       <input id="login-password" type="password" placeholder="Password" style="width:100%;padding:10px 14px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')doLogin()">
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="doLogin()">🔑 Đăng nhập</button>
       <div style="margin-top:16px;font-size:13px;color:var(--muted);text-align:center">
@@ -207,7 +207,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
       <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Tạo ngay một môi trường quản lý AI tự động</p>
       <div id="register-error" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
       <input id="register-company" type="text" placeholder="Tên công ty (Ví dụ: Vinamilk)" style="width:100%;padding:10px 14px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">
-      <input id="register-email" type="email" placeholder="Email quản trị" style="width:100%;padding:10px 14px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">
+      <input id="register-email" type="text" inputmode="email" autocomplete="email" placeholder="Email quản trị" style="width:100%;padding:10px 14px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">
       <input id="register-password" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)" style="width:100%;padding:10px 14px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')doRegister()">
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="doRegister()">🚀 Khởi tạo hệ thống</button>
       <div style="margin-top:16px;font-size:13px;color:var(--muted)">
@@ -221,7 +221,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
       <h2 style="color:var(--accent);margin-bottom:6px;font-size:20px">Lấy lại mật khẩu</h2>
       <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Nhập email để nhận link reset</p>
       <div id="forgot-error" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
-      <input id="forgot-email" type="email" placeholder="Email" style="width:100%;padding:10px 14px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')doForgotPassword()">
+      <input id="forgot-email" type="text" inputmode="email" autocomplete="email" placeholder="Email" style="width:100%;padding:10px 14px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')doForgotPassword()">
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" onclick="doForgotPassword()">Gửi link</button>
       <div style="margin-top:16px;font-size:13px;color:var(--muted)">
         <a href="#" onclick="showAuthBox('login-form-box')" style="color:var(--accent)">Quay lại đăng nhập</a>
@@ -510,7 +510,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <div id="modal-create-user" class="modal-overlay hidden">
   <div class="modal">
     <h2>👤 Add User</h2>
-    <label>Email</label><input id="fu-email" type="email" placeholder="user@example.com">
+    <label>Email</label><input id="fu-email" type="text" inputmode="email" autocomplete="email" placeholder="user@example.com">
     <label>Password</label><input id="fu-password" type="password" placeholder="Minimum 8 characters">
     <label>Role</label>
     <select id="fu-role">
