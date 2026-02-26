@@ -1,6 +1,6 @@
 //! HTTP server implementation using Axum.
 
-use axum::response::Html;
+
 use axum::{
     Json, Router,
     extract::State,
@@ -49,9 +49,14 @@ pub struct TelegramBotState {
     pub abort_handle: Arc<tokio::sync::Notify>,
 }
 
-/// Serve the dashboard HTML page.
-async fn dashboard_page() -> Html<&'static str> {
-    Html(super::dashboard::dashboard_html())
+/// Serve the dashboard HTML page (no-cache to prevent stale JS after deploys).
+async fn dashboard_page() -> axum::response::Response {
+    axum::response::Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .header("Cache-Control", "no-store, no-cache, must-revalidate")
+        .header("Pragma", "no-cache")
+        .body(axum::body::Body::from(super::dashboard::dashboard_html()))
+        .unwrap()
 }
 
 /// Pairing code auth middleware — validates X-Pairing-Code header or ?code= query.
