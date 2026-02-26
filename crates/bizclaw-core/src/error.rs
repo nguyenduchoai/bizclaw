@@ -88,6 +88,32 @@ pub enum BizClawError {
     #[error("Rate limited: {0}")]
     RateLimited(String),
 
+    // Orchestration errors
+    #[error("Delegation error: {0}")]
+    Delegation(String),
+
+    #[error("Agent not found: {0}")]
+    AgentNotFound(String),
+
+    #[error("No permission: {0}")]
+    NoPermission(String),
+
+    #[error("Team error: {0}")]
+    Team(String),
+
+    #[error("Handoff error: {0}")]
+    Handoff(String),
+
+    #[error("Evaluate loop error: {0}")]
+    EvaluateLoop(String),
+
+    #[error("Quality gate failed: {0}")]
+    QualityGate(String),
+
+    // Database errors
+    #[error("Database error: {0}")]
+    Database(String),
+
     #[error("{0}")]
     Other(String),
 }

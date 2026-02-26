@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use axum::extract::DefaultBodyLimit;
+use bizclaw_db::DataStore;
 
 /// Shared state for the gateway server.
 #[derive(Clone)]
@@ -36,6 +37,8 @@ pub struct AppState {
     pub telegram_bots: Arc<tokio::sync::Mutex<HashMap<String, TelegramBotState>>>,
     /// Per-tenant SQLite database for persistent CRUD (providers, agents, channels, settings).
     pub db: Arc<super::db::GatewayDb>,
+    /// Orchestration DataStore — delegations, teams, handoffs, traces.
+    pub orch_store: Arc<dyn bizclaw_db::DataStore>,
 }
 
 /// State for an active Telegram bot connected to an agent.
@@ -240,6 +243,15 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             "/api/v1/agents/broadcast",
             post(super::routes::agent_broadcast),
         )
+        // Orchestration API
+        .route("/api/v1/orchestration/delegate", post(super::routes::orch_delegate))
+        .route("/api/v1/orchestration/handoff", post(super::routes::orch_handoff))
+        .route("/api/v1/orchestration/handoff/{session_id}", axum::routing::delete(super::routes::orch_clear_handoff))
+        .route("/api/v1/orchestration/evaluate", post(super::routes::orch_evaluate))
+        .route("/api/v1/orchestration/links", get(super::routes::orch_list_links).post(super::routes::orch_create_link))
+        .route("/api/v1/orchestration/links/{id}", axum::routing::delete(super::routes::orch_delete_link))
+        .route("/api/v1/orchestration/delegations", get(super::routes::orch_list_delegations))
+        .route("/api/v1/orchestration/traces", get(super::routes::orch_list_traces))
         // Gallery API
         .route("/api/v1/gallery", get(super::routes::gallery_list))
         .route("/api/v1/gallery", post(super::routes::gallery_create))
@@ -438,8 +450,32 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
     };
     let gateway_db = Arc::new(gateway_db);
 
-    // Initialize Multi-Agent Orchestrator
-    let mut orchestrator = bizclaw_agent::orchestrator::Orchestrator::new();
+    // Initialize Orchestration DataStore (SQLite — same directory as gateway.db)
+    let orch_db_path = config_path
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("orchestration.db");
+    let orch_store: Arc<dyn bizclaw_db::DataStore> = match bizclaw_db::SqliteStore::open(&orch_db_path) {
+        Ok(store) => {
+            let store = Arc::new(store);
+            // Run migrations
+            if let Err(e) = store.migrate().await {
+                tracing::error!("❌ Orchestration DB migration failed: {e}");
+            } else {
+                tracing::info!("🔗 Orchestration DB initialized: {}", orch_db_path.display());
+            }
+            store
+        }
+        Err(e) => {
+            tracing::warn!("⚠️ Orchestration DB failed, using in-memory: {e}");
+            let store = Arc::new(bizclaw_db::SqliteStore::in_memory().unwrap());
+            let _ = store.migrate().await;
+            store
+        }
+    };
+
+    // Initialize Multi-Agent Orchestrator with DataStore
+    let mut orchestrator = bizclaw_agent::orchestrator::Orchestrator::with_store(orch_store.clone());
 
     // Migrate from legacy agents.json if it exists AND DB is empty
     let agents_path = config_path
@@ -565,6 +601,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         knowledge: Arc::new(tokio::sync::Mutex::new(knowledge)),
         telegram_bots: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
         db: gateway_db,
+        orch_store,
     };
 
     let state_arc = Arc::new(state);

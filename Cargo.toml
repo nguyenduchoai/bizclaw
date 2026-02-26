@@ -15,6 +15,7 @@ members = [
     "crates/bizclaw-gateway",
     "crates/bizclaw-agent",
     "crates/bizclaw-platform",
+    "crates/bizclaw-db",
 ]
 
 [workspace.package]
@@ -81,6 +82,8 @@ lettre = { version = "0.11", features = ["tokio1-native-tls", "builder"] }
 imap = "2"
 native-tls = "0.2"
 mail-parser = "0.9"
+# Database abstraction
+sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "chrono", "json", "uuid", "migrate"] }
 
 # Internal crates
 bizclaw-core = { path = "crates/bizclaw-core" }
@@ -96,6 +99,7 @@ bizclaw-agent = { path = "crates/bizclaw-agent" }
 bizclaw-mcp = { path = "crates/bizclaw-mcp" }
 bizclaw-scheduler = { path = "crates/bizclaw-scheduler" }
 bizclaw-knowledge = { path = "crates/bizclaw-knowledge" }
+bizclaw-db = { path = "crates/bizclaw-db" }
 
 [package]
 name = "bizclaw"
@@ -119,6 +123,7 @@ bizclaw-mcp.workspace = true
 bizclaw-scheduler.workspace = true
 bizclaw-knowledge.workspace = true
 bizclaw-gateway.workspace = true
+bizclaw-db.workspace = true
 bizclaw-platform = { path = "crates/bizclaw-platform" }
 tokio.workspace = true
 clap.workspace = true

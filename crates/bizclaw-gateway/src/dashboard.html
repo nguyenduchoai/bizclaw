@@ -174,6 +174,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <a href="/tools" onclick="navigateTo(event,'tools')" id="nav-tools">🛠️ <span data-i18n="nav.tools">Công cụ</span></a>
       <a href="/mcp" onclick="navigateTo(event,'mcp')" id="nav-mcp">🔗 <span data-i18n="nav.mcp">Máy chủ MCP</span></a>
       <a href="/agents" onclick="navigateTo(event,'agents')" id="nav-agents">🤖 <span data-i18n="nav.agents">AI Agent</span></a>
+      <a href="/orchestration" onclick="navigateTo(event,'orchestration')" id="nav-orchestration">🔀 <span data-i18n="nav.orchestration">Orchestration</span></a>
       <a href="/gallery" onclick="navigateTo(event,'gallery')" id="nav-gallery">📦 <span data-i18n="nav.gallery">Gallery</span></a>
       <a href="/knowledge" onclick="navigateTo(event,'knowledge')" id="nav-knowledge">📚 <span data-i18n="nav.knowledge">Kho tri thức</span></a>
       <a href="/scheduler" onclick="navigateTo(event,'scheduler')" id="nav-scheduler">⏰ <span data-i18n="nav.scheduler">Lịch trình</span></a>
@@ -636,6 +637,54 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
 
+    <!-- ═══ ORCHESTRATION ═══ -->
+    <div id="page-orchestration" style="display:none">
+      <div class="page-header"><div><h1>🔀 <span data-i18n="orch.title">Orchestration</span></h1><div class="sub" data-i18n="orch.subtitle">Delegation, Handoff, Evaluate Loop, Permission Links, LLM Traces</div></div></div>
+      <div class="stats">
+        <div class="card"><div class="card-label" data-i18n="orch.delegations">Delegations</div><div class="card-value accent" id="orch-delegations">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="orch.links">Permission Links</div><div class="card-value green" id="orch-links">0</div></div>
+        <div class="card"><div class="card-label" data-i18n="orch.traces">LLM Traces</div><div class="card-value blue" id="orch-traces">0</div></div>
+      </div>
+
+      <!-- Delegate Form -->
+      <div class="card" style="margin-top:16px">
+        <h3>📋 <span data-i18n="orch.delegate_title">Giao việc (Delegate)</span></h3>
+        <div class="ch-fields">
+          <label data-i18n="orch.from_agent">Agent giao việc</label>
+          <select id="orch-from" style="width:100%"><option value="">— Chọn agent —</option></select>
+          <label data-i18n="orch.to_agent">Agent nhận việc</label>
+          <select id="orch-to" style="width:100%"><option value="">— Chọn agent —</option></select>
+          <label data-i18n="orch.task">Nội dung công việc</label>
+          <input id="orch-task" placeholder="Viết báo cáo doanh thu tháng này...">
+          <label>Mode</label>
+          <select id="orch-mode" style="width:100%"><option value="sync">Sync (chờ kết quả)</option><option value="async">Async (chạy nền)</option></select>
+        </div>
+        <div style="margin-top:12px"><button class="btn btn-primary" onclick="orchDelegate()">🚀 Delegate</button></div>
+        <div id="orch-delegate-result" style="margin-top:12px;display:none" class="card"></div>
+      </div>
+
+      <!-- Delegation History -->
+      <div class="card" style="margin-top:16px">
+        <h3>📜 <span data-i18n="orch.history">Lịch sử Delegation</span></h3>
+        <div id="orch-delegation-list" style="font-size:13px"><div style="color:var(--text2);text-align:center;padding:20px">Đang tải...</div></div>
+      </div>
+
+      <!-- Permission Links -->
+      <div class="card" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>🔗 <span data-i18n="orch.perm_links">Permission Links</span></h3>
+          <button class="btn btn-primary btn-sm" onclick="orchCreateLink()">+ Thêm Link</button>
+        </div>
+        <div id="orch-links-list" style="font-size:13px;margin-top:8px"><div style="color:var(--text2);text-align:center;padding:20px">Đang tải...</div></div>
+      </div>
+
+      <!-- LLM Traces -->
+      <div class="card" style="margin-top:16px">
+        <h3>📊 <span data-i18n="orch.llm_traces">LLM Traces</span></h3>
+        <div id="orch-traces-list" style="font-size:13px"><div style="color:var(--text2);text-align:center;padding:20px">Đang tải...</div></div>
+      </div>
+    </div>
+
     <!-- ═══ MULTI-AGENT ═══ -->
     <div id="page-agents" style="display:none">
       <div class="page-header"><div><h1>🤖 <span data-i18n="agents.title">AI Agent</span></h1><div class="sub" data-i18n="agents.subtitle">Tạo và quản lý nhiều Agent AI — mỗi agent có nhà cung cấp & mô hình riêng</div></div>
@@ -953,6 +1002,7 @@ function showPage(name, pushState) {
   if (name === 'knowledge') loadKnowledgeDocs();
   if (name === 'brain') loadBrainFiles();
   if (name === 'scheduler') loadSchedulerPage();
+  if (name === 'orchestration') loadOrchestrationPage();
   if (name === 'groups') { navigateTo(null, 'chat'); return; } // redirect groups to chat
 }
 
@@ -966,7 +1016,7 @@ window.addEventListener('popstate', (ev) => {
 function getPageFromPath() {
   const path = location.pathname.replace(/^\//, '').replace(/\/$/, '');
   // Map valid page names
-  const validPages = ['dashboard','chat','settings','providers','channels','tools','brain','configfile','mcp','agents','gallery','knowledge','scheduler'];
+  const validPages = ['dashboard','chat','settings','providers','channels','tools','brain','configfile','mcp','agents','orchestration','gallery','knowledge','scheduler'];
   if (path === 'groups') return 'chat'; // redirect groups page to chat
   if (!path || path === '' || !validPages.includes(path)) return 'dashboard';
   return path;
@@ -3729,6 +3779,192 @@ function toast(msg) {
   setTimeout(() => t.remove(), 3000);
 }
 
+// ═══ ORCHESTRATION PAGE ═══
+async function loadOrchestrationPage() {
+  try {
+    // Load agents into the delegate dropdowns
+    const res = await fetch('/api/v1/agents', { headers: authHeaders() });
+    if (res.ok) {
+      const data = await res.json();
+      const agents = data.agents || [];
+      const fromSel = document.getElementById('orch-from');
+      const toSel = document.getElementById('orch-to');
+      fromSel.innerHTML = '<option value="">— Chọn agent —</option>';
+      toSel.innerHTML = '<option value="">— Chọn agent —</option>';
+      agents.forEach(a => {
+        const name = a.name || a.id || '';
+        const role = a.role || '';
+        const opt = `<option value="${esc(name)}">${esc(name)} (${esc(role)})</option>`;
+        fromSel.innerHTML += opt;
+        toSel.innerHTML += opt;
+      });
+    }
+  } catch(e) { console.error('loadOrchestrationPage agents:', e); }
+
+  // Load stats & lists
+  orchLoadDelegations();
+  orchLoadLinks();
+  orchLoadTraces();
+}
+
+async function orchDelegate() {
+  const from = document.getElementById('orch-from').value;
+  const to = document.getElementById('orch-to').value;
+  const task = document.getElementById('orch-task').value;
+  const mode = document.getElementById('orch-mode').value;
+  if (!from || !to || !task) { toast('⚠️ Vui lòng chọn agent và nhập nội dung công việc'); return; }
+  const resultDiv = document.getElementById('orch-delegate-result');
+  resultDiv.style.display = '';
+  resultDiv.innerHTML = '<div class="pulse" style="color:var(--accent)">⏳ Đang delegate...</div>';
+  try {
+    const res = await fetch('/api/v1/orchestration/delegate', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, task, mode })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      resultDiv.innerHTML = `<div style="color:var(--green)">✅ Delegation thành công</div>
+        <pre style="font-size:12px;margin-top:8px;max-height:200px;overflow:auto;background:var(--bg2);padding:8px;border-radius:6px;color:var(--text)">${esc(JSON.stringify(data, null, 2))}</pre>`;
+      document.getElementById('orch-task').value = '';
+      orchLoadDelegations();
+    } else {
+      resultDiv.innerHTML = `<div style="color:var(--red)">❌ ${esc(data.error || 'Delegation failed')}</div>`;
+    }
+  } catch(e) {
+    resultDiv.innerHTML = `<div style="color:var(--red)">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+async function orchLoadDelegations() {
+  const container = document.getElementById('orch-delegation-list');
+  try {
+    const res = await fetch('/api/v1/orchestration/delegations?agent=*&limit=50', { headers: authHeaders() });
+    const data = await res.json();
+    const list = data.delegations || [];
+    document.getElementById('orch-delegations').textContent = list.length;
+    if (list.length === 0) {
+      container.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">Chưa có delegation nào</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Từ</th><th>Đến</th><th>Task</th><th>Status</th><th>Thời gian</th></tr></thead><tbody>';
+    list.forEach(d => {
+      const status = d.status || 'pending';
+      const badgeClass = status === 'completed' ? 'badge-green' : status === 'error' ? 'badge-red' : 'badge-yellow';
+      html += `<tr>
+        <td>${esc(d.from || '')}</td>
+        <td>${esc(d.to || '')}</td>
+        <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.task || '')}</td>
+        <td><span class="badge ${badgeClass}">${esc(status)}</span></td>
+        <td style="font-size:11px;color:var(--text2)">${esc(d.created_at || d.timestamp || '')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+async function orchCreateLink() {
+  // Simple prompt-based quick create
+  const from = prompt('Agent nguồn (from):');
+  if (!from) return;
+  const to = prompt('Agent đích (to):');
+  if (!to) return;
+  const permsInput = prompt('Permissions (phân cách bằng dấu phẩy, VD: delegate,chat,read):', 'delegate,chat');
+  if (!permsInput) return;
+  const permissions = permsInput.split(',').map(p => p.trim()).filter(Boolean);
+  try {
+    const res = await fetch('/api/v1/orchestration/links', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, permissions })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      toast('✅ Permission link created');
+      orchLoadLinks();
+    } else {
+      toast('❌ ' + (data.error || 'Failed to create link'));
+    }
+  } catch(e) {
+    toast('❌ ' + e.message);
+  }
+}
+
+async function orchDeleteLink(id) {
+  if (!confirm('Xóa permission link này?')) return;
+  try {
+    const res = await fetch('/api/v1/orchestration/links/' + encodeURIComponent(id), {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (res.ok) {
+      toast('✅ Link đã xóa');
+      orchLoadLinks();
+    } else {
+      toast('❌ Không thể xóa');
+    }
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function orchLoadLinks() {
+  const container = document.getElementById('orch-links-list');
+  try {
+    const res = await fetch('/api/v1/orchestration/links', { headers: authHeaders() });
+    const data = await res.json();
+    const links = data.links || [];
+    document.getElementById('orch-links').textContent = links.length;
+    if (links.length === 0) {
+      container.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">Chưa có permission link nào</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Từ</th><th>Đến</th><th>Quyền</th><th></th></tr></thead><tbody>';
+    links.forEach(l => {
+      const perms = (l.permissions || []).map(p => `<span class="badge badge-blue">${esc(p)}</span>`).join(' ');
+      html += `<tr>
+        <td>${esc(l.from || '')}</td>
+        <td>${esc(l.to || '')}</td>
+        <td>${perms}</td>
+        <td><button class="btn btn-red btn-sm" onclick="orchDeleteLink('${esc(l.id || '')}')" style="padding:2px 8px;font-size:11px">🗑️</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+async function orchLoadTraces() {
+  const container = document.getElementById('orch-traces-list');
+  try {
+    const res = await fetch('/api/v1/orchestration/traces?limit=50', { headers: authHeaders() });
+    const data = await res.json();
+    const traces = data.traces || [];
+    document.getElementById('orch-traces').textContent = traces.length;
+    if (traces.length === 0) {
+      container.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">Chưa có LLM trace nào</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Agent</th><th>Provider</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Thời gian</th></tr></thead><tbody>';
+    traces.forEach(tr => {
+      const tokens = (tr.prompt_tokens || 0) + (tr.completion_tokens || 0);
+      const latency = tr.latency_ms ? tr.latency_ms + 'ms' : '—';
+      html += `<tr>
+        <td>${esc(tr.agent || '')}</td>
+        <td>${esc(tr.provider || '')}</td>
+        <td style="font-size:12px;color:var(--cyan)">${esc(tr.model || '')}</td>
+        <td><span class="badge badge-purple">${tokens}</span></td>
+        <td style="font-size:12px">${latency}</td>
+        <td style="font-size:11px;color:var(--text2)">${esc(tr.created_at || tr.timestamp || '')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);text-align:center;padding:12px">❌ ${esc(e.message)}</div>`;
+  }
+}
+
 // ═══ i18n ═══
 let currentLang = localStorage.getItem('bizclaw_lang') || 'vi';
 const I18N = {
@@ -3738,7 +3974,13 @@ const I18N = {
     'nav.providers':'Nhà cung cấp','nav.channels':'Kênh liên lạc','nav.tools':'Công cụ',
     'nav.brain':'Brain Engine','nav.mcp':'Máy chủ MCP','nav.agents':'AI Agent',
     'nav.gallery':'Gallery','nav.knowledge':'Kho tri thức','nav.config':'Tệp cấu hình',
-    'nav.scheduler':'Lịch trình',
+    'nav.scheduler':'Lịch trình','nav.orchestration':'Điều phối',
+    // Orchestration
+    'orch.title':'Điều phối','orch.subtitle':'Ủy quyền, Chuyển giao, Vòng lặp đánh giá, Liên kết quyền, LLM Traces',
+    'orch.delegations':'Ủy quyền','orch.links':'Liên kết quyền','orch.traces':'LLM Traces',
+    'orch.delegate_title':'Giao việc (Delegate)','orch.from_agent':'Agent giao việc','orch.to_agent':'Agent nhận việc',
+    'orch.task':'Nội dung công việc','orch.history':'Lịch sử Delegation',
+    'orch.perm_links':'Liên kết quyền','orch.llm_traces':'LLM Traces',
     'gallery.title':'Gallery','gallery.subtitle':'50 mẫu agent template + tự tạo. Upload file MD mở rộng khả năng.',
     // Dashboard
     'dash.title':'Bảng điều khiển','dash.subtitle':'Trung tâm quản lý Agent Gateway',
@@ -3845,7 +4087,13 @@ const I18N = {
     'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools',
     'nav.brain':'Brain Engine','nav.mcp':'MCP Servers','nav.agents':'AI Agent',
     'nav.gallery':'Gallery','nav.knowledge':'Knowledge','nav.config':'Config File',
-    'nav.scheduler':'Scheduler',
+    'nav.scheduler':'Scheduler','nav.orchestration':'Orchestration',
+    // Orchestration
+    'orch.title':'Orchestration','orch.subtitle':'Delegation, Handoff, Evaluate Loop, Permission Links, LLM Traces',
+    'orch.delegations':'Delegations','orch.links':'Permission Links','orch.traces':'LLM Traces',
+    'orch.delegate_title':'Delegate Task','orch.from_agent':'From Agent','orch.to_agent':'To Agent',
+    'orch.task':'Task Content','orch.history':'Delegation History',
+    'orch.perm_links':'Permission Links','orch.llm_traces':'LLM Traces',
     'gallery.title':'Gallery','gallery.subtitle':'50 agent templates + custom. Upload MD files to extend capabilities.',
     // Dashboard
     'dash.title':'Dashboard','dash.subtitle':'Agent Gateway Control Panel',

@@ -14,6 +14,7 @@ bizclaw-tools.workspace = true
 bizclaw-security.workspace = true
 bizclaw-mcp.workspace = true
 bizclaw-knowledge.workspace = true
+bizclaw-db.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
