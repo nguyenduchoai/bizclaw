@@ -1,6 +1,8 @@
 //! Unified OpenAI-compatible provider.
 //!
 //! A single struct that handles chat completions for ALL OpenAI-compatible APIs.
+//! Includes Anthropic prompt caching support (cache_control) — inspired by
+//! OpenFang's approach to minimize token costs on repeated system prompts.
 //! Different providers are distinguished only by endpoint URL, auth style, and API key.
 
 use async_trait::async_trait;
@@ -150,27 +152,66 @@ impl Provider for OpenAiCompatibleProvider {
             return Err(BizClawError::ApiKeyMissing(self.name.clone()));
         }
 
+        let is_anthropic = self.name == "anthropic" || self.base_url.contains("anthropic");
+
         // Build request body — standard OpenAI format
         let mut body = json!({
             "model": params.model,
-            "messages": messages,
             "temperature": params.temperature,
             "max_tokens": params.max_tokens,
         });
+
+        // ═══════════════════════════════════════
+        // Anthropic Prompt Caching — cache_control
+        // ═══════════════════════════════════════
+        if is_anthropic {
+            // Anthropic uses top-level "system" field (not messages[0])
+            // with cache_control for prompt caching
+            let mut non_system_msgs: Vec<Value> = Vec::new();
+            let mut system_blocks: Vec<Value> = Vec::new();
+
+            for msg in messages {
+                if msg.role == bizclaw_core::types::Role::System {
+                    system_blocks.push(json!({
+                        "type": "text",
+                        "text": msg.content,
+                        "cache_control": { "type": "ephemeral" }
+                    }));
+                } else {
+                    non_system_msgs.push(serde_json::to_value(msg).unwrap_or_default());
+                }
+            }
+
+            if !system_blocks.is_empty() {
+                body["system"] = Value::Array(system_blocks);
+            }
+            body["messages"] = Value::Array(non_system_msgs);
+
+            tracing::debug!(
+                "🧊 Anthropic prompt caching enabled (system blocks with cache_control)"
+            );
+        } else {
+            body["messages"] = serde_json::to_value(messages).unwrap_or_default();
+        }
 
         // Add tools if present
         if !tools.is_empty() {
             let tool_defs: Vec<Value> = tools
                 .iter()
                 .map(|t| {
-                    json!({
+                    let mut def = json!({
                         "type": "function",
                         "function": {
                             "name": t.name,
                             "description": t.description,
                             "parameters": t.parameters,
                         }
-                    })
+                    });
+                    // Cache tool definitions for Anthropic (they rarely change)
+                    if is_anthropic {
+                        def["cache_control"] = json!({ "type": "ephemeral" });
+                    }
+                    def
                 })
                 .collect();
             body["tools"] = Value::Array(tool_defs);

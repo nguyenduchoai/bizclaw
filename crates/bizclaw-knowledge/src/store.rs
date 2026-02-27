@@ -141,10 +141,15 @@ impl KnowledgeStore {
 
     /// List all documents.
     pub fn list_documents(&self) -> Vec<(i64, String, String, i64)> {
-        let mut stmt = self
+        let mut stmt = match self
             .conn
-            .prepare("SELECT id, name, source, chunk_count FROM documents ORDER BY id DESC")
-            .unwrap();
+            .prepare("SELECT id, name, source, chunk_count FROM documents ORDER BY id DESC") {
+                Ok(s) => s,
+                Err(e) => {
+                    tracing::warn!("list_documents prepare error: {e}");
+                    return Vec::new();
+                }
+            };
 
         stmt.query_map([], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))

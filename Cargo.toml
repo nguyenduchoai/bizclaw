@@ -16,6 +16,7 @@ members = [
     "crates/bizclaw-agent",
     "crates/bizclaw-platform",
     "crates/bizclaw-db",
+    "crates/bizclaw-hands",
 ]
 
 [workspace.package]

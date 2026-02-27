@@ -473,6 +473,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizclaw-hands"
+version = "0.2.0"
+dependencies = [
+ "bizclaw-core",
+ "chrono",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "bizclaw-knowledge"
 version = "0.2.0"
 dependencies = [

@@ -18,12 +18,12 @@ pub fn dot_product_simd(a: &[f32], b: &[f32]) -> f32 {
 
     #[cfg(target_arch = "aarch64")]
     {
-        return neon::dot_product_neon(a, b);
+        neon::dot_product_neon(a, b)
     }
 
     #[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
     {
-        return avx2::dot_product_avx2(a, b);
+        avx2::dot_product_avx2(a, b)
     }
 
     #[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]

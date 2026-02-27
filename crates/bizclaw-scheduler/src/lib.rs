@@ -37,10 +37,10 @@ pub mod store;
 pub mod tasks;
 pub mod workflow;
 
-pub use engine::SchedulerEngine;
+pub use engine::{RetryStats, SchedulerEngine};
 pub use notify::{Notification, NotifyChannel, NotifyRouter};
 pub use persistence::SchedulerDb;
 pub use store::TaskStore;
-pub use tasks::{Task, TaskStatus, TaskType};
+pub use tasks::{RetryPolicy, Task, TaskStatus, TaskType};
 pub use workflow::{WorkflowAction, WorkflowEngine, WorkflowEvent};
 

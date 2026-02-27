@@ -77,6 +77,9 @@ pub struct BizClawConfig {
     /// MCP server configurations.
     #[serde(default)]
     pub mcp_servers: Vec<McpServerEntry>,
+    /// Quality Gate — optional evaluator for response review.
+    #[serde(default)]
+    pub quality_gate: Option<QualityGateConfig>,
 }
 
 fn default_api_key() -> String {
@@ -111,6 +114,7 @@ impl Default for BizClawConfig {
             identity: Identity::default(),
             channel: ChannelConfig::default(),
             mcp_servers: vec![],
+            quality_gate: None,
         }
     }
 }
@@ -627,6 +631,20 @@ pub struct McpServerEntry {
 
 fn default_mcp_enabled() -> bool {
     true
+}
+
+/// Quality Gate configuration — evaluator reviews agent responses.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGateConfig {
+    /// Evaluator system prompt (e.g., "Check for accuracy and completeness").
+    #[serde(default)]
+    pub evaluator_prompt: String,
+    /// Model to use for evaluation (defaults to agent's model).
+    #[serde(default)]
+    pub evaluator_model: Option<String>,
+    /// Maximum revision rounds before accepting response.
+    #[serde(default)]
+    pub max_revisions: Option<u32>,
 }
 
 #[cfg(test)]

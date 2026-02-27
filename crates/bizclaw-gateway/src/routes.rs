@@ -1891,32 +1891,48 @@ pub async fn scheduler_list_tasks(State(state): State<Arc<AppState>>) -> Json<se
         .list_tasks()
         .iter()
         .map(|t| {
-            let (action_type, prompt, cron) = match &t.action {
-                bizclaw_scheduler::tasks::TaskAction::AgentPrompt(p) => ("agent_prompt", Some(p.as_str()), None),
-                bizclaw_scheduler::tasks::TaskAction::Notify(m) => ("notify", Some(m.as_str()), None),
-                bizclaw_scheduler::tasks::TaskAction::Webhook { url, .. } => ("webhook", Some(url.as_str()), None),
-            };
-            let cron_expr = match &t.task_type {
-                bizclaw_scheduler::tasks::TaskType::Cron { expression } => Some(expression.as_str()),
-                _ => cron,
+            let action_type = match &t.action {
+                bizclaw_scheduler::tasks::TaskAction::AgentPrompt(_) => "agent_prompt",
+                bizclaw_scheduler::tasks::TaskAction::Notify(_) => "notify",
+                bizclaw_scheduler::tasks::TaskAction::Webhook { .. } => "webhook",
             };
             serde_json::json!({
                 "id": t.id,
                 "name": t.name,
-                "status": format!("{:?}", t.status),
+                "action": t.action,
+                "task_type": t.task_type,
+                "status": t.status,
                 "enabled": t.enabled,
                 "run_count": t.run_count,
                 "next_run": t.next_run.map(|d| d.to_rfc3339()),
                 "last_run": t.last_run.map(|d| d.to_rfc3339()),
                 "action_type": action_type,
-                "prompt": prompt,
-                "cron": cron_expr,
                 "agent_name": t.agent_name,
                 "deliver_to": t.deliver_to,
+                // Retry fields
+                "fail_count": t.fail_count,
+                "last_error": t.last_error,
+                "retry": {
+                    "max_retries": t.retry.max_retries,
+                    "base_delay_secs": t.retry.base_delay_secs,
+                    "backoff_multiplier": t.retry.backoff_multiplier,
+                    "max_delay_secs": t.retry.max_delay_secs,
+                },
+                "retry_status": t.retry_status(),
             })
         })
         .collect();
-    Json(serde_json::json!({"ok": true, "tasks": tasks, "count": tasks.len()}))
+    let stats = engine.retry_stats();
+    Json(serde_json::json!({
+        "ok": true,
+        "tasks": tasks,
+        "count": tasks.len(),
+        "stats": {
+            "retrying": stats.retrying,
+            "permanently_failed": stats.permanently_failed,
+            "total_retries": stats.total_retries,
+        }
+    }))
 }
 
 /// Add a new scheduled task.
@@ -1978,6 +1994,17 @@ pub async fn scheduler_remove_task(
 ) -> Json<serde_json::Value> {
     let removed = state.scheduler.lock().await.remove_task(&id);
     Json(serde_json::json!({"ok": removed}))
+}
+
+/// Toggle a scheduled task (enable/disable).
+pub async fn scheduler_toggle_task(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let enabled = body["enabled"].as_bool().unwrap_or(true);
+    state.scheduler.lock().await.set_enabled(&id, enabled);
+    Json(serde_json::json!({"ok": true, "enabled": enabled}))
 }
 
 /// Get notification history.
@@ -2939,12 +2966,13 @@ mod tests {
     use std::sync::Mutex;
 
     fn test_state() -> State<Arc<AppState>> {
+        let (activity_tx, _rx) = tokio::sync::broadcast::channel(16);
         State(Arc::new(AppState {
             gateway_config: bizclaw_core::config::GatewayConfig::default(),
             full_config: Arc::new(Mutex::new(bizclaw_core::config::BizClawConfig::default())),
             config_path: std::path::PathBuf::from("/tmp/test_config.toml"),
             start_time: std::time::Instant::now(),
-            pairing_code: None,
+            pairing_code: Arc::new(Mutex::new(String::new())),
             auth_failures: Arc::new(tokio::sync::Mutex::new((0, std::time::Instant::now()))),
             agent: std::sync::Arc::new(tokio::sync::Mutex::new(None)),
             orchestrator: std::sync::Arc::new(tokio::sync::Mutex::new(
@@ -2962,6 +2990,9 @@ mod tests {
                 let store = Arc::new(bizclaw_db::SqliteStore::in_memory().unwrap());
                 store
             },
+            traces: Arc::new(Mutex::new(Vec::new())),
+            activity_tx,
+            activity_log: Arc::new(Mutex::new(Vec::new())),
         }))
     }
 
@@ -3665,4 +3696,23 @@ pub async fn orch_list_traces(
     })).collect();
 
     Json(serde_json::json!({"ok": true, "traces": items, "count": items.len()}))
+}
+
+// ═══ MCP Servers API ═══
+pub async fn mcp_list_servers(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let config = state.full_config.lock().unwrap();
+    let servers: Vec<serde_json::Value> = config.mcp_servers.iter().map(|s| {
+        serde_json::json!({
+            "name": s.name,
+            "transport": "stdio",
+            "command": s.command,
+            "args": s.args,
+            "enabled": s.enabled,
+            "tools_count": 0,
+            "status": if s.enabled { "configured" } else { "disabled" },
+        })
+    }).collect();
+    Json(serde_json::json!({"ok": true, "servers": servers, "count": servers.len()}))
 }

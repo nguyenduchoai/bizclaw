@@ -1,0 +1,117 @@
+// BizClaw Dashboard — English translations
+// Extracted from dashboard.html for modular maintenance
+export const en = {
+  // Navigation
+  'nav.dashboard':'Dashboard','nav.webchat':'WebChat','nav.settings':'Settings',
+  'nav.providers':'Providers','nav.channels':'Channels','nav.tools':'Tools',
+  'nav.brain':'Brain Engine','nav.mcp':'MCP Servers','nav.agents':'AI Agent',
+  'nav.gallery':'Gallery','nav.knowledge':'Knowledge','nav.config':'Config File',
+  'nav.scheduler':'Scheduler','nav.orchestration':'Orchestration',
+  // Orchestration
+  'orch.title':'Orchestration','orch.subtitle':'Delegation, Handoff, Evaluate Loop, Permission Links, LLM Traces',
+  'orch.delegations':'Delegations','orch.links':'Permission Links','orch.traces':'LLM Traces',
+  'orch.delegate_title':'Delegate Task','orch.from_agent':'From Agent','orch.to_agent':'To Agent',
+  'orch.task':'Task Content','orch.history':'Delegation History',
+  'orch.perm_links':'Permission Links','orch.llm_traces':'LLM Traces',
+  'gallery.title':'Gallery','gallery.subtitle':'50 agent templates + custom. Upload MD files to extend capabilities.',
+  // Dashboard
+  'dash.title':'Dashboard','dash.subtitle':'Agent Gateway Control Panel',
+  'dash.status':'Status','dash.version':'Version','dash.provider':'Provider',
+  'dash.model':'AI Model','dash.uptime':'Uptime','dash.platform':'Platform',
+  'dash.channels':'Active Channels','dash.clock':'Clock','dash.system':'System',
+  'dash.online':'Online','dash.quickactions':'Quick Actions',
+  'sys.os':'OS:','sys.arch':'Arch:','sys.memory':'Memory:',
+  // Table headers
+  'th.channel':'Channel','th.type':'Type','th.status':'Status','th.configured':'Configured',
+  // Chat
+  'chat.title':'WebChat','chat.welcome':'Connected to BizClaw. Type a message to start chatting.',
+  'chat.thinking':'BizClaw is thinking','chat.placeholder':'Type your message...','chat.send':'Send ↑',
+  'chat.history_cleared':'💬 Chat history cleared',
+  'chat.help':'Available commands:\n/status — Show agent status\n/reset — Clear chat history\n/help — Show this help',
+  // Status
+  'status.connected':'Connected','status.disconnected':'Disconnected',
+  // Settings
+  'settings.title':'Agent Settings','settings.subtitle':'Configure your AI agent — provider, model, identity, security',
+  'settings.save':'💾 Save Settings',
+  'set.provider_section':'AI Provider','set.provider':'Provider','set.model':'Model',
+  'set.apikey':'API Key','set.baseurl':'Custom API Base URL','set.loading_models':'Loading models...',
+  'set.model_path':'Model Path','set.scan':'Scan','set.threads':'Threads',
+  'set.temperature':'Temperature','set.identity':'Identity','set.agent_name':'Agent Name',
+  'set.persona':'Persona','set.sysprompt':'System Prompt','set.memory':'Memory',
+  'set.backend':'Backend','set.autosave':'Auto Save','set.security':'Security / Autonomy',
+  'set.autonomy':'Autonomy Level','set.readonly':'Read Only','set.supervised':'Supervised',
+  'set.full':'Full','set.workspace_only':'Workspace Only',
+  // Providers
+  'providers.title':'Providers','providers.subtitle':'Configure AI providers — set default provider, API key, model',
+  'providers.active_label':'Active Provider','providers.total_label':'Total Providers',
+  'providers.type_cloud':'Cloud','providers.type_local':'Local','providers.type_proxy':'Proxy',
+  'providers.badge_active':'Active','providers.btn_activate':'⚡ Activate','providers.btn_active':'✅ In Use',
+  // Channels
+  'channels.title':'Channel Configuration','channels.subtitle':'Connect your agent to messaging platforms',
+  // Tools
+  'tools.title':'Tools','tools.subtitle':'15 built-in tools + external MCP tools',
+  'tool.active':'Active','tool.available':'Available',
+  'tool.file':'File','tool.editfile':'Edit File','tool.websearch':'Web Search',
+  'tool.calendar':'Calendar','tool.docreader':'Document Reader','tool.summarizer':'Group Summarizer',
+  'tool.httpreq':'HTTP Request','tool.configmgr':'Config Manager','tool.memsearch':'Memory Search',
+  'tool.shell_desc':'Execute system commands (sandboxed)','tool.file_desc':'Read/write/list files',
+  'tool.editfile_desc':'Precise text replacements in files',
+  'tool.glob_desc':'Find files by pattern (*.rs, **/*.toml)',
+  'tool.grep_desc':'Search file contents with regex',
+  'tool.httpreq_desc':'Call external APIs (GET/POST/PUT/DELETE)',
+  'tool.configmgr_desc':'Read/write config.toml at runtime',
+  'tool.memsearch_desc':'Search past conversations via FTS5',
+  'tool.execcode':'Execute Code','tool.execcode_desc':'Run Python, JS, Go, Rust, C code...',
+  'tool.plan':'Plan Mode','tool.plan_desc':'Task decomposition with dependencies & complexity',
+  'tool.sessionctx':'Session Context','tool.sessionctx_desc':'Session info: provider, tokens, tools',
+  'tool.calendar_desc':'Google Calendar integration','tool.docreader_desc':'PDF, DOCX, Excel, CSV extraction',
+  'tool.summarizer_desc':'Zalo/Telegram group message summary',
+  // MCP
+  'mcp.title':'MCP Servers','mcp.subtitle':'Model Context Protocol — extend your agent with external tools',
+  'mcp.add':'Add Server','mcp.total':'Total Servers','mcp.active':'Active',
+  'mcp.protocol':'Protocol','mcp.add_title':'Add MCP Server','mcp.popular':'Popular MCP Servers',
+  // Multi-Agent
+  'agents.title':'Multi-Agent AI','agents.subtitle':'Create and manage multiple AI agents with different roles',
+  'agents.create':'Create Agent','agents.total':'Total Agents','agents.default':'Default Agent',
+  'agents.messages':'Messages','agents.create_new':'Create New Agent','agents.broadcast':'Broadcast Message',
+  'agents.msg':'Message','agents.send_all':'Send to All','agents.edit':'Edit Agent',
+  // Agent Groups
+  'groups.title':'Agent Groups','groups.subtitle':'Create groups of AI Agents to discuss and collaborate',
+  'groups.create':'Create Group','groups.total':'Total Groups','groups.agents_count':'Agents in Groups',
+  'groups.conversations':'Conversations','groups.create_new':'Create New Group',
+  'groups.topic':'Topic','groups.select_agents':'Select Agents:',
+  'groups.agent_hint':'No agents yet? Go to Multi-Agent page to create some first.',
+  // Knowledge Base
+  'kb.title':'Knowledge Base','kb.subtitle':'Personal RAG — add documents for context-aware AI responses',
+  'kb.add_doc':'Add Document','kb.documents':'Documents','kb.chunks':'Chunks',
+  'kb.search_engine':'Search Engine','kb.search':'Search Knowledge','kb.search_btn':'Search',
+  'kb.add_title':'Add Document','kb.source':'Source','kb.content':'Content',
+  'kb.doc_list':'Document List',
+  // Brain Engine
+  'brain.title':'Brain Engine','brain.engine':'Engine','brain.quant':'Quantization',
+  'brain.features':'Features','brain.models':'Available Models','brain.size':'Size',
+  'brain.download':'Download','brain.ws_sub':'Brain workspace, personality files, and system health check',
+  'brain.health_btn':'Health Check','brain.health_title':'System Health Check',
+  'brain.check_name':'Check','brain.check_status':'Status','brain.check_detail':'Detail',
+  'brain.ws_title':'Brain Workspace','brain.new_file':'New File','brain.save':'Save',
+  'brain.files_count':'Brain Files',
+  // Forms
+  'form.name':'Name','form.command':'Command','form.args':'Arguments (comma-separated)',
+  'form.env':'Environment Variables (KEY=VALUE, one per line)','form.save':'Save','form.cancel':'Cancel',
+  'form.role':'Role','form.description':'Description',
+  // Config page
+  'config.title':'config.toml',
+  // Onboarding
+  'onboard.welcome_sub':'Let AI create a personalized assistant just for you. Only takes 30 seconds.',
+  'onboard.your_name':'Your Name','onboard.about_you':'Who are you, what do you do?',
+  'onboard.agent_vibe':'Agent Personality',
+  'onboard.provider_sub':'Choose your AI source. No API key? Use Ollama or Brain Engine.',
+  'onboard.done_title':'Agent is Ready!',
+  'onboard.done_sub':'AI is creating a unique personality for your agent...',
+  // Pairing
+  'pairing.title':'BizClaw Agent','pairing.desc':'Enter Pairing Code to access Dashboard',
+  'pairing.confirm':'🔓 Confirm','pairing.error':'Please enter pairing code',
+  // Scheduler (new)
+  'sched.title':'Scheduler','sched.subtitle':'Manage scheduled tasks with automatic retry mechanism',
+  'sched.retrying':'Retrying','sched.failed':'Permanently Failed','sched.total_retries':'Total Retries',
+};

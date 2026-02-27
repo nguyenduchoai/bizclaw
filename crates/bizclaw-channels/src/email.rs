@@ -298,6 +298,7 @@ impl Channel for EmailChannel {
 }
 
 /// Synchronous IMAP fetch — called inside spawn_blocking.
+#[allow(clippy::too_many_arguments)]
 fn imap_fetch_sync(
     host: &str,
     port: u16,

@@ -171,4 +171,76 @@ mod tests {
         let err: BizClawError = io_err.into();
         assert!(matches!(err, BizClawError::Io(_)));
     }
+
+    #[test]
+    fn test_json_error_conversion() {
+        let json_err = serde_json::from_str::<serde_json::Value>("invalid").unwrap_err();
+        let err: BizClawError = json_err.into();
+        assert!(matches!(err, BizClawError::Json(_)));
+    }
+
+    #[test]
+    fn test_all_error_variants_display() {
+        let errors: Vec<BizClawError> = vec![
+            BizClawError::Provider("p".into()),
+            BizClawError::ProviderNotFound("p".into()),
+            BizClawError::ModelNotFound("m".into()),
+            BizClawError::ApiKeyMissing("k".into()),
+            BizClawError::Channel("c".into()),
+            BizClawError::ChannelNotConnected("c".into()),
+            BizClawError::AuthFailed("a".into()),
+            BizClawError::Memory("m".into()),
+            BizClawError::Brain("b".into()),
+            BizClawError::ModelLoad("l".into()),
+            BizClawError::GgufParse("g".into()),
+            BizClawError::Inference("i".into()),
+            BizClawError::Tool("t".into()),
+            BizClawError::ToolNotFound("t".into()),
+            BizClawError::Security("s".into()),
+            BizClawError::PermissionDenied("d".into()),
+            BizClawError::Config("c".into()),
+            BizClawError::ConfigNotFound("f".into()),
+            BizClawError::Gateway("g".into()),
+            BizClawError::Http("h".into()),
+            BizClawError::Timeout("t".into()),
+            BizClawError::RateLimited("r".into()),
+            BizClawError::Delegation("d".into()),
+            BizClawError::AgentNotFound("a".into()),
+            BizClawError::NoPermission("n".into()),
+            BizClawError::Team("t".into()),
+            BizClawError::Handoff("h".into()),
+            BizClawError::EvaluateLoop("e".into()),
+            BizClawError::QualityGate("q".into()),
+            BizClawError::Database("d".into()),
+            BizClawError::Other("o".into()),
+        ];
+
+        for err in &errors {
+            let display = err.to_string();
+            assert!(!display.is_empty(), "Error should have display: {:?}", err);
+        }
+        // There should be 31 variants
+        assert_eq!(errors.len(), 31);
+    }
+
+    #[test]
+    fn test_error_is_debug() {
+        let err = BizClawError::Provider("test".into());
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("Provider"));
+    }
+
+    #[test]
+    fn test_config_constructor() {
+        let err = BizClawError::config("bad config");
+        assert_eq!(err.to_string(), "Configuration error: bad config");
+    }
+
+    #[test]
+    fn test_result_type_alias() {
+        fn returns_ok() -> Result<i32> { Ok(42) }
+        fn returns_err() -> Result<i32> { Err(BizClawError::Other("fail".into())) }
+        assert_eq!(returns_ok().unwrap(), 42);
+        assert!(returns_err().is_err());
+    }
 }

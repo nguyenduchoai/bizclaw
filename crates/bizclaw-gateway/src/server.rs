@@ -22,7 +22,7 @@ pub struct AppState {
     pub full_config: Arc<Mutex<BizClawConfig>>,
     pub config_path: PathBuf,
     pub start_time: std::time::Instant,
-    pub pairing_code: Option<String>,
+    pub pairing_code: Arc<Mutex<String>>,
     /// Brute-force protection — (failed_count, last_failed_at)
     pub auth_failures: Arc<tokio::sync::Mutex<(u32, std::time::Instant)>>,
     /// The Agent engine — handles chat with tools, memory, and all providers.
@@ -39,6 +39,12 @@ pub struct AppState {
     pub db: Arc<super::db::GatewayDb>,
     /// Orchestration DataStore — delegations, teams, handoffs, traces.
     pub orch_store: Arc<dyn bizclaw_db::DataStore>,
+    /// LLM call traces — records every provider call for cost/latency monitoring.
+    pub traces: Arc<Mutex<Vec<super::openai_compat::LlmTrace>>>,
+    /// Activity event broadcaster — sends real-time events to all connected dashboards.
+    pub activity_tx: tokio::sync::broadcast::Sender<super::openai_compat::ActivityEvent>,
+    /// Activity log — keeps recent events for REST polling.
+    pub activity_log: Arc<Mutex<Vec<super::openai_compat::ActivityEvent>>>,
 }
 
 /// State for an active Telegram bot connected to an agent.
@@ -49,14 +55,44 @@ pub struct TelegramBotState {
     pub abort_handle: Arc<tokio::sync::Notify>,
 }
 
-/// Serve the dashboard HTML page (no-cache to prevent stale JS after deploys).
+/// Serve the NEW Preact-based dashboard (no-cache to prevent stale JS after deploys).
 async fn dashboard_page() -> axum::response::Response {
+    axum::response::Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .header("Cache-Control", "no-store, no-cache, must-revalidate")
+        .header("Pragma", "no-cache")
+        .body(axum::body::Body::from(super::dashboard::dashboard_v2_html()))
+        .unwrap()
+}
+
+/// Serve the LEGACY monolithic dashboard at /legacy.
+async fn legacy_dashboard_page() -> axum::response::Response {
     axum::response::Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
         .header("Cache-Control", "no-store, no-cache, must-revalidate")
         .header("Pragma", "no-cache")
         .body(axum::body::Body::from(super::dashboard::dashboard_html()))
         .unwrap()
+}
+
+/// Serve embedded dashboard static files (/static/dashboard/*).
+async fn dashboard_static(
+    axum::extract::Path(path): axum::extract::Path<String>,
+) -> axum::response::Response {
+    let full_path = format!("/static/dashboard/{}", path);
+    let files = super::dashboard::dashboard_static_files();
+    if let Some((content, content_type)) = files.get(full_path.as_str()) {
+        axum::response::Response::builder()
+            .header("Content-Type", *content_type)
+            .header("Cache-Control", "public, max-age=3600")
+            .body(axum::body::Body::from(*content))
+            .unwrap()
+    } else {
+        axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::from("Not Found"))
+            .unwrap()
+    }
 }
 
 /// Pairing code auth middleware — validates X-Pairing-Code header or ?code= query.
@@ -66,9 +102,10 @@ async fn require_pairing(
     next: axum::middleware::Next,
 ) -> axum::response::Response {
     // If no pairing code configured, allow all
-    let Some(expected) = &state.pairing_code else {
+    let expected = state.pairing_code.lock().unwrap().clone();
+    if expected.is_empty() {
         return next.run(req).await;
-    };
+    }
 
     // Brute-force protection: lock out after 5 failed attempts for 60s
     {
@@ -92,7 +129,7 @@ async fn require_pairing(
         .get("X-Pairing-Code")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    if constant_time_eq(from_header, expected) {
+    if constant_time_eq(from_header, &expected) {
         // Reset failures on success
         let mut failures = state.auth_failures.lock().await;
         *failures = (0, std::time::Instant::now());
@@ -103,7 +140,7 @@ async fn require_pairing(
     if let Some(query) = req.uri().query() {
         for pair in query.split('&') {
             if let Some(code) = pair.strip_prefix("code=")
-                && constant_time_eq(code, expected) {
+                && constant_time_eq(code, &expected) {
                     return next.run(req).await;
                 }
         }
@@ -131,17 +168,29 @@ async fn verify_pairing(
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
     let code = body["code"].as_str().unwrap_or("");
-    match &state.pairing_code {
-        Some(expected) if constant_time_eq(code, expected) => Json(serde_json::json!({"ok": true})),
-        Some(_) => Json(serde_json::json!({"ok": false, "error": "Invalid pairing code"})),
-        None => Json(serde_json::json!({"ok": true})), // no code required
+    let expected = state.pairing_code.lock().unwrap().clone();
+    if expected.is_empty() || constant_time_eq(code, &expected) {
+        Json(serde_json::json!({"ok": true}))
+    } else {
+        Json(serde_json::json!({"ok": false, "error": "Invalid pairing code"}))
     }
 }
 
 /// Constant-time string comparison to prevent timing attacks (M3).
+/// Does NOT short-circuit on length mismatch to avoid leaking length info.
 fn constant_time_eq(a: &str, b: &str) -> bool {
-    if a.len() != b.len() { return false; }
-    a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+    let len_eq = a.len() == b.len();
+    // Always iterate over the longer string to avoid timing differences
+    let max_len = a.len().max(b.len());
+    let a_bytes = a.as_bytes();
+    let b_bytes = b.as_bytes();
+    let mut diff = 0u8;
+    for i in 0..max_len {
+        let x = if i < a_bytes.len() { a_bytes[i] } else { 0 };
+        let y = if i < b_bytes.len() { b_bytes[i] } else { 0 };
+        diff |= x ^ y;
+    }
+    len_eq && diff == 0
 }
 
 /// Security headers middleware — CSP, HSTS, XSS protection.
@@ -157,9 +206,9 @@ async fn security_headers(
     headers.insert("X-XSS-Protection", "1; mode=block".parse().unwrap());
     // HSTS — tell browsers to always use HTTPS (1 year)
     headers.insert("Strict-Transport-Security", "max-age=31536000; includeSubDomains".parse().unwrap());
-    // CSP — restrict script/style sources
+    // CSP — restrict script/style sources (includes esm.sh for Preact CDN)
     headers.insert("Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' ws: wss:; frame-ancestors 'none'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' ws: wss: https://esm.sh; frame-ancestors 'none'"
         .parse().unwrap());
     response
 }
@@ -209,6 +258,10 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route(
             "/api/v1/scheduler/tasks/{id}",
             axum::routing::delete(super::routes::scheduler_remove_task),
+        )
+        .route(
+            "/api/v1/scheduler/tasks/{id}/toggle",
+            post(super::routes::scheduler_toggle_task),
         )
         .route(
             "/api/v1/scheduler/notifications",
@@ -314,6 +367,12 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         )
         // Health Check
         .route("/api/v1/health", get(super::routes::system_health_check))
+        // LLM Traces & Cost API
+        .route("/api/v1/traces", get(super::openai_compat::list_traces))
+        .route("/api/v1/traces/cost", get(super::openai_compat::cost_breakdown))
+        .route("/api/v1/activity", get(super::openai_compat::list_activity))
+        // MCP Servers API (stub — returns configured MCP servers)
+        .route("/api/v1/mcp/servers", get(super::routes::mcp_list_servers))
         .route("/ws", get(super::ws::ws_handler))
         .route_layer(axum::middleware::from_fn_with_state(
             shared.clone(),
@@ -323,6 +382,8 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
     // Public routes — no auth
     let public = Router::new()
         .route("/", get(dashboard_page))
+        .route("/legacy", get(legacy_dashboard_page))
+        .route("/static/dashboard/*path", get(dashboard_static))
         .route("/health", get(super::routes::health_check))
         .route("/api/v1/verify-pairing", post(verify_pairing))
         // WhatsApp webhook — must be public for Meta verification
@@ -331,7 +392,10 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             get(super::routes::whatsapp_webhook_verify).post(super::routes::whatsapp_webhook),
         )
         // Webhook inbound — public, auth via HMAC signature in header
-        .route("/api/v1/webhook/inbound", post(super::routes::webhook_inbound));
+        .route("/api/v1/webhook/inbound", post(super::routes::webhook_inbound))
+        // OpenAI-Compatible API — public with own auth (Bearer token)
+        .route("/v1/chat/completions", post(super::openai_compat::chat_completions))
+        .route("/v1/models", get(super::openai_compat::list_models));
 
     // SPA fallback — serve dashboard HTML for all frontend routes
     // so that /dashboard, /chat, /settings etc. all work with path-based routing
@@ -580,13 +644,14 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         .await;
     });
 
+    let (activity_tx, _rx) = tokio::sync::broadcast::channel::<super::openai_compat::ActivityEvent>(256);
+
     let state = AppState {
         gateway_config: config.clone(),
         full_config: Arc::new(Mutex::new(full_config)),
         config_path: config_path.clone(),
         start_time: std::time::Instant::now(),
-        pairing_code: if config.require_pairing {
-            
+        pairing_code: Arc::new(Mutex::new(if config.require_pairing {
             std::env::var("BIZCLAW_PAIRING_CODE").ok().or_else(|| {
                 config_path.parent().and_then(|d| {
                     let pc = d.join(".pairing_code");
@@ -594,10 +659,10 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
                         .ok()
                         .map(|s| s.trim().to_string())
                 })
-            })
+            }).unwrap_or_default()
         } else {
-            None
-        },
+            String::new()
+        })),
         auth_failures: Arc::new(tokio::sync::Mutex::new((0, std::time::Instant::now()))),
         agent: Arc::new(tokio::sync::Mutex::new(agent)),
         orchestrator: orchestrator_arc.clone(),
@@ -606,6 +671,9 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         telegram_bots: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
         db: gateway_db,
         orch_store,
+        traces: Arc::new(Mutex::new(Vec::new())),
+        activity_tx: activity_tx.clone(),
+        activity_log: Arc::new(Mutex::new(Vec::new())),
     };
 
     let state_arc = Arc::new(state);

@@ -1,7 +1,7 @@
 //! SQLite-backed persistence for Scheduler tasks, Plans, and Workflow rules.
 //! Replaces JSON file store — survives restarts, supports concurrent access.
 
-use crate::tasks::{Task, TaskAction, TaskStatus, TaskType};
+use crate::tasks::{RetryPolicy, Task, TaskAction, TaskStatus, TaskType};
 use chrono::{DateTime, Utc};
 use std::path::Path;
 
@@ -106,6 +106,13 @@ impl SchedulerDb {
         // Add new columns for existing DBs (safe to fail if already exist)
         let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN agent_name TEXT", []);
         let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN deliver_to TEXT", []);
+        // Retry mechanism columns (v2)
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN fail_count INTEGER NOT NULL DEFAULT 0", []);
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN last_error TEXT", []);
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN retry_max INTEGER NOT NULL DEFAULT 3", []);
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN retry_base_delay INTEGER NOT NULL DEFAULT 30", []);
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN retry_backoff REAL NOT NULL DEFAULT 2.0", []);
+        let _ = self.conn.execute("ALTER TABLE scheduler_tasks ADD COLUMN retry_max_delay INTEGER NOT NULL DEFAULT 300", []);
 
         Ok(())
     }
@@ -137,14 +144,16 @@ impl SchedulerDb {
             TaskStatus::Completed => "completed",
             TaskStatus::Failed(_) => "failed",
             TaskStatus::Disabled => "disabled",
+            TaskStatus::RetryPending { .. } => "retry_pending",
         };
 
         self.conn
             .execute(
                 "INSERT OR REPLACE INTO scheduler_tasks 
                  (id, name, action_type, action_data, task_type, task_type_data, status, notify_via,
-                  agent_name, deliver_to, created_at, last_run, next_run, run_count, enabled)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                  agent_name, deliver_to, created_at, last_run, next_run, run_count, enabled,
+                  fail_count, last_error, retry_max, retry_base_delay, retry_backoff, retry_max_delay)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)",
                 rusqlite::params![
                     task.id,
                     task.name,
@@ -161,6 +170,12 @@ impl SchedulerDb {
                     task.next_run.map(|t| t.to_rfc3339()),
                     task.run_count,
                     task.enabled as i32,
+                    task.fail_count,
+                    task.last_error,
+                    task.retry.max_retries,
+                    task.retry.base_delay_secs as i64,
+                    task.retry.backoff_multiplier,
+                    task.retry.max_delay_secs as i64,
                 ],
             )
             .map_err(|e| format!("Save task: {e}"))?;
@@ -171,7 +186,7 @@ impl SchedulerDb {
     pub fn load_tasks(&self) -> Vec<Task> {
         let mut stmt = match self
             .conn
-            .prepare("SELECT id, name, action_type, action_data, task_type, task_type_data, status, notify_via, agent_name, deliver_to, created_at, last_run, next_run, run_count, enabled FROM scheduler_tasks ORDER BY created_at")
+            .prepare("SELECT id, name, action_type, action_data, task_type, task_type_data, status, notify_via, agent_name, deliver_to, created_at, last_run, next_run, run_count, enabled, fail_count, last_error, retry_max, retry_base_delay, retry_backoff, retry_max_delay FROM scheduler_tasks ORDER BY created_at")
         {
             Ok(s) => s,
             Err(_) => return Vec::new(),
@@ -237,11 +252,27 @@ impl SchedulerDb {
                     },
                 };
 
+                // Load retry fields (with defaults for backward compat)
+                let fail_count: u32 = row.get(15).unwrap_or(0);
+                let last_error: Option<String> = row.get(16).unwrap_or(None);
+                let retry_max: u32 = row.get(17).unwrap_or(3);
+                let retry_base_delay: i64 = row.get(18).unwrap_or(30);
+                let retry_backoff: f64 = row.get(19).unwrap_or(2.0);
+                let retry_max_delay: i64 = row.get(20).unwrap_or(300);
+
                 let status = match status_str.as_str() {
                     "running" => TaskStatus::Running,
                     "completed" => TaskStatus::Completed,
-                    "failed" => TaskStatus::Failed("unknown".into()),
+                    "failed" => TaskStatus::Failed(last_error.clone().unwrap_or_else(|| "unknown".into())),
                     "disabled" => TaskStatus::Disabled,
+                    "retry_pending" => {
+                        // Reconstruct retry_at from next_run
+                        let retry_at = next_run_str.as_ref()
+                            .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+                            .map(|d| d.with_timezone(&Utc))
+                            .unwrap_or_else(Utc::now);
+                        TaskStatus::RetryPending { retry_at, attempt: fail_count }
+                    }
                     _ => TaskStatus::Pending,
                 };
 
@@ -269,6 +300,14 @@ impl SchedulerDb {
                     next_run,
                     run_count,
                     enabled,
+                    retry: RetryPolicy {
+                        max_retries: retry_max,
+                        base_delay_secs: retry_base_delay as u64,
+                        backoff_multiplier: retry_backoff,
+                        max_delay_secs: retry_max_delay as u64,
+                    },
+                    fail_count,
+                    last_error,
                 })
             })
             .ok();

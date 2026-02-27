@@ -3,6 +3,7 @@
 
 pub mod dashboard;
 pub mod db;
+pub mod openai_compat;
 pub mod routes;
 pub mod server;
 pub mod ws;

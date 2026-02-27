@@ -137,7 +137,7 @@ impl Tool for SessionContextTool {
                 },
                 info.knowledge_docs
             ),
-            "uptime" | "all" | _ => {
+            _ => {
                 format!(
                     "═══ Session Context ═══\n\
                      Session ID: {}\n\

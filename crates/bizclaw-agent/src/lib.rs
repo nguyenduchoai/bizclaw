@@ -258,52 +258,38 @@ impl Agent {
     }
 
     /// Process a user message and generate a response.
-    /// Features: knowledge RAG, memory retrieval, multi-round tool calling, auto-compaction.
+    ///
+    /// Uses Think-Act-Observe loop (inspired by [GoClaw](https://github.com/nextlevelbuilder/goclaw))
+    /// with Quality Gate evaluation (inspired by [OpenFang](https://github.com/RightNow-AI/openfang)).
     pub async fn process(&mut self, user_message: &str) -> Result<String> {
         let mut compacted = false;
-
-        // ═══════════════════════════════════════
-        // Phase 0: Auto-compaction Check
-        // ═══════════════════════════════════════
         let estimated_tokens = self.estimate_tokens();
         let max_context = self.config.brain.context_length as usize;
-        let utilization = if max_context > 0 {
-            estimated_tokens as f32 / max_context as f32
-        } else {
-            0.0
-        };
+        let utilization = if max_context > 0 { estimated_tokens as f32 / max_context as f32 } else { 0.0 };
 
         if utilization > 0.70 && self.conversation.len() > 10 {
-            tracing::info!(
-                "📦 Auto-compaction triggered ({}% context used)",
-                (utilization * 100.0) as u32
-            );
+            tracing::info!("📦 Auto-compaction triggered ({}% used)", (utilization * 100.0) as u32);
             self.compact_conversation().await;
             compacted = true;
         }
 
-        // ═══════════════════════════════════════
-        // Phase 1: Knowledge Base RAG
-        // ═══════════════════════════════════════
-        if let Some(kb_context) = self.search_knowledge(user_message).await {
+        // Knowledge RAG
+        if let Some(kb_ctx) = self.search_knowledge(user_message).await {
             self.conversation.push(Message::system(format!(
-                "[Knowledge Base — relevant documents]\n{kb_context}\n[End of knowledge context]"
+                "[Knowledge Base]\n{kb_ctx}\n[End knowledge]"
             )));
         }
 
-        // ═══════════════════════════════════════
-        // Phase 2: Memory Retrieval
-        // ═══════════════════════════════════════
-        if let Some(memory_ctx) = self.retrieve_memory(user_message).await {
+        // Memory retrieval
+        if let Some(mem_ctx) = self.retrieve_memory(user_message).await {
             self.conversation.push(Message::system(format!(
-                "[Past conversations]\n{memory_ctx}\n[End of past conversations]"
+                "[Past conversations]\n{mem_ctx}\n[End past]"
             )));
         }
 
-        // Add user message to conversation
         self.conversation.push(Message::user(user_message));
 
-        // Trim conversation to prevent context overflow (keep system + last 40 messages)
+        // Trim conversation
         if self.conversation.len() > 41 {
             let system = self.conversation[0].clone();
             let keep = self.conversation.len() - 40;
@@ -313,9 +299,7 @@ impl Agent {
             self.conversation.extend(tail);
         }
 
-        // Get cached tool definitions
         let tool_defs = self.prompt_cache.tool_defs(&self.tools).to_vec();
-
         let params = GenerateParams {
             model: self.config.default_model.clone(),
             temperature: self.config.default_temperature,
@@ -324,131 +308,115 @@ impl Agent {
             stop: vec![],
         };
 
-        // ═══════════════════════════════════════
-        // Phase 3: Multi-round Tool Calling Loop
-        // ═══════════════════════════════════════
-        const MAX_TOOL_ROUNDS: usize = 3;
+        // Think-Act-Observe Loop
+        const MAX_ROUNDS: usize = 5;
         let mut final_content = String::new();
-        let mut tool_rounds_used = 0;
+        let mut tool_rounds = 0;
 
-        for round in 0..=MAX_TOOL_ROUNDS {
-            let current_tools = if round < MAX_TOOL_ROUNDS {
-                &tool_defs
-            } else {
-                &vec![]
-            };
-            let response = self
-                .provider
-                .chat(&self.conversation, current_tools, &params)
-                .await?;
+        for round in 0..=MAX_ROUNDS {
+            let tools = if round < MAX_ROUNDS { &tool_defs } else { &vec![] };
+            tracing::debug!("🧠 Think round {}/{}", round + 1, MAX_ROUNDS);
 
-            // No tool calls → this is the final text response
-            if response.tool_calls.is_empty() {
-                final_content = response
-                    .content
-                    .unwrap_or_else(|| "I'm not sure how to respond.".into());
+            let resp = self.provider.chat(&self.conversation, tools, &params).await?;
+
+            if resp.tool_calls.is_empty() {
+                final_content = resp.content.unwrap_or_else(|| "I'm not sure how to respond.".into());
                 self.conversation.push(Message::assistant(&final_content));
                 break;
             }
 
-            // Has tool calls → execute them
-            tool_rounds_used = round + 1;
-            tracing::info!(
-                "Tool round {}/{}: {} tool call(s)",
-                round + 1,
-                MAX_TOOL_ROUNDS,
-                response.tool_calls.len()
-            );
+            // ACT
+            tool_rounds = round + 1;
+            tracing::info!("⚡ Act round {}: {} tool(s)", tool_rounds, resp.tool_calls.len());
 
-            let mut tool_results = Vec::new();
-
-            for tc in &response.tool_calls {
-                tracing::info!(
-                    "  → {} ({})",
-                    tc.function.name,
-                    &tc.function.arguments[..tc.function.arguments.len().min(100)]
-                );
-
-                // Security check for shell commands
+            let mut results = Vec::new();
+            for tc in &resp.tool_calls {
+                tracing::info!("  → {}", tc.function.name);
                 if tc.function.name == "shell"
-                    && let Ok(args) =
-                        serde_json::from_str::<serde_json::Value>(&tc.function.arguments)
-                        && let Some(cmd) = args["command"].as_str()
-                            && !self.security.check_command(cmd).await? {
-                                tool_results.push(Message::tool(
-                                    format!("Permission denied: command '{}' not allowed", cmd),
-                                    &tc.id,
-                                ));
-                                continue;
-                            }
-
-                // Execute tool
+                    && let Ok(args) = serde_json::from_str::<serde_json::Value>(&tc.function.arguments)
+                    && let Some(cmd) = args["command"].as_str()
+                    && !self.security.check_command(cmd).await?
+                {
+                    results.push(Message::tool(format!("Permission denied: '{cmd}'"), &tc.id));
+                    continue;
+                }
                 if let Some(tool) = self.tools.get(&tc.function.name) {
                     match tool.execute(&tc.function.arguments).await {
-                        Ok(result) => {
-                            let output = if result.output.len() > 4000 {
-                                format!(
-                                    "{}...\n[truncated, {} total chars]",
-                                    &result.output[..4000],
-                                    result.output.len()
-                                )
-                            } else {
-                                result.output
-                            };
-                            tool_results.push(Message::tool(&output, &tc.id));
+                        Ok(r) => {
+                            let out = if r.output.len() > 4000 {
+                                format!("{}...[truncated]", &r.output[..4000])
+                            } else { r.output };
+                            results.push(Message::tool(&out, &tc.id));
                         }
-                        Err(e) => {
-                            tool_results.push(Message::tool(format!("Tool error: {e}"), &tc.id));
-                        }
+                        Err(e) => results.push(Message::tool(format!("Error: {e}"), &tc.id)),
                     }
                 } else {
-                    tool_results.push(Message::tool(
-                        format!("Tool not found: {}", tc.function.name),
-                        &tc.id,
-                    ));
+                    results.push(Message::tool(format!("Not found: {}", tc.function.name), &tc.id));
                 }
             }
 
-            // Add assistant message with tool calls to conversation
+            // OBSERVE
             self.conversation.push(Message {
                 role: bizclaw_core::types::Role::Assistant,
-                content: response.content.clone().unwrap_or_default(),
-                name: None,
-                tool_call_id: None,
-                tool_calls: Some(response.tool_calls.clone()),
+                content: resp.content.clone().unwrap_or_default(),
+                name: None, tool_call_id: None,
+                tool_calls: Some(resp.tool_calls.clone()),
             });
-
-            // Add tool results to conversation
-            for tr in tool_results {
-                self.conversation.push(tr);
-            }
+            for r in results { self.conversation.push(r); }
+            tracing::debug!("🔍 Observe — looping to Think");
         }
 
-        // If we exhausted all rounds without a final text response
         if final_content.is_empty() {
             final_content = "I executed the requested tools.".into();
             self.conversation.push(Message::assistant(&final_content));
         }
 
-        // ═══════════════════════════════════════
-        // Phase 4: Save to Memory + Update Stats
-        // ═══════════════════════════════════════
-        self.save_memory(user_message, &final_content).await;
+        // Quality Gate
+        if let Some(ref gate) = self.config.quality_gate
+            && !gate.evaluator_prompt.is_empty() {
+                let max_rev = gate.max_revisions.unwrap_or(2) as usize;
+                for rev in 0..max_rev {
+                    let ep = format!("{}\n\nUSER: {}\nRESPONSE: {}\n\nReply APPROVED or REVISION_NEEDED: <feedback>",
+                        gate.evaluator_prompt, user_message, final_content);
+                    let em = vec![Message::system("Quality evaluator."), Message::user(&ep)];
+                    let epar = GenerateParams {
+                        model: gate.evaluator_model.clone().unwrap_or(self.config.default_model.clone()),
+                        temperature: 0.3, max_tokens: 500, top_p: 0.9, stop: vec![],
+                    };
+                    match self.provider.chat(&em, &[], &epar).await {
+                        Ok(er) => {
+                            let e = er.content.unwrap_or_default();
+                            if e.contains("APPROVED") { tracing::info!("✅ QG passed"); break; }
+                            if e.contains("REVISION_NEEDED") {
+                                tracing::info!("🔄 Revision {}/{}", rev+1, max_rev);
+                                let fb = e.split_once(':').map(|x| x.1).unwrap_or("Improve.");
+                                self.conversation.push(Message::system(format!("[QG rev {}/{}] {}", rev+1, max_rev, fb.trim())));
+                                if let Ok(rv) = self.provider.chat(&self.conversation, &[], &params).await
+                                    && let Some(nc) = rv.content {
+                                        final_content = nc;
+                                        self.conversation.push(Message::assistant(&final_content));
+                                    }
+                            } else { break; }
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }
 
-        // Update context stats
+        // Save memory + update stats
+        self.save_memory(user_message, &final_content).await;
         let new_tokens = self.estimate_tokens();
         self.last_stats = ContextStats {
             message_count: self.conversation.len(),
             estimated_tokens: new_tokens,
             utilization_pct: new_tokens as f32 / max_context as f32 * 100.0,
-            max_context,
-            last_tool_rounds: tool_rounds_used,
-            compacted,
+            max_context, last_tool_rounds: tool_rounds, compacted,
             session_id: self.session_id.clone(),
         };
 
         Ok(final_content)
     }
+
 
     /// Search the knowledge base for relevant context.
     async fn search_knowledge(&self, query: &str) -> Option<String> {

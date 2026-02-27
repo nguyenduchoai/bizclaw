@@ -54,6 +54,7 @@ impl BrainWorkspace {
     }
 
     /// Create workspace with default BizClaw home dir.
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         Self::new(bizclaw_core::config::BizClawConfig::home_dir())
     }
@@ -277,6 +278,7 @@ impl DailyLogManager {
         Self { memory_dir }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         Self::new(bizclaw_core::config::BizClawConfig::home_dir())
     }

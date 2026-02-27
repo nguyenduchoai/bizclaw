@@ -152,6 +152,7 @@ impl GatewayDb {
 
         // Each provider definition is fully self-describing:
         // (name, label, icon, type, base_url, chat_path, models_path, auth_style, env_keys_json, models_json)
+        #[allow(clippy::type_complexity)]
         let defaults: Vec<(&str, &str, &str, &str, &str, &str, &str, &str, &str, &str)> = vec![
             (
                 "openai", "OpenAI", "🤖", "cloud",
@@ -309,6 +310,7 @@ impl GatewayDb {
     }
 
     /// Create or update a provider.
+    #[allow(clippy::too_many_arguments)]
     pub fn upsert_provider(
         &self,
         name: &str,

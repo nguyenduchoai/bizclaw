@@ -4,11 +4,14 @@
 
 BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **mọi nơi** — từ Raspberry Pi đến cloud server. Hỗ trợ nhiều LLM provider, kênh giao tiếp, và công cụ thông qua kiến trúc thống nhất, hoán đổi được.
 
+> 💡 **Lấy cảm hứng từ** [GoClaw](https://github.com/nextlevelbuilder/goclaw) (Go-based agent framework) và [OpenFang](https://github.com/RightNow-AI/openfang) (Rust agent OS với 7 Hands architecture). BizClaw kết hợp Think-Act-Observe loop từ GoClaw với trait-driven modularity, đồng thời tham khảo cách OpenFang tổ chức autonomous "Hands" chạy nền 24/7.
+
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen)]()
-[![Crates](https://img.shields.io/badge/crates-15-success)]()
-[![LOC](https://img.shields.io/badge/lines-40463-informational)]()
+[![Tests](https://img.shields.io/badge/tests-227%20passing-brightgreen)]()
+[![Crates](https://img.shields.io/badge/crates-16-success)]()
+[![LOC](https://img.shields.io/badge/lines-36636-informational)]()
+[![Clippy](https://img.shields.io/badge/clippy-0%20warnings-brightgreen)]()
 [![Website](https://img.shields.io/badge/🌐_Website-bizclaw.vn-blue)](https://bizclaw.vn)
 [![Facebook](https://img.shields.io/badge/📘_Fanpage-bizclaw.vn-1877F2?logo=facebook)](https://www.facebook.com/bizclaw.vn)
 
@@ -55,14 +58,18 @@ cd bizclaw && cargo build --release
 | **🛠️ 13 Tools** | Shell, File, Edit File, Glob, Grep, Web Search, HTTP Request, Config Manager, Execute Code (9 ngôn ngữ), Plan Mode, Group Summarizer, Calendar, Document Reader, Memory Search, Session Context |
 | **🔗 MCP** | Model Context Protocol client — kết nối MCP servers bên ngoài, mở rộng tools không giới hạn |
 | **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log, Per-tenant SQLite DB |
-| **🌐 Web Dashboard** | 12 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, settings |
+| **🌐 Web Dashboard** | 15 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, **LLM Traces, Cost Tracking, Activity Feed**, settings |
 | **🤖 51 Agent Templates** | 13 danh mục nghiệp vụ, system prompt chuyên sâu, cài 1 click |
 | **👥 Group Chat** | Tạo nhóm agent cộng tác — gửi 1 câu hỏi, tất cả agent trong nhóm phản hồi |
 | **🧠 3-Tier Memory** | Brain workspace (SOUL.md/MEMORY.md), Daily auto-compaction, FTS5 search |
 | **📚 Knowledge RAG** | Upload documents → vector search, relevance scoring |
-| **⏰ Scheduler** | Tác vụ hẹn giờ, agent tự chạy background |
+| **⏰ Scheduler** | Tác vụ hẹn giờ, agent tự chạy background, **retry mechanism với exponential backoff** |
 | **💾 Persistence** | SQLite gateway.db (providers, agents, channels), agents.json backup, auto-restore |
 | **🧠 Brain Engine** | GGUF inference: mmap, quantization, Flash Attention, SIMD (ARM NEON, x86 SSE2/AVX2) |
+| **🔄 Think-Act-Observe** | Agent loop 5 rounds max — *lấy cảm hứng từ GoClaw/OpenFang* |
+| **✅ Quality Gates** | Evaluator LLM tự review response, auto-revision nếu chưa đạt |
+| **📊 Prompt Caching** | Anthropic `cache_control` — tiết kiệm 60-90% token lặp |
+| **🔌 OpenAI-Compatible API** | Drop-in `/v1/chat/completions` — dùng với Cursor, Aider, Continue... |
 | **🔒 Security** | Command allowlist, AES-256, HMAC-SHA256, JWT + bcrypt, CORS, rate limiting |
 
 ### 🤖 Agent Gallery — 51 Mẫu Nghiệp vụ
@@ -223,8 +230,8 @@ ollama pull qwen3         # ~4.7GB
 | `bizclaw-tools` | 13 native tools + MCP bridge | ✅ |
 | `bizclaw-mcp` | MCP client (JSON-RPC 2.0 via stdio) | ✅ |
 | `bizclaw-security` | AES-256, Command allowlist, Sandbox | ✅ |
-| `bizclaw-agent` | Agent loop, tool calling (max 3 rounds), context management | ✅ |
-| `bizclaw-gateway` | Axum HTTP + WS + Dashboard (12 pages, i18n VI/EN) | ✅ |
+| `bizclaw-agent` | Think-Act-Observe loop (5 rounds), Quality Gates, auto-compaction | ✅ |
+| `bizclaw-gateway` | Axum HTTP + WS + Dashboard (15 pages, i18n VI/EN), OpenAI-compatible API, LLM Tracing | ✅ |
 | `bizclaw-knowledge` | Knowledge RAG with FTS5, document chunking | ✅ |
 | `bizclaw-scheduler` | Scheduled tasks, agent integration, notifications | ✅ |
 | `bizclaw-runtime` | Process adapters | ✅ |
@@ -235,14 +242,16 @@ ollama pull qwen3         # ~4.7GB
 | Metric | Value |
 |--------|-------|
 | **Language** | 100% Rust |
-| **Crates** | 15 |
-| **Lines of Code** | ~40463 |
-| **Tests** | 124 passing |
+| **Crates** | 16 |
+| **Lines of Code** | ~36,636 |
+| **Tests** | 227 passing |
+| **Clippy Warnings** | **0** ✅ |
 | **Providers** | 15 built-in + custom endpoint |
-| **Channels** | 9 types |
+| **Channels** | 25+ types (33 registered) |
 | **Tools** | 13 native + MCP (unlimited) |
+| **Hands** | 7 autonomous + custom |
 | **Gallery** | 51 business agent templates |
-| **Dashboard** | 12 pages, bilingual (VI/EN) |
+| **Dashboard** | 15 pages, bilingual (VI/EN) |
 | **Binary Size** | bizclaw 12M, platform 7.7M |
 | **Last Updated** | 2026-02-26 (03070b6) |
 
@@ -294,6 +303,20 @@ BizClaw is deployed at [bizclaw.vn](https://bizclaw.vn):
 | 🌐 **Website** | [https://bizclaw.vn](https://bizclaw.vn) |
 | 📘 **Fanpage** | [https://www.facebook.com/bizclaw.vn](https://www.facebook.com/bizclaw.vn) |
 | 💻 **GitHub** | [https://github.com/nguyenduchoai/bizclaw](https://github.com/nguyenduchoai/bizclaw) |
+
+---
+
+## 🙏 Inspiration & Credits
+
+BizClaw được xây dựng với cảm hứng và tham khảo kiến trúc từ các dự án open-source sau:
+
+| Project | Đóng góp cho BizClaw |
+|---------|---------------------|
+| **[GoClaw](https://github.com/nextlevelbuilder/goclaw)** | Think-Act-Observe agent loop pattern, multi-round tool calling architecture |
+| **[OpenFang](https://github.com/RightNow-AI/openfang)** | "7 Hands" autonomous agent concept → inspired Scheduler + background tasks, Rust-first binary approach, 16-layer security model |
+| **[OpenClaw](https://github.com/nicepkg/openclaw)** | Multi-channel gateway concept (Telegram, Discord, Email), MCP integration patterns |
+
+> Cảm ơn cộng đồng open-source đã xây dựng nền tảng cho các AI Agent framework thế hệ mới.
 
 ---
 
