@@ -36,7 +36,7 @@ BizClaw là hạ tầng AI Agent module hoá, kiến trúc trait-driven. Không 
 |----------|---------|----------|----------|
 | 🍓 **Raspberry Pi** | **$0/tháng** | Doanh nghiệp nhỏ, startup, cá nhân | Binary 12MB, 512MB RAM, Ollama local |
 | 📱 **Android** | **$0/tháng** | Agent bỏ túi, điều khiển Facebook/Zalo | Foreground 24/7, Accessibility Service |
-| 🖥️ **VPS** | **$5-10/tháng** | Production, multi-tenant, agency | 51 agents, multi-domain, SSL |
+| 🖥️ **VPS** | **Tuỳ nhu cầu** | Production, multi-tenant, agency | Tự thuê VPS từ đối tác — BizClaw miễn phí |
 
 ```
  Cùng 1 codebase Rust →  cargo build  →  chạy trên cả 3
@@ -44,7 +44,7 @@ BizClaw là hạ tầng AI Agent module hoá, kiến trúc trait-driven. Không 
    ┌──────┼──────────────────┐
    ▼      ▼                  ▼
   🍓 Pi  📱 Android          🖥️ VPS
-  $0      $0                 $5/tháng
+  $0      $0                 Tuỳ nhu cầu
   1 agent Agent bỏ túi       50+ agents
   Offline 24/7 + App ctrl    Multi-tenant
 ```
