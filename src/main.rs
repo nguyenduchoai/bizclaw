@@ -592,55 +592,30 @@ async fn main() -> Result<()> {
             // Telegram channel
             if let Some(tg_config) = &channel_config.telegram
                 && tg_config.enabled && !tg_config.bot_token.is_empty() {
-                    println!("   🤖 Telegram: starting bot...");
-                    let tg = bizclaw_channels::telegram::TelegramChannel::new(
-                        bizclaw_channels::telegram::TelegramConfig {
-                            bot_token: tg_config.bot_token.clone(),
-                            enabled: true,
-                            poll_interval: 1,
-                        },
-                    );
+                    println!("   🤖 Telegram: starting bot (with auto-reconnect)...");
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
-                        run_channel_loop("telegram", tg.start_polling(), cfg_clone).await;
+                        run_channel_loop_with_reconnect("telegram", cfg_clone).await;
                     });
                 }
 
             // Discord channel
             if let Some(dc_config) = &channel_config.discord
                 && dc_config.enabled && !dc_config.bot_token.is_empty() {
-                    println!("   🎮 Discord: starting bot...");
-                    let dc = bizclaw_channels::discord::DiscordChannel::new(
-                        bizclaw_channels::discord::DiscordConfig {
-                            bot_token: dc_config.bot_token.clone(),
-                            enabled: true,
-                            intents: (1 << 0) | (1 << 9) | (1 << 12) | (1 << 15),
-                        },
-                    );
+                    println!("   🎮 Discord: starting bot (with auto-reconnect)...");
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
-                        run_channel_loop("discord", dc.start_gateway(), cfg_clone).await;
+                        run_channel_loop_with_reconnect("discord", cfg_clone).await;
                     });
                 }
 
             // Email channel
             if let Some(ref email_cfg) = channel_config.email
                 && email_cfg.enabled && !email_cfg.email.is_empty() {
-                    println!("   📧 Email: starting listener ({})...", email_cfg.email);
-                    let em = bizclaw_channels::email::EmailChannel::new(
-                        bizclaw_channels::email::EmailConfig {
-                            imap_host: email_cfg.imap_host.clone(),
-                            imap_port: email_cfg.imap_port,
-                            smtp_host: email_cfg.smtp_host.clone(),
-                            smtp_port: email_cfg.smtp_port,
-                            email: email_cfg.email.clone(),
-                            password: email_cfg.password.clone(),
-                            ..Default::default()
-                        },
-                    );
+                    println!("   📧 Email: starting listener (with auto-reconnect)...");
                     let cfg_clone = agent_config.clone();
                     tokio::spawn(async move {
-                        run_channel_loop("email", em.start_polling(), cfg_clone).await;
+                        run_channel_loop_with_reconnect("email", cfg_clone).await;
                     });
                 }
 
@@ -888,7 +863,6 @@ where
     };
 
     // Create channel sender for replies
-    // We need a way to send messages back. For now, use the provider-specific send.
     let send_client = reqwest::Client::new();
 
     while let Some(incoming) = stream.next().await {
@@ -912,7 +886,6 @@ where
                 // Send response back through the same channel
                 match channel_name {
                     "telegram" => {
-                        // Use Telegram sendMessage API
                         if let Some(ref tg_cfg) = config.channel.telegram {
                             let url = format!(
                                 "https://api.telegram.org/bot{}/sendMessage",
@@ -929,7 +902,6 @@ where
                         }
                     }
                     "discord" => {
-                        // Use Discord REST API to send message
                         if let Some(ref dc_cfg) = config.channel.discord {
                             let url = format!(
                                 "https://discord.com/api/v10/channels/{}/messages",
@@ -948,16 +920,12 @@ where
                         }
                     }
                     "email" => {
-                        // Reply via SMTP (if email channel has send capability)
                         if let Some(ref _email_cfg) = config.channel.email {
                             tracing::info!(
                                 "[email] Reply to {}: {}...",
                                 incoming.sender_id,
                                 &response[..response.len().min(60)]
                             );
-                            // Email replies are handled by the EmailChannel's send() method
-                            // The incoming.sender_id contains the From address
-                            // For now, log the reply — full SMTP send is in EmailChannel
                         }
                     }
                     _ => {
@@ -971,5 +939,74 @@ where
         }
     }
 
-    tracing::warn!("📡 Channel '{channel_name}' stream ended — channel may have disconnected");
+    tracing::warn!("📡 Channel '{channel_name}' stream ended — channel disconnected");
 }
+
+/// Run a channel listener loop with automatic reconnect on disconnect.
+/// Uses exponential backoff: 5s → 10s → 20s → ... → 300s max.
+async fn run_channel_loop_with_reconnect(
+    channel_name: &'static str,
+    config: bizclaw_core::BizClawConfig,
+) {
+    let mut retry_delay = std::time::Duration::from_secs(5);
+    let max_delay = std::time::Duration::from_secs(300);
+
+    loop {
+        tracing::info!("📡 Connecting channel '{channel_name}'...");
+
+        match channel_name {
+            "telegram" => {
+                if let Some(ref tg_cfg) = config.channel.telegram {
+                    let tg = bizclaw_channels::telegram::TelegramChannel::new(
+                        bizclaw_channels::telegram::TelegramConfig {
+                            bot_token: tg_cfg.bot_token.clone(),
+                            enabled: true,
+                            poll_interval: 1,
+                        },
+                    );
+                    run_channel_loop("telegram", tg.start_polling(), config.clone()).await;
+                }
+            }
+            "discord" => {
+                if let Some(ref dc_cfg) = config.channel.discord {
+                    let dc = bizclaw_channels::discord::DiscordChannel::new(
+                        bizclaw_channels::discord::DiscordConfig {
+                            bot_token: dc_cfg.bot_token.clone(),
+                            enabled: true,
+                            intents: (1 << 0) | (1 << 9) | (1 << 12) | (1 << 15),
+                        },
+                    );
+                    run_channel_loop("discord", dc.start_gateway(), config.clone()).await;
+                }
+            }
+            "email" => {
+                if let Some(ref email_cfg) = config.channel.email {
+                    let em = bizclaw_channels::email::EmailChannel::new(
+                        bizclaw_channels::email::EmailConfig {
+                            imap_host: email_cfg.imap_host.clone(),
+                            imap_port: email_cfg.imap_port,
+                            smtp_host: email_cfg.smtp_host.clone(),
+                            smtp_port: email_cfg.smtp_port,
+                            email: email_cfg.email.clone(),
+                            password: email_cfg.password.clone(),
+                            ..Default::default()
+                        },
+                    );
+                    run_channel_loop("email", em.start_polling(), config.clone()).await;
+                }
+            }
+            _ => {
+                tracing::warn!("Unknown channel: {channel_name}");
+                return; // Don't retry unknown channels
+            }
+        }
+
+        tracing::warn!(
+            "📡 Channel '{channel_name}' disconnected — reconnecting in {:?}...",
+            retry_delay
+        );
+        tokio::time::sleep(retry_delay).await;
+        retry_delay = (retry_delay * 2).min(max_delay);
+    }
+}
+
