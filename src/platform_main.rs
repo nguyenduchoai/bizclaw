@@ -69,6 +69,30 @@ fn expand_path(p: &str) -> String {
     shellexpand::tilde(p).to_string()
 }
 
+/// Generate a cryptographically secure JWT secret and persist to file.
+/// This ensures tokens survive process restarts.
+fn generate_and_persist_jwt_secret(path: &std::path::Path) -> String {
+    use rand::Rng;
+    let secret: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect();
+    if let Err(e) = std::fs::write(path, &secret) {
+        tracing::warn!("⚠️  Failed to persist JWT secret to {}: {e}", path.display());
+        tracing::warn!("⚠️  Tokens will be INVALIDATED on restart. Set JWT_SECRET env var for persistence.");
+    } else {
+        tracing::info!("🔑 JWT secret generated and saved to {}", path.display());
+        // Set restrictive permissions on Unix
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+        }
+    }
+    secret
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -140,23 +164,28 @@ async fn main() -> Result<()> {
         println!("   ⚠️  Change this password after first login!\n");
     }
 
-    // Prefer JWT_SECRET env var over CLI default
+    // Prefer JWT_SECRET env var > persisted file > CLI arg > auto-generate
+    let jwt_secret_path = std::path::Path::new(&data_dir).parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join(".jwt_secret");
     let jwt_secret = match std::env::var("JWT_SECRET") {
         Ok(s) if !s.is_empty() => s,
         _ => {
-            if cli.jwt_secret == "bizclaw-platform-secret-2026" {
-                // Auto-generate a cryptographically secure random secret
-                use rand::Rng;
-                let secret: String = rand::thread_rng()
-                    .sample_iter(&rand::distributions::Alphanumeric)
-                    .take(64)
-                    .map(char::from)
-                    .collect();
-                tracing::warn!("⚠️  JWT_SECRET not set! Auto-generated 256-bit random secret for this session.");
-                tracing::warn!("⚠️  Tokens will be INVALIDATED on restart. Set JWT_SECRET env var for persistence.");
-                secret
-            } else {
+            if cli.jwt_secret != "bizclaw-platform-secret-2026" {
+                // Explicit CLI arg provided
                 cli.jwt_secret.clone()
+            } else if jwt_secret_path.exists() {
+                // Load persisted secret from file
+                match std::fs::read_to_string(&jwt_secret_path) {
+                    Ok(s) if !s.trim().is_empty() => {
+                        tracing::info!("🔑 JWT secret loaded from {}", jwt_secret_path.display());
+                        s.trim().to_string()
+                    }
+                    _ => generate_and_persist_jwt_secret(&jwt_secret_path)
+                }
+            } else {
+                // First run — generate and persist
+                generate_and_persist_jwt_secret(&jwt_secret_path)
             }
         }
     };
@@ -201,7 +230,6 @@ async fn main() -> Result<()> {
                 let running: Vec<_> = tenants.iter().filter(|t| t.status == "running").collect();
                 if !running.is_empty() {
                     println!("🔄 Auto-restarting {} tenant(s)...", running.len());
-                    // We need to keep our own Vec since we're about to drop the lock
                     let running_owned: Vec<_> = running.into_iter().cloned().collect();
                     drop(db_lock); // Release lock before starting tenants
                     for tenant in &running_owned {
