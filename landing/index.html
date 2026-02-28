@@ -56,8 +56,87 @@ h1 .grad{background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-
 .btn-secondary:hover{border-color:var(--accent);background:var(--accent-glow)}
 .hero-stats{display:flex;gap:48px;justify-content:center;margin-top:60px;flex-wrap:wrap}
 .hero-stat{text-align:center}
-.hero-stat .num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-stat .num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;background:var(--grad2);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .hero-stat .label{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* ═══ PLATFORM SECTION ═══ */
+#platforms{background:var(--bg);position:relative;overflow:hidden}
+#platforms::before{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(99,102,241,.06) 0%,transparent 70%);pointer-events:none}
+.platforms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px;position:relative}
+.platforms-grid::before{content:'';position:absolute;top:50%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--accent),var(--cyan),transparent);opacity:.3;z-index:0}
+.platform-card{background:var(--card);border-radius:20px;padding:36px 28px;text-align:center;position:relative;z-index:1;transition:all .4s;overflow:hidden}
+.platform-card::before{content:'';position:absolute;inset:-2px;border-radius:22px;padding:2px;background:linear-gradient(135deg,var(--accent),var(--cyan),var(--accent));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:.4s}
+.platform-card:hover::before{opacity:1}
+.platform-card:hover{transform:translateY(-8px);box-shadow:0 20px 60px rgba(99,102,241,.15)}
+.platform-icon{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px;position:relative}
+.platform-icon.pi{background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(52,211,153,.05))}
+.platform-icon.android{background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.05))}
+.platform-icon.vps{background:linear-gradient(135deg,rgba(34,211,238,.15),rgba(34,211,238,.05))}
+.platform-card h3{font-size:20px;font-weight:700;margin-bottom:4px;font-family:'Space Grotesk',sans-serif}
+.platform-price{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:800;margin:8px 0}
+.platform-price.free{color:var(--green)}
+.platform-price.low{color:var(--cyan)}
+.platform-card .platform-desc{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.platform-features{list-style:none;text-align:left}
+.platform-features li{padding:5px 0;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.platform-features li .pf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pf-dot.green{background:var(--green)}
+.pf-dot.purple{background:var(--accent)}
+.pf-dot.cyan{background:var(--cyan)}
+.platform-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.ptag-green{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.ptag-purple{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.ptag-cyan{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+
+/* Floating orbs */
+.platform-orbs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(40px);animation:float 8s ease-in-out infinite}
+.orb-1{width:200px;height:200px;background:rgba(99,102,241,.08);top:-50px;left:-50px;animation-delay:0s}
+.orb-2{width:150px;height:150px;background:rgba(34,211,238,.06);bottom:-30px;right:-30px;animation-delay:3s}
+.orb-3{width:180px;height:180px;background:rgba(52,211,153,.05);top:50%;right:20%;animation-delay:5s}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.05)}}
+
+/* ═══ ANDROID SHOWCASE ═══ */
+.android-showcase{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:48px}
+.android-visual{position:relative;display:flex;align-items:center;justify-content:center;min-height:400px}
+.phone-frame{width:200px;height:380px;background:var(--card);border:2px solid var(--border);border-radius:28px;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+.phone-screen{position:absolute;inset:8px;border-radius:20px;background:linear-gradient(180deg,#1a1b2e 0%,#12131f 100%);display:flex;flex-direction:column;padding:16px 12px}
+.phone-notch{width:60px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 12px}
+.phone-logo{text-align:center;font-size:28px;margin-bottom:8px}
+.phone-title{text-align:center;font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:12px}
+.phone-status{display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(52,211,153,.1);border-radius:8px;margin-bottom:8px;font-size:10px;color:var(--green)}
+.phone-status .ps-dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+.app-lines{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.app-line{height:3px;border-radius:2px;opacity:.3}
+.app-line:nth-child(1){background:var(--accent);width:80%}
+.app-line:nth-child(2){background:var(--cyan);width:60%}
+.app-line:nth-child(3){background:var(--green);width:70%}
+
+/* App connection lines */
+.app-nodes{position:absolute;top:0;left:0;right:0;bottom:0}
+.app-node{position:absolute;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:float 6s ease-in-out infinite}
+.app-node.fb{background:linear-gradient(135deg,#1877F2,#0d47a1);top:15%;right:5%;animation-delay:0s}
+.app-node.msg{background:linear-gradient(135deg,#a855f6,#6366f1);top:45%;right:0;animation-delay:2s}
+.app-node.zalo{background:linear-gradient(135deg,#0068ff,#0041a8);bottom:20%;right:10%;animation-delay:4s}
+
+.android-info h3{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:16px;line-height:1.3}
+.android-info .ai-highlight{background:var(--grad1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.android-info p{color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:20px}
+.mode-pills{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.mode-pill{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.mode-pill.local{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.mode-pill.remote{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.mode-pill.hybrid{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.app-control-list{list-style:none}
+.app-control-list li{padding:6px 0;font-size:14px;display:flex;align-items:center;gap:10px}
+.app-control-list li .acl-icon{font-size:18px;width:24px;text-align:center}
+
+@media(max-width:768px){
+  .platforms-grid{grid-template-columns:1fr}
+  .platforms-grid::before{display:none}
+  .android-showcase{grid-template-columns:1fr}
+  .android-visual{min-height:300px}
+}
 
 /* ═══ SECTION ═══ */
 section{padding:100px 24px}
@@ -322,6 +401,100 @@ footer a{color:var(--accent2);text-decoration:none}
       <div class="provider-pill">🔌 CLIProxy</div>
       <div class="provider-pill">📡 vLLM</div>
 
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORMS -->
+<section id="platforms">
+  <div class="container">
+    <div class="platform-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+    <div class="section-label" data-vi="CHẠY MỌI NƠI" data-en="RUNS EVERYWHERE">ĐA NỀN TẢNG</div>
+    <div class="section-title" data-vi="1 Codebase → 3 Nền Tảng → Mọi Quy Mô" data-en="1 Codebase → 3 Platforms → Any Scale">1 Codebase → 3 Nền Tảng → Mọi Quy Mô</div>
+    <div class="section-desc" data-vi="Nền tảng AI Agent DUY NHẤT chạy được trên cả Raspberry Pi, điện thoại Android, và VPS. Từ 1 codebase Rust duy nhất." data-en="The ONLY AI Agent platform that runs on Raspberry Pi, Android phones, AND VPS. From a single Rust codebase.">Nền tảng AI Agent DUY NHẤT chạy được trên cả Raspberry Pi, điện thoại Android, và VPS. Từ 1 codebase Rust duy nhất.</div>
+
+    <div class="platforms-grid">
+      <div class="platform-card fade-up" style="--i:0">
+        <div class="platform-icon pi">🍓</div>
+        <span class="platform-tag ptag-green">STARTUP</span>
+        <h3>Raspberry Pi</h3>
+        <div class="platform-price free" data-vi="$0/tháng" data-en="$0/month">$0/tháng</div>
+        <p class="platform-desc" data-vi="Biến bất kỳ Pi nào thành AI server. Chạy 24/7 với điện như bóng đèn LED." data-en="Turn any Pi into an AI server. Runs 24/7 with the power of an LED bulb.">Biến bất kỳ Pi nào thành AI server. Chạy 24/7 với điện như bóng đèn LED.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot green"></span> Binary 12MB, 512MB RAM</li>
+          <li><span class="pf-dot green"></span> Ollama + Brain Engine local</li>
+          <li><span class="pf-dot green"></span> data-vi="Không cần internet" data-en="No internet needed">Không cần internet</li>
+          <li><span class="pf-dot green"></span> SIMD (ARM NEON)</li>
+        </ul>
+      </div>
+
+      <div class="platform-card fade-up" style="--i:1">
+        <div class="platform-icon android">📱</div>
+        <span class="platform-tag ptag-purple">MOBILE</span>
+        <h3>Android</h3>
+        <div class="platform-price free" data-vi="$0/tháng" data-en="$0/month">$0/tháng</div>
+        <p class="platform-desc" data-vi="Agent bỏ túi. Điều khiển Facebook, Messenger, Zalo tự động." data-en="Pocket agent. Controls Facebook, Messenger, Zalo automatically.">Agent bỏ túi. Điều khiển Facebook, Messenger, Zalo tự động.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot purple"></span> Foreground Service 24/7</li>
+          <li><span class="pf-dot purple"></span> Accessibility điều khiển app</li>
+          <li><span class="pf-dot purple"></span> 3 mode: LOCAL/REMOTE/HYBRID</li>
+          <li><span class="pf-dot purple"></span> 10 device tools</li>
+        </ul>
+      </div>
+
+      <div class="platform-card fade-up" style="--i:2">
+        <div class="platform-icon vps">🖥️</div>
+        <span class="platform-tag ptag-cyan">PRODUCTION</span>
+        <h3>VPS / Cloud</h3>
+        <div class="platform-price low" data-vi="$5–10/tháng" data-en="$5–10/month">$5–10/tháng</div>
+        <p class="platform-desc" data-vi="Multi-tenant, 51 agents, multi-domain, SSL. Dành cho agency và doanh nghiệp." data-en="Multi-tenant, 51 agents, multi-domain, SSL. For agencies and enterprises.">Multi-tenant, 51 agents, multi-domain, SSL. Dành cho agency và doanh nghiệp.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot cyan"></span> Docker + one-click deploy</li>
+          <li><span class="pf-dot cyan"></span> 50+ agents đồng thời</li>
+          <li><span class="pf-dot cyan"></span> Admin dashboard 15 trang</li>
+          <li><span class="pf-dot cyan"></span> Multi-domain SSL</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANDROID SHOWCASE -->
+<section id="android-showcase" style="background:var(--bg2)">
+  <div class="container">
+    <div class="android-showcase">
+      <div class="android-visual">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="phone-logo">⚡</div>
+            <div class="phone-title">BizClaw Agent</div>
+            <div class="phone-status"><span class="ps-dot"></span> Agent đang chạy 24/7</div>
+            <div class="phone-status" style="background:rgba(99,102,241,.1);color:var(--accent2)"><span class="ps-dot" style="background:var(--accent)"></span> Accessibility: ON</div>
+            <div class="app-lines"><div class="app-line"></div><div class="app-line"></div><div class="app-line"></div></div>
+          </div>
+        </div>
+        <div class="app-nodes">
+          <div class="app-node fb" title="Facebook">📘</div>
+          <div class="app-node msg" title="Messenger">💬</div>
+          <div class="app-node zalo" title="Zalo">📨</div>
+        </div>
+      </div>
+      <div class="android-info">
+        <h3 data-vi="Không chỉ chat.<br>Mà <span class='ai-highlight'>ĐIỀU KHIỂN</span>." data-en="Not just chat.<br>But <span class='ai-highlight'>CONTROL</span>.">Không chỉ chat.<br>Mà <span class="ai-highlight">ĐIỀU KHIỂN</span>.</h3>
+        <p data-vi="Các app AI khác chỉ cho bạn chat. BizClaw cho agent điều khiển cả điện thoại — tự đăng bài Facebook, tự trả lời Messenger, tự nhắn tin Zalo. Chạy 24/7, kể cả khi bạn ngủ." data-en="Other AI apps only let you chat. BizClaw lets agents control your entire phone — auto-post on Facebook, auto-reply Messenger, auto-message Zalo. Running 24/7, even while you sleep.">Các app AI khác chỉ cho bạn chat. BizClaw cho agent điều khiển cả điện thoại — tự đăng bài Facebook, tự trả lời Messenger, tự nhắn tin Zalo. Chạy 24/7, kể cả khi bạn ngủ.</p>
+        <div class="mode-pills">
+          <span class="mode-pill local">📱 LOCAL — Offline</span>
+          <span class="mode-pill remote">🌐 REMOTE — VPS/Pi</span>
+          <span class="mode-pill hybrid">🔀 HYBRID — Cả hai</span>
+        </div>
+        <ul class="app-control-list">
+          <li><span class="acl-icon">📘</span> <span data-vi="Facebook — tự đăng bài, bình luận, like" data-en="Facebook — auto-post, comment, like">Facebook — tự đăng bài, bình luận, like</span></li>
+          <li><span class="acl-icon">💬</span> <span data-vi="Messenger — tự trả lời tin nhắn" data-en="Messenger — auto-reply messages">Messenger — tự trả lời tin nhắn</span></li>
+          <li><span class="acl-icon">📨</span> <span data-vi="Zalo — tự nhắn tin liên hệ" data-en="Zalo — auto-message contacts">Zalo — tự nhắn tin liên hệ</span></li>
+          <li><span class="acl-icon">🔍</span> <span data-vi="Bất kỳ app — đọc màn hình, click, gõ text" data-en="Any app — read screen, click, type text">Bất kỳ app — đọc màn hình, click, gõ text</span></li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
