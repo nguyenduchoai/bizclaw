@@ -1,8 +1,17 @@
 # ⚡ BizClaw
 
-> **Hạ tầng AI Agent nhanh, module hoá — viết hoàn toàn bằng Rust.**
+<p align="center">
+  <img src="docs/images/hero-banner.png" alt="BizClaw — 1 codebase, 3 platforms" width="800">
+</p>
 
-BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **mọi nơi** — từ Raspberry Pi đến cloud server. Hỗ trợ nhiều LLM provider, kênh giao tiếp, và công cụ thông qua kiến trúc thống nhất, hoán đổi được.
+<p align="center">
+  <strong>1 codebase. 3 nền tảng. Doanh nghiệp nào cũng chạy được.</strong><br>
+  Raspberry Pi ($0) • Android (24/7) • VPS (Production)
+</p>
+
+> **Nền tảng AI Agent duy nhất chạy được trên cả Raspberry Pi, điện thoại Android, và VPS — từ 1 codebase Rust duy nhất.**
+
+BizClaw là hạ tầng AI Agent module hoá, kiến trúc trait-driven. Không phải toy project — đây là production platform cho doanh nghiệp, chạy trên phần cứng từ 512MB RAM.
 
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust)](https://www.rust-lang.org/)
@@ -19,19 +28,35 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 
 ---
 
-## 🇻🇳 Tiếng Việt
+## 🍓📱🖥️ Chạy MỌI NƠI — 1 Codebase, 3 Nền Tảng
 
-### 🚀 100% Tự Host — Không phụ thuộc Cloud
+> **BizClaw là nền tảng AI Agent DUY NHẤT triển khai được trên cả 3:**
 
-> **Tuyệt đối KHÔNG cần tạo tài khoản trên server trung gian.** KHÔNG tự động upload dữ liệu lên cloud bên thứ ba.
-> Clone code về → build → chạy thẳng trên máy cá nhân, VPS hoặc Raspberry Pi.
+| Nền tảng | Chi phí | Use Case | Đặc điểm |
+|----------|---------|----------|----------|
+| 🍓 **Raspberry Pi** | **$0/tháng** | Doanh nghiệp nhỏ, startup, cá nhân | Binary 12MB, 512MB RAM, Ollama local |
+| 📱 **Android** | **$0/tháng** | Agent bỏ túi, điều khiển Facebook/Zalo | Foreground 24/7, Accessibility Service |
+| 🖥️ **VPS** | **$5-10/tháng** | Production, multi-tenant, agency | 51 agents, multi-domain, SSL |
+
+```
+ Cùng 1 codebase Rust →  cargo build  →  chạy trên cả 3
+          │
+   ┌──────┼──────────────────┐
+   ▼      ▼                  ▼
+  🍓 Pi  📱 Android          🖥️ VPS
+  $0      $0                 $5/tháng
+  1 agent Agent bỏ túi       50+ agents
+  Offline 24/7 + App ctrl    Multi-tenant
+```
+
+> **Tuyệt đối KHÔNG cần tạo tài khoản trên server trung gian.** Không telemetry. Không tracking. Dữ liệu 100% của bạn.
 
 | | Chi tiết |
 |--|---------|
-| 🔒 **Local & Bảo Mật** | Dữ liệu chat, API Keys lưu mã hoá cục bộ trên ổ cứng. SQLite database nằm ngay trên máy bạn. |
-| 🌐 **Chạy Độc Lập** | Không token trung gian, không bị khóa quyền chức năng. Không telemetry, không tracking. |
-| 🧠 **Offline Mode** | Brain Engine + Ollama chạy LLM local. Internet chỉ cần cho cloud providers (OpenAI, Gemini...) |
-| 📱 **Mọi thiết bị** | Linux, macOS, Windows, Raspberry Pi, **Android**. Binary duy nhất ~13MB, APK ~8MB. |
+| 🔒 **Local & Bảo Mật** | Dữ liệu chat, API Keys mã hoá AES-256 trên ổ cứng. SQLite database nằm ngay trên máy bạn. |
+| 🌐 **Chạy Độc Lập** | Không cloud, không trung gian. Offline 100% với Ollama + Brain Engine. |
+| 📱 **Android Agent** | App điều khiển Facebook/Messenger/Zalo — AI tự post, tự reply, tự nhắn tin. |
+| 🍓 **Edge Device** | Raspberry Pi 4/5 chạy production. $0 chi phí hạ tầng. |
 
 **3 cách cài đặt:**
 
@@ -254,22 +279,36 @@ ollama pull qwen3         # ~4.7GB
 | `bizclaw-ffi` | Android/Edge FFI layer — 7 functions, cdylib, catch_unwind | ✅ |
 | `bizclaw-hands` | Process adapters, runtime execution | ✅ |
 
-### 📱 Android Agent Platform
+### 📱 Android Agent Platform — Không chỉ chat. Mà ĐIỀU KHIỂN.
 
-| Component | Mô tả |
-|-----------|--------|
-| `BizClawDaemonService` | Foreground service chạy Rust engine 24/7, WakeLock, auto-restart |
-| `BizClawAccessibilityService` | Điều khiển BẤT KỲ app: đọc màn hình, click, gõ text, swipe |
-| `AppController` | High-level: đăng Facebook, trả lời Messenger, nhắn Zalo |
-| `DeviceCapabilities` | Battery, storage, network, GPS, CPU/RAM, OEM battery killer |
-| `BootReceiver` | Tự khởi động lại agent sau khi reboot |
-| `DashboardScreen` | Device monitoring, daemon start/stop, device stats |
+<p align="center">
+  <img src="docs/images/android-agent-platform.png" alt="BizClaw Android — 3 modes" width="500">
+</p>
 
-**Supported apps (via Accessibility Service):**
-- Facebook — post, comment, like
-- Messenger — reply, read messages
-- Zalo — send messages
-- Bất kỳ app nào — generic screen.read / screen.click
+**3 chế độ hoạt động:**
+
+| Mode | Emoji | Mô tả |
+|------|-------|--------|
+| LOCAL | 📱 | Rust engine chạy trên phone, Ollama local, $0, không cần internet |
+| REMOTE | 🌐 | Kết nối VPS/Pi, chat & điều khiển agent từ xa |
+| HYBRID | 🔀 | Engine local + agent cloud cùng lúc |
+
+**Điều khiển BẤT KỲ app nào trên phone:**
+
+| App | Khả năng |
+|-----|----------|
+| Facebook | Tự đăng bài, bình luận, like |
+| Messenger | Tự trả lời tin nhắn |
+| Zalo | Tự nhắn tin |
+| Bất kỳ app | Đọc màn hình, click, gõ text, swipe |
+
+| Component | Chức năng |
+|-----------|----------|
+| `BizClawDaemonService` | Foreground service 24/7, WakeLock, auto-restart |
+| `BizClawAccessibilityService` | Điều khiển UI: đọc, click, gõ, swipe, tap toạ độ |
+| `AppController` | Workflow: Facebook post, Messenger reply, Zalo send |
+| `DeviceCapabilities` | Battery, storage, GPS, CPU, OEM battery killer |
+| `BootReceiver` | Tự khởi động lại agent sau reboot |
 
 ### 📊 Stats
 
