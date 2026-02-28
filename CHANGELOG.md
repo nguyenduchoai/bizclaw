@@ -7,7 +7,15 @@
 - **Lane-based Scheduler** — 4 priority lanes (main/cron/subagent/delegate) with per-lane concurrency limits, prevents agent floods on edge devices
 - **Agent Discovery** — auto-generates `AGENTS.md` for context injection (full details ≤15 agents, compact table >15 agents, keyword search)
 - **SKILL.md Injection** — loads domain expertise files into Hand execution context, supports YAML frontmatter stripping, flat + subdirectory patterns
-- **Android/Edge FFI Layer** (`bizclaw-ffi` crate) — 5-function UniFFI surface (`start_daemon`, `stop_daemon`, `get_status`, `send_message`, `get_version`) with `catch_unwind` safety, 2-thread Tokio runtime for edge devices
+- **Android/Edge FFI Layer** (`bizclaw-ffi` crate) — 7-function UniFFI surface (`start_daemon`, `stop_daemon`, `get_status`, `send_message`, `get_version`, `register_device_tools`, `execute_device_action`) with `catch_unwind` safety, 2-thread Tokio runtime for edge devices
+- **Android Agent Platform** — 16 Kotlin files, 2750 LOC:
+  - `BizClawDaemonService` — Foreground service 24/7, WakeLock, START_STICKY, auto-restart on task removal
+  - `BizClawAccessibilityService` — Control ANY app: read screen, click, type, swipe, tap coordinates, navigation
+  - `AppController` — High-level workflows: Facebook post/comment, Messenger reply, Zalo send, generic screen reading
+  - `DeviceCapabilities` — Battery, storage, network, GPS, CPU/RAM, OEM battery killer detection (Xiaomi/Samsung/OPPO/Vivo/Huawei)
+  - `BootReceiver` — Auto-start daemon after phone reboot
+  - `DashboardScreen` — Device monitoring, daemon start/stop, device stats grid
+  - Material 3 + Jetpack Compose UI, 4 screens (Chat, Agents, Settings, Dashboard)
 - New crate: `bizclaw-ffi` (cdylib + rlib for Android .so / Raspberry Pi)
 - New modules: `failover.rs`, `lanes.rs`, `discovery.rs`, `skills.rs`
 - Total workspace crates: 16 → **18**

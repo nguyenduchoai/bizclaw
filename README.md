@@ -7,10 +7,11 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-227%20passing-brightgreen)]()
-[![Crates](https://img.shields.io/badge/crates-16-success)]()
-[![LOC](https://img.shields.io/badge/lines-36636-informational)]()
+[![Tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)]()
+[![Crates](https://img.shields.io/badge/crates-18-success)]()
+[![LOC](https://img.shields.io/badge/lines-39K+-informational)]()
 [![Clippy](https://img.shields.io/badge/clippy-0%20warnings-brightgreen)]()
+[![Android](https://img.shields.io/badge/Android-Agent%20Platform-34A853?logo=android)](android/)
 [![Website](https://img.shields.io/badge/🌐_Website-bizclaw.vn-blue)](https://bizclaw.vn)
 [![Facebook](https://img.shields.io/badge/📘_Fanpage-bizclaw.vn-1877F2?logo=facebook)](https://www.facebook.com/bizclaw.vn)
 
@@ -30,7 +31,7 @@ BizClaw là nền tảng AI Agent kiến trúc trait-driven, có thể chạy **
 | 🔒 **Local & Bảo Mật** | Dữ liệu chat, API Keys lưu mã hoá cục bộ trên ổ cứng. SQLite database nằm ngay trên máy bạn. |
 | 🌐 **Chạy Độc Lập** | Không token trung gian, không bị khóa quyền chức năng. Không telemetry, không tracking. |
 | 🧠 **Offline Mode** | Brain Engine + Ollama chạy LLM local. Internet chỉ cần cho cloud providers (OpenAI, Gemini...) |
-| 📱 **Mọi thiết bị** | Linux, macOS, Windows, Raspberry Pi. Binary duy nhất ~13MB. |
+| 📱 **Mọi thiết bị** | Linux, macOS, Windows, Raspberry Pi, **Android**. Binary duy nhất ~13MB, APK ~8MB. |
 
 **3 cách cài đặt:**
 
@@ -58,6 +59,7 @@ cd bizclaw && cargo build --release
 | **🔗 MCP** | Model Context Protocol client — kết nối MCP servers bên ngoài, mở rộng tools không giới hạn |
 | **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log, Per-tenant SQLite DB |
 | **🌐 Web Dashboard** | 15 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, **LLM Traces, Cost Tracking, Activity Feed**, settings |
+| **📱 Android Agent** | App chạy agent 24/7, Foreground Service, Accessibility Service điều khiển Facebook/Messenger/Zalo, device tools (battery/GPS/notification) |
 | **🤖 51 Agent Templates** | 13 danh mục nghiệp vụ, system prompt chuyên sâu, cài 1 click |
 | **👥 Group Chat** | Tạo nhóm agent cộng tác — gửi 1 câu hỏi, tất cả agent trong nhóm phản hồi |
 | **🧠 3-Tier Memory** | Brain workspace (SOUL.md/MEMORY.md), Daily auto-compaction, FTS5 search |
@@ -156,6 +158,12 @@ Bạn: "Chuẩn bị pitch cho nhà đầu tư Series A"
 │  (SQLite+FTS5) (Allowlist)   (RAG+FTS5)                  │
 │    ▼                                                     │
 │ Brain Engine (GGUF+SIMD) — offline inference             │
+│    ▼                                                     │
+│ ┌──────────────────────────────────────────────────────┐ │
+│ │ 📱 Android Agent Platform                            │ │
+│ │ bizclaw-ffi → Foreground Service → Device Control    │ │
+│ │ Accessibility Service → Facebook/Messenger/Zalo      │ │
+│ └──────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -243,24 +251,44 @@ ollama pull qwen3         # ~4.7GB
 | `bizclaw-scheduler` | Scheduled tasks, agent integration, notifications | ✅ |
 | `bizclaw-runtime` | Process adapters | ✅ |
 | `bizclaw-platform` | Multi-tenant admin platform, JWT, audit log | ✅ |
+| `bizclaw-ffi` | Android/Edge FFI layer — 7 functions, cdylib, catch_unwind | ✅ |
+| `bizclaw-hands` | Process adapters, runtime execution | ✅ |
+
+### 📱 Android Agent Platform
+
+| Component | Mô tả |
+|-----------|--------|
+| `BizClawDaemonService` | Foreground service chạy Rust engine 24/7, WakeLock, auto-restart |
+| `BizClawAccessibilityService` | Điều khiển BẤT KỲ app: đọc màn hình, click, gõ text, swipe |
+| `AppController` | High-level: đăng Facebook, trả lời Messenger, nhắn Zalo |
+| `DeviceCapabilities` | Battery, storage, network, GPS, CPU/RAM, OEM battery killer |
+| `BootReceiver` | Tự khởi động lại agent sau khi reboot |
+| `DashboardScreen` | Device monitoring, daemon start/stop, device stats |
+
+**Supported apps (via Accessibility Service):**
+- Facebook — post, comment, like
+- Messenger — reply, read messages
+- Zalo — send messages
+- Bất kỳ app nào — generic screen.read / screen.click
 
 ### 📊 Stats
 
 | Metric | Value |
 |--------|-------|
-| **Language** | 100% Rust |
-| **Crates** | 16 |
-| **Lines of Code** | ~36,636 |
-| **Tests** | 227 passing |
+| **Language** | 100% Rust + Kotlin (Android) |
+| **Crates** | 18 |
+| **Lines of Code** | ~39,000+ (Rust 36K + Kotlin 2.7K) |
+| **Tests** | 240 passing |
 | **Clippy Warnings** | **0** ✅ |
 | **Providers** | 15 built-in + custom endpoint |
 | **Channels** | 25+ types (33 registered) |
-| **Tools** | 13 native + MCP (unlimited) |
+| **Tools** | 13 native + MCP (unlimited) + 10 device tools |
 | **Scheduler** | Background tasks + retry |
 | **Gallery** | 51 business agent templates |
 | **Dashboard** | 15 pages, bilingual (VI/EN) |
-| **Binary Size** | bizclaw 12M, platform 7.7M |
-| **Last Updated** | 2026-02-26 (03070b6) |
+| **Android** | 16 Kotlin files, Material 3, Compose |
+| **Binary Size** | bizclaw 12M, platform 7.7M, APK ~8MB |
+| **Last Updated** | 2026-02-28 |
 
 ---
 
@@ -322,4 +350,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**BizClaw** v0.2.0 — *AI nhanh, mọi nơi. / Fast AI, everywhere.*
+**BizClaw** v0.3.0 — *AI nhanh, mọi nơi. / Fast AI, everywhere.*
