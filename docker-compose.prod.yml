@@ -22,6 +22,7 @@ services:
       - RUST_LOG=info
       - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
       - BIZCLAW_CORS_ORIGINS=https://bizclaw.vn,https://apps.bizclaw.vn
+      - BIZCLAW_BIND_ALL=1
       - TZ=Asia/Ho_Chi_Minh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
@@ -46,6 +47,7 @@ services:
       - RUST_LOG=info
       - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
       - BIZCLAW_CORS_ORIGINS=https://viagent.vn,https://apps.viagent.vn
+      - BIZCLAW_BIND_ALL=1
       - TZ=Asia/Ho_Chi_Minh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
@@ -67,7 +69,7 @@ services:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./landing:/var/www/bizclaw-landing:ro
       - ./deploy/viagent-landing:/var/www/viagent-landing:ro
-      - certbot_data:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
     depends_on:
       - bizclaw
