@@ -17,8 +17,8 @@ COPY data/ data/
 # Build release binaries
 RUN cargo build --release --bin bizclaw --bin bizclaw-platform
 
-# Stage 2: Runtime
-FROM debian:bookworm-slim
+# Stage 2: Runtime — use trixie to match glibc from rust:latest (2.40)
+FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libssl3 curl \
