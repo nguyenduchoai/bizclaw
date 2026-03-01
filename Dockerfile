@@ -12,6 +12,7 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
 COPY src/ src/
+COPY data/ data/
 
 # Build release binaries
 RUN cargo build --release --bin bizclaw --bin bizclaw-platform
