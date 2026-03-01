@@ -13,6 +13,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
 COPY src/ src/
 COPY data/ data/
+COPY migrations/ migrations/
 
 # Build release binaries
 RUN cargo build --release --bin bizclaw --bin bizclaw-platform
