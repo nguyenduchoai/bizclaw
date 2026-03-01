@@ -161,8 +161,69 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .provider-icon.brain{background:rgba(248,81,73,0.1);color:var(--red)}
 .provider-icon.llamacpp{background:rgba(210,153,34,0.1);color:var(--yellow)}
 
-/* ── Responsive ── */
-@media(max-width:768px){.sidebar{width:60px}.sidebar a span:not(.nav-icon),.sidebar .logo p,.sidebar .bottom .shortcut-hint,.sidebar .logo .version-badge{display:none}.grid{grid-template-columns:1fr}.ch-grid{grid-template-columns:1fr}.main{padding:20px 16px}}
+/* ── Teams / Workflows page ── */
+.teams-templates{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:24px}
+.team-tpl{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:all .3s;cursor:pointer}
+.team-tpl:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(88,166,255,0.12);border-color:rgba(88,166,255,0.3)}
+.team-tpl::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.team-tpl.tpl-feat::before{background:linear-gradient(90deg,#6C5CE7,#a29bfe)}
+.team-tpl.tpl-bug::before{background:linear-gradient(90deg,#f85149,#ff6b6b)}
+.team-tpl.tpl-sec::before{background:linear-gradient(90deg,#fdcb6e,#f39c12)}
+.team-tpl.tpl-content::before{background:linear-gradient(90deg,#00b894,#55efc4)}
+.team-tpl.tpl-review::before{background:linear-gradient(90deg,#58a6ff,#56d4dd)}
+.team-tpl.tpl-support::before{background:linear-gradient(90deg,#bc8cff,#e17bff)}
+.team-tpl .tpl-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.team-tpl .tpl-icon{font-size:28px}
+.team-tpl .tpl-title{font-size:16px;font-weight:600}
+.team-tpl .tpl-agents{font-size:11px;color:var(--accent);background:rgba(88,166,255,0.1);padding:2px 8px;border-radius:8px;margin-left:auto}
+.team-tpl .tpl-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.team-tpl .tpl-pipeline{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.team-tpl .pipe-step{font-size:10px;padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:20px;color:var(--text);white-space:nowrap;transition:all .2s}
+.team-tpl:hover .pipe-step{border-color:rgba(88,166,255,0.3)}
+.team-tpl .pipe-arrow{font-size:10px;color:var(--border);padding:0 2px}
+
+/* Team runs */
+.team-runs{margin-top:16px}
+.run-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;transition:all .2s}
+.run-card:hover{border-color:rgba(88,166,255,0.2)}
+.run-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.run-id{font-family:'Menlo','Courier New',monospace;font-size:12px;color:var(--accent)}
+.run-steps{display:flex;gap:0;align-items:center;flex-wrap:wrap}
+.run-step{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;background:var(--card);border:1px solid var(--border);transition:all .3s}
+.run-step.done{background:rgba(63,185,80,0.08);border-color:rgba(63,185,80,0.25);color:var(--green)}
+.run-step.running{background:rgba(88,166,255,0.08);border-color:rgba(88,166,255,0.3);color:var(--accent);animation:stepPulse 1.5s ease-in-out infinite}
+.run-step.failed{background:rgba(248,81,73,0.08);border-color:rgba(248,81,73,0.25);color:var(--red)}
+.run-step.pending{color:var(--muted)}
+.run-arrow{font-size:10px;color:var(--border);padding:0 3px}
+@keyframes stepPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.run-progress{height:4px;background:var(--border);border-radius:4px;margin-top:12px;overflow:hidden}
+.run-progress-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--accent));transition:width .5s}
+
+/* Team detail modal */
+.team-agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:16px 0}
+.agent-role-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;transition:all .2s}
+.agent-role-card:hover{border-color:rgba(88,166,255,0.3);transform:scale(1.02)}
+.agent-role-card .role-icon{font-size:32px;display:block;margin-bottom:6px}
+.agent-role-card .role-name{font-weight:600;font-size:14px}
+.agent-role-card .role-type{font-size:11px;color:var(--muted);margin-top:2px}
+.agent-role-card .role-access{font-size:10px;margin-top:6px;padding:3px 8px;border-radius:6px;display:inline-block}
+.agent-role-card .role-access.analysis{background:rgba(88,166,255,0.1);color:var(--accent)}
+.agent-role-card .role-access.coding{background:rgba(63,185,80,0.1);color:var(--green)}
+.agent-role-card .role-access.verification{background:rgba(210,153,34,0.1);color:var(--yellow)}
+.agent-role-card .role-access.testing{background:rgba(188,140,255,0.1);color:var(--purple)}
+.agent-role-card .role-access.scanning{background:rgba(240,136,62,0.1);color:var(--orange)}
+
+/* Active teams list */
+.active-team{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:all .2s}
+.active-team:hover{border-color:rgba(88,166,255,0.2)}
+.active-team .team-info{display:flex;align-items:center;gap:12px}
+.active-team .team-icon{font-size:20px}
+.active-team .team-name{font-weight:600;font-size:14px}
+.active-team .team-meta{font-size:11px;color:var(--muted)}
+.active-team .team-actions{display:flex;gap:6px}
+
+/* Responsive */
+@media(max-width:768px){.sidebar{width:60px}.sidebar a span:not(.nav-icon),.sidebar .logo p,.sidebar .bottom .shortcut-hint,.sidebar .logo .version-badge{display:none}.grid{grid-template-columns:1fr}.ch-grid{grid-template-columns:1fr}.main{padding:20px 16px}.teams-templates{grid-template-columns:1fr}.team-agents-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -174,6 +235,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
   <a class="active" href="#/dashboard" data-page="dashboard"><span class="nav-icon">📊</span> <span>Dashboard</span></a>
   <a href="#/tenants" data-page="tenants"><span class="nav-icon">🏢</span> <span>Tenants</span></a>
   <a href="#/users" data-page="users"><span class="nav-icon">👥</span> <span>Users</span></a>
+  <a href="#/teams" data-page="teams"><span class="nav-icon">🐜</span> <span>Agent Teams</span></a>
   <a href="#/audit" data-page="audit"><span class="nav-icon">📋</span> <span>Audit Log</span></a>
   <a href="#/ollama" data-page="ollama"><span class="nav-icon">🧠</span> <span>Ollama</span></a>
   <a href="#/profile" data-page="profile"><span class="nav-icon">👤</span> <span>Profile</span></a>
@@ -458,7 +520,122 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
       </div>
     </div>
   </div>
+
+  <!-- Agent Teams / Workflows -->
+  <div id="page-teams" class="hidden">
+    <h1>🐜 Agent Teams <button class="btn btn-primary" onclick="showCreateTeamModal()" style="margin-left:auto">+ Build Team</button></h1>
+
+    <!-- Stats -->
+    <div class="stats" id="teams-stats">
+      <div class="stat"><label>Templates</label><div class="val" id="ts-templates">6</div></div>
+      <div class="stat"><label>Active Teams</label><div class="val green" id="ts-active">0</div></div>
+      <div class="stat"><label>Total Runs</label><div class="val" id="ts-runs">0</div></div>
+      <div class="stat"><label>Success Rate</label><div class="val" id="ts-rate">—</div></div>
+    </div>
+
+    <!-- Template Gallery -->
+    <div class="card" style="margin-bottom:20px">
+      <h3>📦 Team Templates <a href="#" onclick="return false">Install with one click →</a></h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Pre-built agent teams — mỗi team gồm các agents chuyên biệt phối hợp hoàn thành workflow.</p>
+      <div class="teams-templates" id="tpl-gallery"></div>
+    </div>
+
+    <!-- Active Teams -->
+    <div class="card" style="margin-bottom:20px">
+      <h3>⚡ Active Teams <a href="#" onclick="return false" id="teams-refresh">Refresh ↻</a></h3>
+      <div id="active-teams-list"></div>
+    </div>
+
+    <!-- Recent Workflow Runs -->
+    <div class="card">
+      <h3>📊 Recent Workflow Runs <a href="#" onclick="return false">View all →</a></h3>
+      <div class="team-runs" id="workflow-runs"></div>
+    </div>
+  </div>
+
 </main>
+
+<!-- Team Template Detail Modal -->
+<div id="modal-team-detail" class="modal-overlay hidden">
+  <div class="modal" style="min-width:650px;max-width:800px">
+    <h2 id="tpl-detail-title">Team Template</h2>
+    <p id="tpl-detail-desc" style="font-size:13px;color:var(--muted);margin-bottom:16px"></p>
+    
+    <!-- Pipeline visualization -->
+    <div style="margin-bottom:20px">
+      <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:8px">Pipeline</label>
+      <div id="tpl-detail-pipeline" style="display:flex;align-items:center;gap:0;flex-wrap:wrap;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)"></div>
+    </div>
+    
+    <!-- Agents -->
+    <div style="margin-bottom:20px">
+      <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:8px">Agent Roles</label>
+      <div class="team-agents-grid" id="tpl-detail-agents"></div>
+    </div>
+
+    <!-- Config -->
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:8px">Configuration</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;color:var(--muted)">Max retries per step</label>
+          <input id="tpl-cfg-retries" type="number" value="2" min="0" max="5" style="width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted)">Timeout per agent (seconds)</label>
+          <input id="tpl-cfg-timeout" type="number" value="900" min="60" max="3600" style="width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-outline" onclick="hideModal('modal-team-detail')">Đóng</button>
+      <button class="btn btn-green" onclick="installTeamTemplate()" id="btn-install-tpl">🚀 Cài đặt Team</button>
+    </div>
+  </div>
+</div>
+
+<!-- Run Workflow Modal -->
+<div id="modal-run-workflow" class="modal-overlay hidden">
+  <div class="modal" style="min-width:500px">
+    <h2>▶️ Chạy Workflow</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Team: <strong id="run-team-name" style="color:var(--accent)"></strong></p>
+    <label>Mô tả task</label>
+    <textarea id="run-task-input" placeholder="Ví dụ: Thêm chức năng xác thực OAuth2.0 cho hệ thống..." style="min-height:100px"></textarea>
+    <label>Tenant để chạy</label>
+    <select id="run-tenant-select" style="width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">
+      <option value="">-- Chọn tenant --</option>
+    </select>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="hideModal('modal-run-workflow')">Huỷ</button>
+      <button class="btn btn-primary" onclick="startWorkflowRun()">🚀 Bắt đầu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Custom Team Modal -->
+<div id="modal-create-team" class="modal-overlay hidden">
+  <div class="modal" style="min-width:600px">
+    <h2>🏗️ Build Custom Team</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Tạo team agent tùy chỉnh với pipeline riêng. Mỗi agent có persona và vai trò riêng biệt.</p>
+    
+    <label>Team Name</label>
+    <input id="ct-name" placeholder="my-data-pipeline">
+    <label>Description</label>
+    <input id="ct-desc" placeholder="Pipeline xử lý và phân tích dữ liệu khách hàng">
+    
+    <div style="margin-top:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <label style="margin:0">Agents</label>
+      <button class="btn btn-outline btn-sm" onclick="addCustomAgent()">+ Add Agent</button>
+    </div>
+    <div id="ct-agents-list"></div>
+    
+    <div class="actions">
+      <button class="btn btn-outline" onclick="hideModal('modal-create-team')">Huỷ</button>
+      <button class="btn btn-primary" onclick="createCustomTeam()">💾 Tạo Team</button>
+    </div>
+  </div>
+</div>
 
 <!-- Create Tenant Modal -->
 <div id="modal-create" class="modal-overlay hidden">
@@ -743,6 +920,7 @@ const ROUTE_MAP = {
   '/dashboard': 'dashboard',
   '/tenants': 'tenants',
   '/users': 'users',
+  '/teams': 'teams',
   '/audit': 'audit',
   '/ollama': 'ollama',
   '/profile': 'profile',
@@ -808,6 +986,7 @@ function loadPage(){
   else if(currentPage==='tenants')loadTenants();
   else if(currentPage==='tenant-detail') loadTenantDetailFromHash();
   else if(currentPage==='users')loadUsers();
+  else if(currentPage==='teams')loadTeams();
   else if(currentPage==='audit')loadAudit();
   else if(currentPage==='ollama')loadOllama();
 }
@@ -1870,6 +2049,426 @@ document.addEventListener('keydown', (e) => {
     },100);
   }
 });
+
+// ── Agent Teams / Workflows ──────────────────────────────
+
+const TEAM_TEMPLATES = [
+  {
+    id: 'feature-dev', cls: 'tpl-feat', icon: '🚀', title: 'Feature Development',
+    agents: 5,
+    desc: 'Từ yêu cầu → code đã test + review. Planner chia nhỏ stories, Developer implement, Verifier kiểm tra, Tester viết tests, Reviewer code review.',
+    pipeline: ['Plan', 'Implement', 'Verify', 'Test', 'Review'],
+    roles: [
+      { icon: '🧠', name: 'Planner', type: 'analysis', desc: 'Phân tích yêu cầu, tạo stories' },
+      { icon: '💻', name: 'Developer', type: 'coding', desc: 'Implement code cho từng story' },
+      { icon: '🔍', name: 'Verifier', type: 'verification', desc: 'Verify theo acceptance criteria' },
+      { icon: '🧪', name: 'Tester', type: 'testing', desc: 'Viết và chạy tests' },
+      { icon: '📝', name: 'Reviewer', type: 'analysis', desc: 'Code review cuối cùng' }
+    ]
+  },
+  {
+    id: 'bug-fix', cls: 'tpl-bug', icon: '🐛', title: 'Bug Fix Pipeline',
+    agents: 4,
+    desc: 'Paste bug report → nhận fix + regression test. Triager reproduce, Investigator tìm root cause, Fixer patch, Verifier confirm.',
+    pipeline: ['Triage', 'Investigate', 'Fix', 'Verify'],
+    roles: [
+      { icon: '🔬', name: 'Triager', type: 'analysis', desc: 'Reproduce bug, xác nhận' },
+      { icon: '🕵️', name: 'Investigator', type: 'analysis', desc: 'Tìm root cause' },
+      { icon: '🔧', name: 'Fixer', type: 'coding', desc: 'Patch code + regression test' },
+      { icon: '✅', name: 'Verifier', type: 'verification', desc: 'Xác nhận fix hoạt động' }
+    ]
+  },
+  {
+    id: 'security-audit', cls: 'tpl-sec', icon: '🛡️', title: 'Security Audit',
+    agents: 4,
+    desc: 'Quét repo → patch vulnerabilities + regression tests. Scanner tìm lỗ hổng, Prioritizer xếp hạng severity, Fixer patch, Verifier re-audit.',
+    pipeline: ['Scan', 'Prioritize', 'Fix', 'Re-Audit'],
+    roles: [
+      { icon: '📡', name: 'Scanner', type: 'scanning', desc: 'Quét CVE, OWASP top 10' },
+      { icon: '⚖️', name: 'Prioritizer', type: 'analysis', desc: 'Xếp hạng severity' },
+      { icon: '🔐', name: 'Fixer', type: 'coding', desc: 'Patch vulnerabilities' },
+      { icon: '🔍', name: 'Re-Auditor', type: 'verification', desc: 'Kiểm tra lại sau fix' }
+    ]
+  },
+  {
+    id: 'content-create', cls: 'tpl-content', icon: '✍️', title: 'Content Creation',
+    agents: 4,
+    desc: 'Research → Draft → Edit → Publish. Researcher thu thập data, Writer viết bài, Editor chỉnh sửa, Publisher format final.',
+    pipeline: ['Research', 'Draft', 'Edit', 'Publish'],
+    roles: [
+      { icon: '🔎', name: 'Researcher', type: 'analysis', desc: 'Thu thập thông tin, data' },
+      { icon: '✏️', name: 'Writer', type: 'coding', desc: 'Viết nội dung' },
+      { icon: '📐', name: 'Editor', type: 'verification', desc: 'Chỉnh sửa, kiểm duyệt' },
+      { icon: '📢', name: 'Publisher', type: 'coding', desc: 'Format và xuất bản' }
+    ]
+  },
+  {
+    id: 'code-review', cls: 'tpl-review', icon: '🔬', title: 'Code Review Pipeline',
+    agents: 3,
+    desc: 'Analyze → Security check → Performance review. 3 chuyên gia phân tích code từ nhiều góc độ rồi tổng hợp.',
+    pipeline: ['Analyze', 'Security', 'Performance', 'Summary'],
+    roles: [
+      { icon: '🏗️', name: 'Architect', type: 'analysis', desc: 'Đánh giá kiến trúc, patterns' },
+      { icon: '🔒', name: 'Security Expert', type: 'scanning', desc: 'Kiểm tra bảo mật' },
+      { icon: '⚡', name: 'Perf Analyst', type: 'analysis', desc: 'Phân tích performance' }
+    ]
+  },
+  {
+    id: 'customer-support', cls: 'tpl-support', icon: '💬', title: 'Customer Support',
+    agents: 3,
+    desc: 'Phân loại → Trả lời → Escalate. Classifier phân loại ticket, Responder soạn câu trả lời, Escalator chuyển tiếp complex cases.',
+    pipeline: ['Classify', 'Respond', 'Escalate'],
+    roles: [
+      { icon: '🏷️', name: 'Classifier', type: 'analysis', desc: 'Phân loại ticket' },
+      { icon: '💁', name: 'Responder', type: 'coding', desc: 'Soạn câu trả lời' },
+      { icon: '📞', name: 'Escalator', type: 'analysis', desc: 'Chuyển tiếp phức tạp' }
+    ]
+  }
+];
+
+// Installed teams storage
+let installedTeams = JSON.parse(localStorage.getItem('bizclaw_teams') || '[]');
+let workflowRuns = JSON.parse(localStorage.getItem('bizclaw_runs') || '[]');
+let selectedTplId = null;
+
+function saveTeamsState() {
+  localStorage.setItem('bizclaw_teams', JSON.stringify(installedTeams));
+  localStorage.setItem('bizclaw_runs', JSON.stringify(workflowRuns));
+}
+
+function loadTeams() {
+  renderTemplateGallery();
+  renderActiveTeams();
+  renderWorkflowRuns();
+  updateTeamStats();
+}
+
+function updateTeamStats() {
+  document.getElementById('ts-active').textContent = installedTeams.length;
+  document.getElementById('ts-runs').textContent = workflowRuns.length;
+  const done = workflowRuns.filter(r => r.status === 'done').length;
+  const total = workflowRuns.length;
+  document.getElementById('ts-rate').textContent = total > 0 ? Math.round(done/total*100) + '%' : '—';
+}
+
+function renderTemplateGallery() {
+  const el = document.getElementById('tpl-gallery');
+  el.innerHTML = TEAM_TEMPLATES.map(t => {
+    const installed = installedTeams.find(it => it.id === t.id);
+    const pipelineHtml = t.pipeline.map((s, i) => 
+      `<span class="pipe-step">${s}</span>${i < t.pipeline.length - 1 ? '<span class="pipe-arrow">→</span>' : ''}`
+    ).join('');
+    return `
+      <div class="team-tpl ${t.cls}" onclick="showTemplateDetail('${t.id}')">
+        <div class="tpl-header">
+          <span class="tpl-icon">${t.icon}</span>
+          <span class="tpl-title">${t.title}</span>
+          <span class="tpl-agents">${t.agents} agents</span>
+        </div>
+        <div class="tpl-desc">${t.desc}</div>
+        <div class="tpl-pipeline">${pipelineHtml}</div>
+        ${installed ? '<div style="margin-top:10px;font-size:11px;color:var(--green)">✅ Installed</div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function showTemplateDetail(tplId) {
+  const tpl = TEAM_TEMPLATES.find(t => t.id === tplId);
+  if (!tpl) return;
+  selectedTplId = tplId;
+  
+  document.getElementById('tpl-detail-title').textContent = `${tpl.icon} ${tpl.title}`;
+  document.getElementById('tpl-detail-desc').textContent = tpl.desc;
+  
+  // Pipeline
+  document.getElementById('tpl-detail-pipeline').innerHTML = tpl.pipeline.map((s, i) =>
+    `<span class="run-step pending" style="padding:8px 16px;font-size:13px">${s}</span>${i < tpl.pipeline.length - 1 ? '<span class="run-arrow" style="font-size:14px;padding:0 6px">→</span>' : ''}`
+  ).join('');
+  
+  // Agent roles
+  document.getElementById('tpl-detail-agents').innerHTML = tpl.roles.map(r =>
+    `<div class="agent-role-card">
+      <span class="role-icon">${r.icon}</span>
+      <div class="role-name">${r.name}</div>
+      <div class="role-type">${r.desc}</div>
+      <span class="role-access ${r.type}">${r.type}</span>
+    </div>`
+  ).join('');
+  
+  const installed = installedTeams.find(it => it.id === tplId);
+  document.getElementById('btn-install-tpl').textContent = installed ? '✅ Đã cài đặt' : '🚀 Cài đặt Team';
+  document.getElementById('btn-install-tpl').disabled = !!installed;
+  
+  document.getElementById('modal-team-detail').classList.remove('hidden');
+}
+
+function installTeamTemplate() {
+  if (!selectedTplId) return;
+  const tpl = TEAM_TEMPLATES.find(t => t.id === selectedTplId);
+  if (!tpl) return;
+  
+  if (installedTeams.find(t => t.id === tpl.id)) {
+    toast('Team đã được cài đặt rồi', 'error');
+    return;
+  }
+  
+  installedTeams.push({
+    id: tpl.id,
+    title: tpl.title,
+    icon: tpl.icon,
+    agents: tpl.agents,
+    pipeline: tpl.pipeline,
+    roles: tpl.roles,
+    installed_at: new Date().toISOString(),
+    runs: 0
+  });
+  
+  saveTeamsState();
+  toast(`✅ Team "${tpl.title}" đã cài đặt thành công!`);
+  hideModal('modal-team-detail');
+  loadTeams();
+}
+
+function renderActiveTeams() {
+  const el = document.getElementById('active-teams-list');
+  if (installedTeams.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><p>🐜 Chưa có team nào được cài đặt.</p><p style="font-size:12px;margin-top:4px">Chọn một template ở trên để bắt đầu!</p></div>';
+    return;
+  }
+  
+  el.innerHTML = installedTeams.map(t => `
+    <div class="active-team">
+      <div class="team-info">
+        <span class="team-icon">${t.icon}</span>
+        <div>
+          <div class="team-name">${escapeHtml(t.title)}</div>
+          <div class="team-meta">${t.agents} agents · ${t.pipeline.join(' → ')} · ${t.runs || 0} runs</div>
+        </div>
+      </div>
+      <div class="team-actions">
+        <button class="btn btn-primary btn-sm" onclick="showRunWorkflow('${t.id}')">▶️ Run</button>
+        <button class="btn btn-danger btn-sm" onclick="uninstallTeam('${t.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function uninstallTeam(teamId) {
+  if (!confirm(`Gỡ cài đặt team "${teamId}"?`)) return;
+  installedTeams = installedTeams.filter(t => t.id !== teamId);
+  saveTeamsState();
+  toast(`🗑️ Team "${teamId}" đã gỡ cài đặt`);
+  loadTeams();
+}
+
+async function showRunWorkflow(teamId) {
+  const team = installedTeams.find(t => t.id === teamId);
+  if (!team) return;
+  
+  document.getElementById('run-team-name').textContent = team.title;
+  document.getElementById('run-task-input').value = '';
+  document.getElementById('run-task-input').dataset.teamId = teamId;
+  
+  // Populate tenant dropdown
+  const sel = document.getElementById('run-tenant-select');
+  sel.innerHTML = '<option value="">-- Chọn tenant --</option>';
+  try {
+    const d = await(await authFetch(API+'/tenants')).json();
+    (d.tenants||[]).forEach(t => {
+      sel.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)} (${t.slug})</option>`;
+    });
+  } catch(e) { console.error(e); }
+  
+  document.getElementById('modal-run-workflow').classList.remove('hidden');
+}
+
+function startWorkflowRun() {
+  const task = document.getElementById('run-task-input').value.trim();
+  const teamId = document.getElementById('run-task-input').dataset.teamId;
+  const tenantId = document.getElementById('run-tenant-select').value;
+  
+  if (!task) { toast('Vui lòng nhập mô tả task', 'error'); return; }
+  if (!tenantId) { toast('Vui lòng chọn tenant', 'error'); return; }
+  
+  const team = installedTeams.find(t => t.id === teamId);
+  if (!team) return;
+  
+  // Create a run record
+  const runId = Math.random().toString(36).slice(2, 10);
+  const run = {
+    id: runId,
+    team_id: teamId,
+    team_title: team.title,
+    team_icon: team.icon,
+    task: task.slice(0, 100),
+    status: 'running',
+    steps: team.pipeline.map((s, i) => ({ name: s, status: i === 0 ? 'running' : 'pending' })),
+    started_at: new Date().toISOString(),
+    progress: 0
+  };
+  
+  workflowRuns.unshift(run);
+  
+  // Update team run count
+  const t = installedTeams.find(t => t.id === teamId);
+  if (t) t.runs = (t.runs || 0) + 1;
+  
+  saveTeamsState();
+  hideModal('modal-run-workflow');
+  toast(`🚀 Workflow "${team.title}" đang chạy! Run ID: ${runId}`);
+  loadTeams();
+  
+  // Simulate steps completing over time
+  simulateRun(runId);
+}
+
+function simulateRun(runId) {
+  const run = workflowRuns.find(r => r.id === runId);
+  if (!run) return;
+  
+  let stepIdx = 0;
+  const interval = setInterval(() => {
+    if (stepIdx >= run.steps.length) {
+      clearInterval(interval);
+      run.status = 'done';
+      run.progress = 100;
+      saveTeamsState();
+      if (currentPage === 'teams') loadTeams();
+      toast(`✅ Workflow run ${runId} hoàn tất!`);
+      return;
+    }
+    
+    // Complete current step
+    run.steps[stepIdx].status = 'done';
+    stepIdx++;
+    
+    // Mark next step as running
+    if (stepIdx < run.steps.length) {
+      run.steps[stepIdx].status = 'running';
+    }
+    
+    run.progress = Math.round((stepIdx / run.steps.length) * 100);
+    saveTeamsState();
+    if (currentPage === 'teams') renderWorkflowRuns();
+  }, 2000 + Math.random() * 2000);
+}
+
+function renderWorkflowRuns() {
+  const el = document.getElementById('workflow-runs');
+  if (workflowRuns.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)"><p>📊 Chưa có workflow run nào.</p><p style="font-size:12px;margin-top:4px">Cài đặt team rồi chạy một workflow để bắt đầu!</p></div>';
+    return;
+  }
+  
+  el.innerHTML = workflowRuns.slice(0, 10).map(r => {
+    const statusIcon = r.status === 'done' ? '✅' : r.status === 'failed' ? '❌' : '🔄';
+    const statusBadge = r.status === 'done' ? 'running' : r.status === 'failed' ? 'error' : 'connected';
+    
+    const stepsHtml = r.steps.map((s, i) => {
+      const icon = s.status === 'done' ? '✓' : s.status === 'running' ? '⟳' : s.status === 'failed' ? '✗' : '○';
+      return `<span class="run-step ${s.status}">${icon} ${s.name}</span>${i < r.steps.length - 1 ? '<span class="run-arrow">→</span>' : ''}`;
+    }).join('');
+    
+    return `
+      <div class="run-card">
+        <div class="run-header">
+          <div>
+            <span class="run-id">${r.team_icon} ${r.id}</span>
+            <span class="badge ${statusBadge}" style="margin-left:8px">${r.status}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">${timeAgo(r.started_at)}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text);margin-bottom:10px">📋 ${escapeHtml(r.task)}</div>
+        <div class="run-steps">${stepsHtml}</div>
+        <div class="run-progress"><div class="run-progress-bar" style="width:${r.progress}%"></div></div>
+      </div>`;
+  }).join('');
+  
+  updateTeamStats();
+}
+
+// Custom team builder
+let customAgentCount = 0;
+
+function showCreateTeamModal() {
+  customAgentCount = 0;
+  document.getElementById('ct-name').value = '';
+  document.getElementById('ct-desc').value = '';
+  document.getElementById('ct-agents-list').innerHTML = '';
+  addCustomAgent();
+  addCustomAgent();
+  document.getElementById('modal-create-team').classList.remove('hidden');
+}
+
+function addCustomAgent() {
+  customAgentCount++;
+  const n = customAgentCount;
+  const el = document.getElementById('ct-agents-list');
+  const div = document.createElement('div');
+  div.id = `ct-agent-${n}`;
+  div.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px';
+  div.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="ct-icon-${n}" style="width:60px;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:16px;text-align:center">
+        <option>🧠</option><option>💻</option><option>🔍</option><option>🧪</option><option>📝</option><option>🔧</option><option>🔬</option><option>📡</option><option>🔐</option><option>✏️</option><option>💬</option><option>⚡</option>
+      </select>
+      <input id="ct-name-${n}" placeholder="Agent name" style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+      <select id="ct-role-${n}" style="width:120px;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px">
+        <option value="analysis">🔵 Analysis</option>
+        <option value="coding">🟢 Coding</option>
+        <option value="verification">🟡 Verification</option>
+        <option value="testing">🟣 Testing</option>
+        <option value="scanning">🟠 Scanning</option>
+      </select>
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('ct-agent-${n}').remove()" style="padding:4px 8px">✕</button>
+    </div>
+    <input id="ct-desc-${n}" placeholder="Mô tả vai trò agent..." style="width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px">
+  `;
+  el.appendChild(div);
+}
+
+function createCustomTeam() {
+  const name = document.getElementById('ct-name').value.trim();
+  const desc = document.getElementById('ct-desc').value.trim();
+  if (!name) { toast('Vui lòng nhập tên team', 'error'); return; }
+  
+  // Collect agents
+  const agents = [];
+  const pipeline = [];
+  document.querySelectorAll('[id^="ct-agent-"]').forEach(div => {
+    const n = div.id.replace('ct-agent-', '');
+    const agentName = document.getElementById(`ct-name-${n}`)?.value?.trim();
+    if (!agentName) return;
+    agents.push({
+      icon: document.getElementById(`ct-icon-${n}`)?.value || '🤖',
+      name: agentName,
+      type: document.getElementById(`ct-role-${n}`)?.value || 'coding',
+      desc: document.getElementById(`ct-desc-${n}`)?.value || ''
+    });
+    pipeline.push(agentName);
+  });
+  
+  if (agents.length < 2) { toast('Team cần ít nhất 2 agents', 'error'); return; }
+  
+  const teamId = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  
+  installedTeams.push({
+    id: teamId,
+    title: name,
+    icon: '🏗️',
+    agents: agents.length,
+    pipeline: pipeline,
+    roles: agents,
+    installed_at: new Date().toISOString(),
+    runs: 0,
+    custom: true
+  });
+  
+  saveTeamsState();
+  hideModal('modal-create-team');
+  toast(`✅ Custom team "${name}" đã tạo thành công!`);
+  loadTeams();
+}
 
 // ── Platform health check ──────────────────────────────
 async function checkPlatformHealth(){
