@@ -2,6 +2,7 @@
 //! Security policies, sandboxing, and secrets encryption.
 
 pub mod allowlist;
+pub mod injection;
 pub mod sandbox;
 pub mod secrets;
 
@@ -24,6 +25,19 @@ impl DefaultSecurityPolicy {
 #[async_trait]
 impl SecurityPolicy for DefaultSecurityPolicy {
     async fn check_command(&self, command: &str) -> Result<bool> {
+        // Block command chaining/piping operators — prevent injection like "ls; rm -rf /"
+        let dangerous_patterns = [";", "&&", "||", "|", "$(", "`", "\n"];
+        for pattern in &dangerous_patterns {
+            if command.contains(pattern) {
+                tracing::warn!(
+                    "Security: command contains dangerous operator '{}': '{}'",
+                    pattern,
+                    &command[..command.len().min(80)]
+                );
+                return Ok(false);
+            }
+        }
+
         let cmd_base = command.split_whitespace().next().unwrap_or("");
         let allowed = self.config.allowed_commands.iter().any(|c| c == cmd_base);
         if !allowed {

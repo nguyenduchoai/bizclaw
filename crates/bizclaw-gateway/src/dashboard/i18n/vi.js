@@ -114,4 +114,28 @@ export const vi = {
   // Scheduler (new)
   'sched.title':'Lịch trình','sched.subtitle':'Quản lý tác vụ lên lịch với cơ chế retry tự động',
   'sched.retrying':'Đang retry','sched.failed':'Thất bại vĩnh viễn','sched.total_retries':'Tổng retry',
+  // Workflows
+  'nav.workflows':'Workflows','nav.skills':'Skills Market',
+  'wf.title':'Workflows Engine','wf.subtitle':'Tự động hóa quy trình với 6 loại step — Sequential, FanOut, Collect, Conditional, Loop, Transform',
+  'wf.total':'Tổng Workflows','wf.step_types':'Loại Step','wf.templates':'Templates',
+  'wf.content_desc':'Soạn nội dung: Viết → Duyệt → Chỉnh sửa',
+  'wf.expert_desc':'3 chuyên gia phân tích song song → Tổng hợp kết quả',
+  'wf.quality_desc':'Tạo nội dung → Lặp đánh giá cho đến khi APPROVED',
+  'wf.research_desc':'Tìm kiếm → Phân tích → Tổng hợp → Báo cáo',
+  'wf.translate_desc':'Dịch → Kiểm tra chất lượng',
+  'wf.codereview_desc':'3 reviewers song song → Bảo mật → Tổng kết',
+  // Skills
+  'skill.title':'Skills Marketplace','skill.subtitle':'10 skills tích hợp sẵn — Cài đặt thêm từ cộng đồng BizClaw Hub',
+  'skill.total':'Tổng Skills','skill.installed':'Đã cài','skill.categories':'Danh mục','skill.search':'Tìm kiếm skill...',
+  'skill.install':'Cài đặt',
+  'skill.rust_desc':'Chuyên gia Rust: ownership, async, performance',
+  'skill.python_desc':'Phân tích dữ liệu Python: pandas, numpy, visualization',
+  'skill.web_desc':'Full-stack web: React, TypeScript, CSS, Node.js',
+  'skill.devops_desc':'DevOps: Docker, K8s, CI/CD, Terraform',
+  'skill.content_desc':'Viết nội dung: blog, marketing, SEO',
+  'skill.security_desc':'Kiểm toán bảo mật: OWASP Top 10, code review',
+  'skill.sql_desc':'SQL chuyên sâu: PostgreSQL, optimization, window functions',
+  'skill.api_desc':'Thiết kế API: REST, OpenAPI, authentication',
+  'skill.vnbiz_desc':'Luật doanh nghiệp VN: thuế, lao động, kế toán',
+  'skill.git_desc':'Git workflow: branching, commit, code review',
 };

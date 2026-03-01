@@ -511,6 +511,7 @@ dependencies = [
  "bizclaw-scheduler",
  "chrono",
  "futures",
+ "hmac",
  "reqwest",
  "rusqlite",
  "serde",
@@ -560,6 +561,7 @@ version = "0.2.0"
 dependencies = [
  "async-trait",
  "bizclaw-core",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -680,6 +682,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizclaw-skills"
+version = "0.2.0"
+dependencies = [
+ "bizclaw-core",
+ "chrono",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "bizclaw-tools"
 version = "0.2.0"
 dependencies = [
@@ -702,6 +721,22 @@ dependencies = [
  "urlencoding",
  "uuid",
  "zip 8.1.0",
+]
+
+[[package]]
+name = "bizclaw-workflows"
+version = "0.2.0"
+dependencies = [
+ "async-trait",
+ "bizclaw-core",
+ "chrono",
+ "futures",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]

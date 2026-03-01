@@ -1,0 +1,23 @@
+[package]
+name = "bizclaw-skills"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Skills marketplace — SKILL.md parser, registry, discovery, and marketplace"
+
+[dependencies]
+bizclaw-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tempfile = "3"

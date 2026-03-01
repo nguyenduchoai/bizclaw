@@ -13,9 +13,11 @@
 
 pub mod bridge;
 pub mod client;
+pub mod sse_http;
 pub mod transport;
 pub mod types;
 
 pub use bridge::McpToolBridge;
 pub use client::McpClient;
+pub use sse_http::{HttpTransport, SseTransport};
 pub use types::{McpServerConfig, McpToolInfo};

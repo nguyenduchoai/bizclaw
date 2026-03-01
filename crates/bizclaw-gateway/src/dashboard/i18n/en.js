@@ -114,4 +114,28 @@ export const en = {
   // Scheduler (new)
   'sched.title':'Scheduler','sched.subtitle':'Manage scheduled tasks with automatic retry mechanism',
   'sched.retrying':'Retrying','sched.failed':'Permanently Failed','sched.total_retries':'Total Retries',
+  // Workflows
+  'nav.workflows':'Workflows','nav.skills':'Skills Market',
+  'wf.title':'Workflows Engine','wf.subtitle':'Automate processes with 6 step types — Sequential, FanOut, Collect, Conditional, Loop, Transform',
+  'wf.total':'Total Workflows','wf.step_types':'Step Types','wf.templates':'Templates',
+  'wf.content_desc':'Content pipeline: Draft → Review → Polish',
+  'wf.expert_desc':'3 experts analyze in parallel → Merge results',
+  'wf.quality_desc':'Generate content → Loop evaluate until APPROVED',
+  'wf.research_desc':'Search → Analyze → Synthesize → Report',
+  'wf.translate_desc':'Translate → Quality verification',
+  'wf.codereview_desc':'3 reviewers in parallel → Security → Summary',
+  // Skills
+  'skill.title':'Skills Marketplace','skill.subtitle':'10 built-in skills — Install more from BizClaw Hub community',
+  'skill.total':'Total Skills','skill.installed':'Installed','skill.categories':'Categories','skill.search':'Search skills...',
+  'skill.install':'Install',
+  'skill.rust_desc':'Rust expert: ownership, async, performance tuning',
+  'skill.python_desc':'Python data analysis: pandas, numpy, visualization',
+  'skill.web_desc':'Full-stack web: React, TypeScript, CSS, Node.js',
+  'skill.devops_desc':'DevOps: Docker, K8s, CI/CD, Terraform',
+  'skill.content_desc':'Content writing: blog, marketing, SEO',
+  'skill.security_desc':'Security auditing: OWASP Top 10, code review',
+  'skill.sql_desc':'SQL expert: PostgreSQL, optimization, window functions',
+  'skill.api_desc':'API design: REST, OpenAPI, authentication',
+  'skill.vnbiz_desc':'Vietnamese business: tax law, labor, accounting',
+  'skill.git_desc':'Git workflow: branching, commits, code review',
 };

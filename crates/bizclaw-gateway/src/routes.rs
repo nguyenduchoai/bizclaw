@@ -603,7 +603,7 @@ pub async fn update_channel(
                     })),
                     "webhook": cfg.channel.webhook.as_ref().map(|wh| serde_json::json!({
                         "enabled": wh.enabled,
-                        "secret": wh.secret,
+                        "secret_set": !wh.secret.is_empty(),
                         "outbound_url": wh.outbound_url,
                     })),
                 });
@@ -830,13 +830,16 @@ pub async fn webhook_inbound(
         }
     };
 
-    // Verify signature if secret configured
+    // Verify signature if secret configured (HMAC-SHA256)
     if !secret.is_empty() {
         let sig = headers.get("x-webhook-signature").and_then(|v| v.to_str().ok()).unwrap_or("");
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(format!("{secret}{body}"));
-        let expected = format!("{:x}", hasher.finalize());
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+        type HmacSha256 = Hmac<Sha256>;
+        let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+            .expect("HMAC can take key of any size");
+        mac.update(body.as_bytes());
+        let expected = format!("{:x}", mac.finalize().into_bytes());
         if expected != sig {
             return Json(serde_json::json!({"ok": false, "error": "Invalid webhook signature"}));
         }
@@ -2993,6 +2996,7 @@ mod tests {
             traces: Arc::new(Mutex::new(Vec::new())),
             activity_tx,
             activity_log: Arc::new(Mutex::new(Vec::new())),
+            rate_limiter: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         }))
     }
 
@@ -3715,4 +3719,117 @@ pub async fn mcp_list_servers(
         })
     }).collect();
     Json(serde_json::json!({"ok": true, "servers": servers, "count": servers.len()}))
+}
+
+// ═══ Xiaozhi Webhook Bridge ═══
+
+/// Xiaozhi webhook inbound — receives voice commands from Xiaozhi Server.
+/// POST /api/v1/xiaozhi/webhook
+pub async fn xiaozhi_webhook(
+    State(state): State<Arc<AppState>>,
+    _headers: axum::http::HeaderMap,
+    body: String,
+) -> Json<serde_json::Value> {
+    let start = std::time::Instant::now();
+
+    // Parse request
+    let req: bizclaw_channels::xiaozhi::XiaozhiRequest = match serde_json::from_str(&body) {
+        Ok(r) => r,
+        Err(e) => return Json(serde_json::json!({"ok": false, "error": format!("Invalid request: {e}")})),
+    };
+
+    if req.content.is_empty() {
+        return Json(serde_json::json!({"ok": false, "error": "'content' field required"}));
+    }
+
+    tracing::info!("[xiaozhi] Device {} → '{}' ({})", req.device_mac, safe_truncate(&req.content, 80), req.lang);
+
+    // Route to agent via orchestrator
+    let response = {
+        let mut orch = state.orchestrator.lock().await;
+        match orch.send(&req.content).await {
+            Ok(r) => r,
+            Err(e) => format!("⚠️ Agent error: {e}"),
+        }
+    };
+
+    let processing_ms = start.elapsed().as_millis() as u64;
+
+    Json(serde_json::json!({
+        "ok": true,
+        "text": response,
+        "agent": "default",
+        "session_id": req.session_id,
+        "device_mac": req.device_mac,
+        "has_audio": false,
+        "processing_ms": processing_ms,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
+}
+
+// ═══ TTS API ═══
+
+/// List available TTS voices.
+pub async fn tts_voices() -> Json<serde_json::Value> {
+    let engine = bizclaw_channels::tts::TtsEngine::new(bizclaw_channels::tts::TtsConfig::default());
+    let voices: Vec<serde_json::Value> = engine.available_voices().iter().map(|v| {
+        serde_json::json!({"id": v.id, "name": v.name, "lang": v.lang})
+    }).collect();
+    Json(serde_json::json!({"ok": true, "voices": voices, "provider": "edge"}))
+}
+
+// ═══ Workflows API ═══
+
+/// List available workflow templates.
+pub async fn workflows_list() -> Json<serde_json::Value> {
+    let templates = vec![
+        serde_json::json!({"id":"content_pipeline","name":"Content Pipeline","description":"Draft → Review → Polish","tags":["content","writing"],"steps":[
+            {"name":"Draft","type":"Sequential","agent_role":"Writer"},
+            {"name":"Review","type":"Sequential","agent_role":"Editor"},
+            {"name":"Polish","type":"Sequential","agent_role":"Proofreader"},
+        ]}),
+        serde_json::json!({"id":"expert_consensus","name":"Expert Consensus","description":"3 experts analyze in parallel → Merge","tags":["analysis","multi-agent"],"steps":[
+            {"name":"Expert Analysis","type":"FanOut","agent_role":"3 Experts (parallel)"},
+            {"name":"Merge Results","type":"Collect","agent_role":"Synthesizer"},
+        ]}),
+        serde_json::json!({"id":"quality_pipeline","name":"Quality Gate","description":"Generate → Loop evaluate until APPROVED","tags":["quality","loop"],"steps":[
+            {"name":"Generate","type":"Sequential","agent_role":"Creator"},
+            {"name":"Evaluate","type":"Loop","agent_role":"Evaluator (until APPROVED)"},
+        ]}),
+        serde_json::json!({"id":"research_pipeline","name":"Research Pipeline","description":"Search → Analyze → Synthesize → Report","tags":["research","data"],"steps":[
+            {"name":"Search","type":"Sequential","agent_role":"Researcher"},
+            {"name":"Analyze","type":"Sequential","agent_role":"Analyst"},
+            {"name":"Synthesize","type":"Sequential","agent_role":"Writer"},
+            {"name":"Report","type":"Transform","agent_role":"Formatter"},
+        ]}),
+        serde_json::json!({"id":"translation_pipeline","name":"Translation Pipeline","description":"Translate → Quality verification","tags":["language","translation"],"steps":[
+            {"name":"Translate","type":"Sequential","agent_role":"Translator"},
+            {"name":"Verify Quality","type":"Conditional","agent_role":"QA Checker"},
+        ]}),
+        serde_json::json!({"id":"code_review","name":"Code Review Pipeline","description":"3 reviewers in parallel → Security → Summary","tags":["code","security"],"steps":[
+            {"name":"Code Analysis","type":"FanOut","agent_role":"3 Reviewers (parallel)"},
+            {"name":"Security Check","type":"Sequential","agent_role":"Security Auditor"},
+            {"name":"Summary","type":"Collect","agent_role":"Lead Reviewer"},
+        ]}),
+    ];
+    Json(serde_json::json!({"ok": true, "workflows": templates}))
+}
+
+// ═══ Skills API ═══
+
+/// List available skills.
+pub async fn skills_list() -> Json<serde_json::Value> {
+    let skills = vec![
+        serde_json::json!({"name":"Rust Expert","icon":"🦀","category":"coding","tags":["rust","systems","performance"],"version":"1.0.0","description":"Rust expert: ownership, async, performance tuning","installed":true}),
+        serde_json::json!({"name":"Python Analyst","icon":"🐍","category":"data","tags":["python","pandas","visualization"],"version":"1.0.0","description":"Python data analysis: pandas, numpy, visualization","installed":true}),
+        serde_json::json!({"name":"Web Developer","icon":"🌐","category":"coding","tags":["react","typescript","css"],"version":"1.0.0","description":"Full-stack web: React, TypeScript, CSS, Node.js","installed":true}),
+        serde_json::json!({"name":"DevOps Engineer","icon":"🔧","category":"devops","tags":["docker","k8s","ci-cd"],"version":"1.0.0","description":"DevOps: Docker, K8s, CI/CD, Terraform","installed":true}),
+        serde_json::json!({"name":"Content Writer","icon":"✍️","category":"writing","tags":["blog","seo","marketing"],"version":"1.0.0","description":"Content writing: blog, marketing, SEO","installed":true}),
+        serde_json::json!({"name":"Security Auditor","icon":"🔒","category":"security","tags":["owasp","pentest","review"],"version":"1.0.0","description":"Security auditing: OWASP Top 10, code review","installed":true}),
+        serde_json::json!({"name":"SQL Expert","icon":"🗄️","category":"data","tags":["postgresql","sqlite","optimization"],"version":"1.0.0","description":"SQL expert: PostgreSQL, optimization, window functions","installed":true}),
+        serde_json::json!({"name":"API Designer","icon":"🔌","category":"coding","tags":["rest","openapi","auth"],"version":"1.0.0","description":"API design: REST, OpenAPI, authentication","installed":true}),
+        serde_json::json!({"name":"Vietnamese Business","icon":"🇻🇳","category":"business","tags":["tax","labor","accounting"],"version":"1.0.0","description":"Vietnamese business: tax law, labor, accounting","installed":true}),
+        serde_json::json!({"name":"Git Workflow","icon":"📦","category":"devops","tags":["git","branching","review"],"version":"1.0.0","description":"Git workflow: branching, commits, code review","installed":true}),
+    ];
+    Json(serde_json::json!({"ok": true, "skills": skills}))
 }

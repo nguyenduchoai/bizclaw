@@ -11,4 +11,6 @@ pub mod webhook;
 pub mod whatsapp;
 pub mod zalo;
 pub mod slack;
+pub mod tts;
+pub mod xiaozhi;
 pub mod adapters;

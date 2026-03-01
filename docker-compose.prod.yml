@@ -1,0 +1,99 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════
+# BizClaw Production — Dual Domain Deployment
+# bizclaw.vn + viagent.vn (independent instances)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── BizClaw Instance ──
+  bizclaw:
+    build: .
+    container_name: bizclaw-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"    # Platform admin
+      - "127.0.0.1:10001:10001"  # Tenant gateway 1
+      - "127.0.0.1:10002:10002"  # Tenant gateway 2
+      - "127.0.0.1:10003:10003"  # Tenant gateway 3
+    volumes:
+      - bizclaw_data:/root/.bizclaw
+    environment:
+      - RUST_LOG=info
+      - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
+      - BIZCLAW_CORS_ORIGINS=https://bizclaw.vn,https://apps.bizclaw.vn
+      - TZ=Asia/Ho_Chi_Minh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - bizclaw-net
+
+  # ── Viagent Instance (separate data) ──
+  viagent:
+    build: .
+    container_name: viagent-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3001"    # Platform admin (remapped)
+      - "127.0.0.1:10011:10001"  # Tenant gateway 1
+      - "127.0.0.1:10012:10002"  # Tenant gateway 2
+    volumes:
+      - viagent_data:/root/.bizclaw
+    environment:
+      - RUST_LOG=info
+      - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
+      - BIZCLAW_CORS_ORIGINS=https://viagent.vn,https://apps.viagent.vn
+      - TZ=Asia/Ho_Chi_Minh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - bizclaw-net
+
+  # ── Nginx Reverse Proxy ──
+  nginx:
+    image: nginx:alpine
+    container_name: bizclaw-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./landing:/var/www/bizclaw-landing:ro
+      - ./deploy/viagent-landing:/var/www/viagent-landing:ro
+      - certbot_data:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - bizclaw
+      - viagent
+    networks:
+      - bizclaw-net
+
+  # ── Certbot (SSL) ──
+  certbot:
+    image: certbot/certbot
+    container_name: bizclaw-certbot
+    volumes:
+      - certbot_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  bizclaw_data:
+    driver: local
+  viagent_data:
+    driver: local
+  certbot_data:
+    driver: local
+  certbot_www:
+    driver: local
+
+networks:
+  bizclaw-net:
+    driver: bridge

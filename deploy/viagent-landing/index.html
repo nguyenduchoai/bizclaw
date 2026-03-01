@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViAgent — Trợ lý AI cho Doanh Nghiệp | AI Agent for Business</title>
+<meta name="description" content="ViAgent — Trợ lý AI dành cho doanh nhân. Chạy trên mọi thiết bị từ Raspberry Pi đến VPS. Tích hợp Zalo, hoạt động độc lập không cần cloud.">
+<meta property="og:title" content="ViAgent — Trợ lý AI cho Doanh Nghiệp">
+<meta property="og:description" content="AI Agent bỏ túi cho doanh nhân. Chạy trên thiết bị 512MB RAM, tích hợp Zalo, hoạt động 24/7 không cần cloud.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://viagent.vn">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08090d;--bg2:#0d1017;--surface:#12151e;--card:#161a26;--border:#1e2433;
+  --text:#e8ecf4;--muted:#7c8599;--accent:#6366f1;--accent2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --green:#34d399;--cyan:#22d3ee;--pink:#f472b6;--orange:#fb923c;
+  --grad1:linear-gradient(135deg,#6366f1,#8b5cf6,#a78bfa);
+  --grad2:linear-gradient(135deg,#06b6d4,#3b82f6,#6366f1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+
+/* ═══ NAV ═══ */
+nav{position:fixed;top:0;width:100%;z-index:100;padding:16px 0;transition:all .3s}
+nav.scrolled{background:rgba(8,9,13,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:var(--text);text-decoration:none}
+.logo span{background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:.2s}
+.nav-links a:hover{color:var(--text)}
+.lang-toggle{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;transition:.2s}
+.lang-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.nav-cta{background:var(--grad1);color:#fff;padding:8px 22px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(99,102,241,.35)}
+
+/* ═══ HERO ═══ */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 24px 80px}
+.hero::before{content:'';position:absolute;top:-50%;left:-30%;width:160%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(99,102,241,.08) 0%,transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(34,211,238,.06) 0%,transparent 50%);pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.03) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse at center,black 30%,transparent 70%)}
+.hero-content{max-width:900px;text-align:center;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;background:var(--accent-glow);border:1px solid rgba(99,102,241,.25);border-radius:30px;font-size:13px;color:var(--accent2);margin-bottom:28px;font-weight:500}
+.hero-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(36px,6vw,72px);font-weight:800;line-height:1.1;margin-bottom:24px;letter-spacing:-2px}
+h1 .grad{background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-desc{font-size:clamp(16px,2vw,20px);color:var(--muted);max-width:640px;margin:0 auto 40px;line-height:1.7}
+.hero-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--grad1);color:#fff;padding:14px 36px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;transition:all .25s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(99,102,241,.4)}
+.btn-secondary{background:transparent;color:var(--text);padding:14px 36px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;border:1px solid var(--border);transition:all .25s;display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{border-color:var(--accent);background:var(--accent-glow)}
+.hero-stats{display:flex;gap:48px;justify-content:center;margin-top:60px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat .num{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;background:var(--grad2);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-stat .label{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* ═══ PLATFORM SECTION ═══ */
+#platforms{background:var(--bg);position:relative;overflow:hidden}
+#platforms::before{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(99,102,241,.06) 0%,transparent 70%);pointer-events:none}
+.platforms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px;position:relative}
+.platforms-grid::before{content:'';position:absolute;top:50%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),var(--accent),var(--cyan),transparent);opacity:.3;z-index:0}
+.platform-card{background:var(--card);border-radius:20px;padding:36px 28px;text-align:center;position:relative;z-index:1;transition:all .4s;overflow:hidden}
+.platform-card::before{content:'';position:absolute;inset:-2px;border-radius:22px;padding:2px;background:linear-gradient(135deg,var(--accent),var(--cyan),var(--accent));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:.4s}
+.platform-card:hover::before{opacity:1}
+.platform-card:hover{transform:translateY(-8px);box-shadow:0 20px 60px rgba(99,102,241,.15)}
+.platform-icon{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px;position:relative}
+.platform-icon.pi{background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(52,211,153,.05))}
+.platform-icon.android{background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.05))}
+.platform-icon.vps{background:linear-gradient(135deg,rgba(34,211,238,.15),rgba(34,211,238,.05))}
+.platform-card h3{font-size:20px;font-weight:700;margin-bottom:4px;font-family:'Space Grotesk',sans-serif}
+.platform-price{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:800;margin:8px 0}
+.platform-price.free{color:var(--green)}
+.platform-price.low{color:var(--cyan)}
+.platform-card .platform-desc{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.platform-features{list-style:none;text-align:left}
+.platform-features li{padding:5px 0;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.platform-features li .pf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pf-dot.green{background:var(--green)}
+.pf-dot.purple{background:var(--accent)}
+.pf-dot.cyan{background:var(--cyan)}
+.platform-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.ptag-green{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.ptag-purple{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.ptag-cyan{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+
+/* Floating orbs */
+.platform-orbs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(40px);animation:float 8s ease-in-out infinite}
+.orb-1{width:200px;height:200px;background:rgba(99,102,241,.08);top:-50px;left:-50px;animation-delay:0s}
+.orb-2{width:150px;height:150px;background:rgba(34,211,238,.06);bottom:-30px;right:-30px;animation-delay:3s}
+.orb-3{width:180px;height:180px;background:rgba(52,211,153,.05);top:50%;right:20%;animation-delay:5s}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.05)}}
+
+/* ═══ ANDROID SHOWCASE ═══ */
+.android-showcase{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:48px}
+.android-visual{position:relative;display:flex;align-items:center;justify-content:center;min-height:400px}
+.phone-frame{width:200px;height:380px;background:var(--card);border:2px solid var(--border);border-radius:28px;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+.phone-screen{position:absolute;inset:8px;border-radius:20px;background:linear-gradient(180deg,#1a1b2e 0%,#12131f 100%);display:flex;flex-direction:column;padding:16px 12px}
+.phone-notch{width:60px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 12px}
+.phone-logo{text-align:center;font-size:28px;margin-bottom:8px}
+.phone-title{text-align:center;font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:12px}
+.phone-status{display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(52,211,153,.1);border-radius:8px;margin-bottom:8px;font-size:10px;color:var(--green)}
+.phone-status .ps-dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+.app-lines{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.app-line{height:3px;border-radius:2px;opacity:.3}
+.app-line:nth-child(1){background:var(--accent);width:80%}
+.app-line:nth-child(2){background:var(--cyan);width:60%}
+.app-line:nth-child(3){background:var(--green);width:70%}
+
+/* App connection lines */
+.app-nodes{position:absolute;top:0;left:0;right:0;bottom:0}
+.app-node{position:absolute;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:float 6s ease-in-out infinite}
+.app-node.fb{background:linear-gradient(135deg,#1877F2,#0d47a1);top:15%;right:5%;animation-delay:0s}
+.app-node.msg{background:linear-gradient(135deg,#a855f6,#6366f1);top:45%;right:0;animation-delay:2s}
+.app-node.zalo{background:linear-gradient(135deg,#0068ff,#0041a8);bottom:20%;right:10%;animation-delay:4s}
+
+.android-info h3{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:16px;line-height:1.3}
+.android-info .ai-highlight{background:var(--grad1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.android-info p{color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:20px}
+.mode-pills{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.mode-pill{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.mode-pill.local{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.mode-pill.remote{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.mode-pill.hybrid{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.app-control-list{list-style:none}
+.app-control-list li{padding:6px 0;font-size:14px;display:flex;align-items:center;gap:10px}
+.app-control-list li .acl-icon{font-size:18px;width:24px;text-align:center}
+
+@media(max-width:768px){
+  .platforms-grid{grid-template-columns:1fr}
+  .platforms-grid::before{display:none}
+  .android-showcase{grid-template-columns:1fr}
+  .android-visual{min-height:300px}
+}
+
+/* ═══ SECTION ═══ */
+section{padding:100px 24px}
+.container{max-width:1200px;margin:0 auto}
+.section-label{font-size:13px;font-weight:600;color:var(--accent2);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:700;margin-bottom:16px;letter-spacing:-1px}
+.section-desc{font-size:17px;color:var(--muted);max-width:600px;margin-bottom:48px;line-height:1.7}
+
+/* ═══ FEATURES ═══ */
+#features{background:var(--bg2)}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;transition:all .3s;position:relative;overflow:hidden}
+.feature-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.feature-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad1);opacity:0;transition:.3s}
+.feature-card:hover::after{opacity:1}
+.feature-icon{font-size:32px;margin-bottom:16px;display:block}
+.feature-card h3{font-size:18px;font-weight:600;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ═══ PROVIDERS ═══ */
+.providers-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.provider-pill{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 24px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;transition:.25s}
+.provider-pill:hover{border-color:var(--accent);background:var(--accent-glow)}
+
+/* ═══ PRICING ═══ */
+#pricing{background:var(--bg2)}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:48px}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;position:relative;transition:.3s}
+.price-card.popular{border-color:var(--accent);box-shadow:0 0 60px rgba(99,102,241,.12)}
+.price-card.popular::before{content:'⭐ Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--grad1);padding:4px 16px;border-radius:20px;font-size:12px;font-weight:600;color:#fff}
+.price-card h3{font-size:20px;font-weight:600;margin-bottom:4px}
+.price-card .price{font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:700;margin:16px 0 8px}
+.price-card .price span{font-size:16px;font-weight:400;color:var(--muted)}
+.price-card .desc{font-size:14px;color:var(--muted);margin-bottom:20px}
+.price-card ul{list-style:none;margin-bottom:24px}
+.price-card li{padding:6px 0;font-size:14px;display:flex;align-items:center;gap:8px}
+.price-card li::before{content:'✓';color:var(--green);font-weight:700;font-size:12px}
+
+/* ═══ HOW IT WORKS ═══ */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:48px;counter-reset:step}
+.step{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;transition:.3s;counter-increment:step}
+.step::before{content:counter(step);position:absolute;top:16px;right:20px;font-family:'Space Grotesk',sans-serif;font-size:48px;font-weight:800;color:rgba(99,102,241,.1)}
+.step:hover{border-color:var(--accent);transform:translateY(-3px)}
+.step h4{font-size:16px;font-weight:600;margin-bottom:8px}
+.step p{font-size:14px;color:var(--muted)}
+
+/* ═══ CTA / REGISTER ═══ */
+#register{position:relative;overflow:hidden}
+#register::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(99,102,241,.08),transparent 60%)}
+.register-box{max-width:560px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px;position:relative;backdrop-filter:blur(10px)}
+.register-box h2{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:8px;text-align:center}
+.register-box .sub{color:var(--muted);font-size:15px;text-align:center;margin-bottom:32px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.form-group input,.form-group select{width:100%;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;outline:none;transition:.2s;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-submit{width:100%;padding:14px;background:var(--grad1);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:.25s;margin-top:8px;font-family:inherit}
+.form-submit:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(99,102,241,.4)}
+.form-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+.form-note{text-align:center;font-size:12px;color:var(--muted);margin-top:16px}
+.form-success{display:none;text-align:center;padding:40px 20px}
+.form-success .icon{font-size:48px;margin-bottom:16px}
+.form-success h3{font-size:22px;margin-bottom:8px;color:var(--green)}
+.form-success p{color:var(--muted);font-size:14px}
+
+/* ═══ SHOWCASE ═══ */
+#showcase{background:var(--bg2)}
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;margin-top:48px}
+.showcase-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;transition:all .3s;position:relative;overflow:hidden}
+.showcase-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.showcase-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad1);opacity:0;transition:.3s}
+.showcase-card:hover::after{opacity:1}
+.showcase-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.tag-automation{background:rgba(251,146,60,.12);color:var(--orange);border:1px solid rgba(251,146,60,.2)}
+.tag-developer{background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.2)}
+.tag-productivity{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.tag-smarthome{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.tag-family{background:rgba(244,114,182,.12);color:var(--pink);border:1px solid rgba(244,114,182,.2)}
+.tag-poweruser{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.showcase-card h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.showcase-card p{font-size:13px;color:var(--muted);line-height:1.6}
+.showcase-card ul{list-style:none;margin-top:10px}
+.showcase-card li{padding:3px 0;font-size:13px;color:var(--muted);display:flex;align-items:flex-start;gap:8px}
+.showcase-card li::before{content:'→';color:var(--accent2);font-weight:700;flex-shrink:0}
+
+/* ═══ SPONSOR ═══ */
+.sponsor-section{padding:60px 24px;text-align:center;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%)}
+.sponsor-label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:24px}
+.sponsor-logo{display:inline-flex;align-items:center;gap:12px;padding:16px 40px;background:var(--card);border:1px solid var(--border);border-radius:16px;text-decoration:none;transition:all .3s;font-family:'Space Grotesk',sans-serif}
+.sponsor-logo:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 12px 40px rgba(99,102,241,.2)}
+.sponsor-logo .sp-icon{font-size:36px}
+.sponsor-logo .sp-text{text-align:left}
+.sponsor-logo .sp-name{font-size:24px;font-weight:700;background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sponsor-logo .sp-desc{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* ═══ TECH ═══ */
+.tech-badges{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.tech-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--muted)}
+
+/* ═══ FOOTER ═══ */
+footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center;color:var(--muted);font-size:13px}
+footer a{color:var(--accent2);text-decoration:none}
+
+/* ═══ ANIMATIONS ═══ */
+.fade-up{opacity:0;transform:translateY(30px);transition:all .6s cubic-bezier(.16,1,.3,1)}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+.stagger{transition-delay:calc(var(--i,0) * 100ms)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hero-stats{gap:24px}
+  .form-row{grid-template-columns:1fr}
+  .hero{padding:100px 16px 60px}
+  section{padding:60px 16px}
+  .register-box{padding:28px 20px}
+  .showcase-grid{grid-template-columns:1fr}
+  #feature-grid{grid-template-columns:1fr!important}
+}
+@media(max-width:480px){h1{font-size:32px!important}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="logo">🤖 <span>ViAgent</span></a>
+    <div class="nav-links">
+      <a href="#features" data-vi="Năng lực" data-en="Features">Năng lực</a>
+      <a href="#showcase" data-vi="Showcase" data-en="Showcase">Showcase</a>
+      <a href="#how" data-vi="Bắt đầu" data-en="Get Started">Bắt đầu</a>
+      <a href="/docs.html" data-vi="📖 Hướng dẫn" data-en="📖 Docs">📖 Hướng dẫn</a>
+      <!-- Registration temporarily disabled -->
+      <!-- <a href="#register" data-vi="Đăng ký" data-en="Register">Đăng ký</a> -->
+      <button class="lang-toggle" onclick="toggleLang()">🌐 EN</button>
+      <a href="#" onclick="goLogin()" class="nav-cta" style="background:transparent;border:1px solid var(--border);color:var(--text);margin-right:8px" data-vi="🔑 Đăng nhập" data-en="🔑 Login">🔑 Đăng nhập</a>
+      <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="nav-cta" data-vi="⭐ GitHub" data-en="⭐ GitHub">⭐ GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> <span data-vi="Trợ lý AI bỏ túi cho doanh nhân" data-en="Pocket AI Assistant for Business">Trợ lý AI bỏ túi cho doanh nhân</span></div>
+    <h1>
+      <span data-vi="Đội ngũ" data-en="Your">Đội ngũ</span> <span class="grad" data-vi="AI Agent" data-en="AI Agent Team">AI Agent</span><br>
+      <span data-vi="luôn bên bạn, mọi lúc" data-en="always by your side">luôn bên bạn, mọi lúc</span>
+    </h1>
+    <p class="hero-desc" data-vi="ViAgent biến mọi thiết bị thành trợ lý AI riêng cho doanh nghiệp — từ Raspberry Pi bỏ túi đến VPS. Kết nối Zalo, quản lý email, lịch hẹn, khách hàng — hoạt động 24/7, không phụ thuộc cloud, không cần internet liên tục." data-en="ViAgent turns any device into your private business AI assistant — from a pocket-sized Raspberry Pi to a VPS. Connect Zalo, manage emails, appointments, clients — running 24/7, cloud-free, no constant internet required.">ViAgent biến mọi thiết bị thành trợ lý AI riêng cho doanh nghiệp — từ Raspberry Pi bỏ túi đến VPS. Kết nối Zalo, quản lý email, lịch hẹn, khách hàng — hoạt động 24/7, không phụ thuộc cloud, không cần internet liên tục.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="btn-primary" data-vi="⭐ GitHub — Xem mã nguồn" data-en="⭐ GitHub — View Source">⭐ GitHub — Xem mã nguồn</a>
+      <a href="/docs.html" class="btn-secondary" data-vi="📖 Hướng dẫn cài đặt" data-en="📖 Installation Guide">📖 Hướng dẫn cài đặt</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">50+</div><div class="label" data-vi="Agent Templates" data-en="Agent Templates">Agent Templates</div></div>
+      <div class="hero-stat"><div class="num">15</div><div class="label" data-vi="AI Providers" data-en="AI Providers">AI Providers</div></div>
+      <div class="hero-stat"><div class="num">23+</div><div class="label" data-vi="Tools (Native+Device)" data-en="Tools (Native+Device)">Tools (Native+Device)</div></div>
+      <div class="hero-stat"><div class="num">91/100</div><div class="label" data-vi="Security Audit" data-en="Security Audit">Security Audit</div></div>
+      <div class="hero-stat"><div class="num">&lt;2s</div><div class="label" data-vi="Khởi động" data-en="Boot time">Khởi động</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-label" data-vi="NĂNG LỰC" data-en="CAPABILITIES">NĂNG LỰC</div>
+    <div class="section-title" data-vi="Trợ lý AI hiểu công việc của bạn" data-en="An AI assistant that understands your business">Trợ lý AI hiểu công việc của bạn</div>
+    <div class="section-desc" data-vi="Nhỏ gọn đủ để bỏ túi trên Pi, mạnh mẽ đủ để vận hành doanh nghiệp. Không cần cloud — AI của bạn, dữ liệu của bạn." data-en="Small enough to fit in your pocket on a Pi, powerful enough to run your business. No cloud needed — your AI, your data.">Nhỏ gọn đủ để bỏ túi trên Pi, mạnh mẽ đủ để vận hành doanh nghiệp. Không cần cloud — AI của bạn, dữ liệu của bạn.</div>
+    <div class="features-grid">
+      <div class="feature-card fade-up" style="--i:0">
+        <span class="feature-icon">🧠</span>
+        <h3 data-vi="Brain Engine" data-en="Brain Engine">Brain Engine</h3>
+        <p data-vi="Chạy mô hình LLaMA ngay trên thiết bị với Flash Attention, FP16 KV Cache (giảm 50% RAM), Grammar-Constrained JSON cho tool calling chính xác." data-en="Run LLaMA models locally with Flash Attention, FP16 KV Cache (50% RAM savings), Grammar-Constrained JSON for precise tool calling.">Chạy mô hình LLaMA ngay trên thiết bị với Flash Attention, FP16 KV Cache (giảm 50% RAM), Grammar-Constrained JSON cho tool calling chính xác.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:1">
+        <span class="feature-icon">🔌</span>
+        <h3 data-vi="15 AI Providers" data-en="15 AI Providers">15 AI Providers</h3>
+        <p data-vi="OpenAI, Anthropic, Gemini, DeepSeek, Groq, OpenRouter, Together, MiniMax, xAI (Grok), Mistral, Ollama, llama.cpp, Brain Engine, CLIProxy, vLLM. Hỗ trợ custom endpoint." data-en="OpenAI, Anthropic, Gemini, DeepSeek, Groq, OpenRouter, Together, MiniMax, xAI (Grok), Mistral, Ollama, llama.cpp, Brain Engine, CLIProxy, vLLM. Custom endpoints supported.">OpenAI, Anthropic, Gemini, DeepSeek, Groq, OpenRouter, Together, MiniMax, xAI (Grok), Mistral, Ollama, llama.cpp, Brain Engine, CLIProxy, vLLM. Hỗ trợ custom endpoint.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:2">
+        <span class="feature-icon">🏢</span>
+        <h3 data-vi="Multi-Tenant Platform" data-en="Multi-Tenant Platform">Multi-Tenant Platform</h3>
+        <p data-vi="Admin dashboard, quản lý tenants, JWT auth, mã pairing 6 số, audit log. Mỗi tenant có port riêng, subdomain riêng." data-en="Admin dashboard, tenant management, JWT auth, 6-digit pairing codes, audit logging. Each tenant gets its own port and subdomain.">Admin dashboard, quản lý tenants, JWT auth, mã pairing 6 số, audit log. Mỗi tenant có port riêng, subdomain riêng.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:3">
+        <span class="feature-icon">💬</span>
+        <h3 data-vi="🇻🇳 Zalo OA Bot + Zalo Cá nhân" data-en="🇻🇳 Zalo OA Bot + Personal Zalo">🇻🇳 Zalo OA Bot + Zalo Cá nhân</h3>
+        <p data-vi="Dual-mode Zalo: Zalo OA Bot (API chính thức bot.zapps.me — sendMessage, webhook, nhóm chat) + Zalo cá nhân (zca-js v2 protocol, dynamic service URLs). Kết hợp Telegram, Discord, CLI, Webhook. AI agent nói chuyện trên Zalo như người thật." data-en="Dual-mode Zalo: Zalo OA Bot (official bot.zapps.me API — sendMessage, webhook, group chat) + Personal Zalo (zca-js v2 protocol, dynamic service URLs). Plus Telegram, Discord, CLI, Webhook. AI agent chats on Zalo like a real person.">Dual-mode Zalo: Zalo OA Bot (API chính thức bot.zapps.me — sendMessage, webhook, nhóm chat) + Zalo cá nhân (zca-js v2 protocol, dynamic service URLs). Kết hợp Telegram, Discord, CLI, Webhook. AI agent nói chuyện trên Zalo như người thật.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:4">
+        <span class="feature-icon">🔒</span>
+        <h3 data-vi="Bảo mật" data-en="Security">Bảo mật</h3>
+        <p data-vi="Command allowlist, JWT + bcrypt, AES-256 encryption, HMAC-SHA256 signing, tenant isolation, audit logging." data-en="Command allowlist, JWT + bcrypt, AES-256 encryption, HMAC-SHA256 signing, tenant isolation, audit logging.">Command allowlist, JWT + bcrypt, AES-256 encryption, HMAC-SHA256 signing, tenant isolation, audit logging.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:5">
+        <span class="feature-icon">🔗</span>
+        <h3 data-vi="MCP Servers — Mở rộng vô hạn" data-en="MCP Servers — Infinite Extensions">MCP Servers — Mở rộng vô hạn</h3>
+        <p data-vi="Kết nối hàng trăm MCP servers: GitHub, Postgres, Brave Search, Puppeteer, Memory... Thêm/xoá/bật/tắt ngay trên Dashboard. Tương thích chuẩn MCP v2024-11-05." data-en="Connect hundreds of MCP servers: GitHub, Postgres, Brave Search, Puppeteer, Memory... Add/remove/toggle from Dashboard. Compatible with MCP v2024-11-05 standard.">Kết nối hàng trăm MCP servers: GitHub, Postgres, Brave Search, Puppeteer, Memory... Thêm/xoá/bật/tắt ngay trên Dashboard. Tương thích chuẩn MCP v2024-11-05.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:6">
+        <span class="feature-icon">🔥</span>
+        <h3 data-vi="Chạy trên 512MB RAM" data-en="Runs on 512MB RAM">Chạy trên 512MB RAM</h3>
+        <p data-vi="Hoạt động độc lập trên BẤT KỲ phần cứng nào có 512MB RAM — từ Raspberry Pi đến VPS mini. LLM sẵn có, không cần cloud. SIMD auto-dispatch (ARM NEON, x86 AVX2)." data-en="Runs independently on ANY hardware with 512MB RAM — from Raspberry Pi to mini VPS. Built-in LLM, no cloud needed. SIMD auto-dispatch (ARM NEON, x86 AVX2).">Hoạt động độc lập trên BẤT KỲ phần cứng nào có 512MB RAM — từ Raspberry Pi đến VPS mini. LLM sẵn có, không cần cloud. SIMD auto-dispatch (ARM NEON, x86 AVX2).</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:7">
+        <span class="feature-icon">🎨</span>
+        <h3 data-vi="Onboarding Wizard + AI Personalization" data-en="Onboarding Wizard + AI Personalization">Onboarding Wizard + AI Personalization</h3>
+        <p data-vi="Lần đầu mở Dashboard → Wizard hỏi bạn là ai → AI tự tạo SOUL.md, IDENTITY.md, USER.md. Agent có tính cách riêng, hiểu bạn ngay từ đầu." data-en="First dashboard visit → Wizard asks who you are → AI auto-generates SOUL.md, IDENTITY.md, USER.md. Agent gets a unique personality, understands you from day one.">Lần đầu mở Dashboard → Wizard hỏi bạn là ai → AI tự tạo SOUL.md, IDENTITY.md, USER.md. Agent có tính cách riêng, hiểu bạn ngay từ đầu.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:8">
+        <span class="feature-icon">🐳</span>
+        <h3 data-vi="Docker + One-Click Install" data-en="Docker + One-Click Install">Docker + One-Click Install</h3>
+        <p data-vi="docker-compose up → chạy ngay. Hoặc curl install.sh → cài trên VPS/Pi trong 1 phút. Không cần kiến thức kỹ thuật cao." data-en="docker-compose up → instant start. Or curl install.sh → install on VPS/Pi in 1 minute. No advanced technical knowledge required.">docker-compose up → chạy ngay. Hoặc curl install.sh → cài trên VPS/Pi trong 1 phút. Không cần kiến thức kỹ thuật cao.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:9">
+        <span class="feature-icon">📦</span>
+        <h3 data-vi="Agent Gallery — 50+ Mẫu cho Doanh nghiệp" data-en="Agent Gallery — 50+ Business Templates">Agent Gallery — 50+ Mẫu cho Doanh nghiệp</h3>
+        <p data-vi="14 danh mục doanh nghiệp: HR, Sales, Marketing, Finance, Legal, IT, Operations, Management... Cài agent chuyên biệt chỉ 1 click + upload file .md mở rộng kiến thức. Tự tạo Gallery riêng." data-en="14 business categories: HR, Sales, Marketing, Finance, Legal, IT, Operations, Management... Install specialized agents with 1 click + upload .md files to extend knowledge. Create your own Gallery.">14 danh mục doanh nghiệp: HR, Sales, Marketing, Finance, Legal, IT, Operations, Management... Cài agent chuyên biệt chỉ 1 click + upload file .md mở rộng kiến thức. Tự tạo Gallery riêng.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:10">
+        <span class="feature-icon">💰</span>
+        <h3 data-vi="Tiết kiệm Token — Mỗi Agent chọn Provider riêng" data-en="Save Tokens — Per-Agent Provider Selection">Tiết kiệm Token — Mỗi Agent chọn Provider riêng</h3>
+        <p data-vi="Translator → Ollama/qwen2.5 (miễn phí, local). Full-Stack Dev → Anthropic/Claude (mạnh). Social Media → Gemini/flash (nhanh, rẻ). Tiết kiệm 60-80% chi phí API." data-en="Translator → Ollama/qwen2.5 (free, local). Full-Stack Dev → Anthropic/Claude (powerful). Social Media → Gemini/flash (fast, cheap). Save 60-80% on API costs.">Translator → Ollama/qwen2.5 (miễn phí, local). Full-Stack Dev → Anthropic/Claude (mạnh). Social Media → Gemini/flash (nhanh, rẻ). Tiết kiệm 60-80% chi phí API.</p>
+      </div>
+
+      <div class="feature-card fade-up" style="--i:11">
+        <span class="feature-icon">🔀</span>
+        <h3 data-vi="Multi-Agent Orchestration" data-en="Multi-Agent Orchestration">Multi-Agent Orchestration</h3>
+        <p data-vi="Agents tự phối hợp: Delegation (sync/async), Handoff, Evaluate Loop, Quality Gates, Permission Links, Team Task Board, LLM Tracing. 9 API endpoints sẵn sàng." data-en="Agents coordinate automatically: Delegation (sync/async), Handoff, Evaluate Loop, Quality Gates, Permission Links, Team Task Board, LLM Tracing. 9 API endpoints ready.">Agents tự phối hợp: Delegation (sync/async), Handoff, Evaluate Loop, Quality Gates, Permission Links, Team Task Board, LLM Tracing. 9 API endpoints sẵn sàng.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:12">
+        <span class="feature-icon">🐘</span>
+        <h3 data-vi="PostgreSQL Backend" data-en="PostgreSQL Backend">PostgreSQL Backend</h3>
+        <p data-vi="viagent-db crate — hỗ trợ PostgreSQL production-grade với sqlx, async migrations, connection pooling. Thay thế SQLite khi cần scale." data-en="viagent-db crate — production-grade PostgreSQL support with sqlx, async migrations, connection pooling. Replace SQLite when scaling.">viagent-db crate — hỗ trợ PostgreSQL production-grade với sqlx, async migrations, connection pooling. Thay thế SQLite khi cần scale.</p>
+      </div>
+      <div class="feature-card fade-up" style="--i:13">
+        <span class="feature-icon">📱</span>
+        <h3 data-vi="Android Agent Platform" data-en="Android Agent Platform">Android Agent Platform</h3>
+        <p data-vi="Biến điện thoại thành AI Agent chạy 24/7. Foreground Service giữ agent sống, Accessibility Service điều khiển Facebook (đăng bài, bình luận), Messenger (trả lời tự động), Zalo (nhắn tin). Device tools: pin, GPS, notification, clipboard, flashlight. Auto-restart sau reboot." data-en="Turn your phone into a 24/7 AI Agent. Foreground Service keeps agent alive, Accessibility Service controls Facebook (post, comment), Messenger (auto-reply), Zalo (messaging). Device tools: battery, GPS, notification, clipboard, flashlight. Auto-restart after reboot.">Biến điện thoại thành AI Agent chạy 24/7. Foreground Service giữ agent sống, Accessibility Service điều khiển Facebook (đăng bài, bình luận), Messenger (trả lời tự động), Zalo (nhắn tin). Device tools: pin, GPS, notification, clipboard, flashlight. Auto-restart sau reboot.</p>
+      </div>
+
+    </div>
+    <div class="providers-row fade-up" style="--i:9">
+      <div class="provider-pill">🤖 OpenAI</div>
+      <div class="provider-pill">🧠 Anthropic</div>
+      <div class="provider-pill">💎 Gemini</div>
+      <div class="provider-pill">🌊 DeepSeek</div>
+      <div class="provider-pill">🤖 Groq</div>
+      <div class="provider-pill">🦙 Ollama</div>
+      <div class="provider-pill">🔧 llama.cpp</div>
+      <div class="provider-pill">🧲 Brain (Local)</div>
+      <div class="provider-pill">🔀 OpenRouter</div>
+      <div class="provider-pill">🤝 Together</div>
+      <div class="provider-pill">🎯 MiniMax</div>
+      <div class="provider-pill">🚀 xAI (Grok)</div>
+      <div class="provider-pill">🌬️ Mistral</div>
+      <div class="provider-pill">🔌 CLIProxy</div>
+      <div class="provider-pill">📡 vLLM</div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORMS -->
+<section id="platforms">
+  <div class="container">
+    <div class="platform-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+    <div class="section-label" data-vi="CHẠY MỌI NƠI" data-en="RUNS EVERYWHERE">ĐA NỀN TẢNG</div>
+    <div class="section-title" data-vi="1 Codebase → 3 Nền Tảng → Mọi Quy Mô" data-en="1 Codebase → 3 Platforms → Any Scale">1 Codebase → 3 Nền Tảng → Mọi Quy Mô</div>
+    <div class="section-desc" data-vi="Nền tảng AI Agent DUY NHẤT chạy được trên cả Raspberry Pi, điện thoại Android, và VPS. Từ 1 codebase Rust duy nhất." data-en="The ONLY AI Agent platform that runs on Raspberry Pi, Android phones, AND VPS. From a single Rust codebase.">Nền tảng AI Agent DUY NHẤT chạy được trên cả Raspberry Pi, điện thoại Android, và VPS. Từ 1 codebase Rust duy nhất.</div>
+
+    <div class="platforms-grid">
+      <div class="platform-card fade-up" style="--i:0">
+        <div class="platform-icon pi">🍓</div>
+        <span class="platform-tag ptag-green">STARTUP</span>
+        <h3>Raspberry Pi</h3>
+        <div class="platform-price free" data-vi="$0/tháng" data-en="$0/month">$0/tháng</div>
+        <p class="platform-desc" data-vi="Biến bất kỳ Pi nào thành AI server. Chạy 24/7 với điện như bóng đèn LED." data-en="Turn any Pi into an AI server. Runs 24/7 with the power of an LED bulb.">Biến bất kỳ Pi nào thành AI server. Chạy 24/7 với điện như bóng đèn LED.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot green"></span> Binary 12MB, 512MB RAM</li>
+          <li><span class="pf-dot green"></span> Ollama + Brain Engine local</li>
+          <li><span class="pf-dot green"></span> <span data-vi="Không cần internet" data-en="No internet needed">Không cần internet</span></li>
+          <li><span class="pf-dot green"></span> SIMD (ARM NEON)</li>
+        </ul>
+      </div>
+
+      <div class="platform-card fade-up" style="--i:1">
+        <div class="platform-icon android">📱</div>
+        <span class="platform-tag ptag-purple">MOBILE</span>
+        <h3>Android</h3>
+        <div class="platform-price free" data-vi="$0/tháng" data-en="$0/month">$0/tháng</div>
+        <p class="platform-desc" data-vi="Agent bỏ túi. Điều khiển Facebook, Messenger, Zalo tự động." data-en="Pocket agent. Controls Facebook, Messenger, Zalo automatically.">Agent bỏ túi. Điều khiển Facebook, Messenger, Zalo tự động.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot purple"></span> Foreground Service 24/7</li>
+          <li><span class="pf-dot purple"></span> Accessibility điều khiển app</li>
+          <li><span class="pf-dot purple"></span> 3 mode: LOCAL/REMOTE/HYBRID</li>
+          <li><span class="pf-dot purple"></span> 10 device tools</li>
+        </ul>
+      </div>
+
+      <div class="platform-card fade-up" style="--i:2">
+        <div class="platform-icon vps">🖥️</div>
+        <span class="platform-tag ptag-cyan">PRODUCTION</span>
+        <h3>VPS / Cloud</h3>
+        <div class="platform-price low" data-vi="Tuỳ nhu cầu" data-en="As needed">Tuỳ nhu cầu</div>
+        <p class="platform-desc" data-vi="Multi-tenant, 51 agents, multi-domain, SSL. Tự thuê VPS từ đối tác (DigitalOcean, Vultr, AWS...) — ViAgent hoàn toàn miễn phí." data-en="Multi-tenant, 51 agents, multi-domain, SSL. Rent VPS from any provider (DigitalOcean, Vultr, AWS...) — ViAgent is completely free.">Multi-tenant, 51 agents, multi-domain, SSL. Tự thuê VPS từ đối tác (DigitalOcean, Vultr, AWS...) — ViAgent hoàn toàn miễn phí.</p>
+        <ul class="platform-features">
+          <li><span class="pf-dot cyan"></span> Docker + one-click deploy</li>
+          <li><span class="pf-dot cyan"></span> 50+ agents đồng thời</li>
+          <li><span class="pf-dot cyan"></span> Admin dashboard 15 trang</li>
+          <li><span class="pf-dot cyan"></span> Multi-domain SSL</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANDROID SHOWCASE -->
+<section id="android-showcase" style="background:var(--bg2)">
+  <div class="container">
+    <div class="android-showcase">
+      <div class="android-visual">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="phone-logo">🤖</div>
+            <div class="phone-title">ViAgent Agent</div>
+            <div class="phone-status"><span class="ps-dot"></span> Agent đang chạy 24/7</div>
+            <div class="phone-status" style="background:rgba(99,102,241,.1);color:var(--accent2)"><span class="ps-dot" style="background:var(--accent)"></span> Accessibility: ON</div>
+            <div class="app-lines"><div class="app-line"></div><div class="app-line"></div><div class="app-line"></div></div>
+          </div>
+        </div>
+        <div class="app-nodes">
+          <div class="app-node fb" title="Facebook">📘</div>
+          <div class="app-node msg" title="Messenger">💬</div>
+          <div class="app-node zalo" title="Zalo">📨</div>
+        </div>
+      </div>
+      <div class="android-info">
+        <h3 data-vi="Không chỉ chat.<br>Mà <span class='ai-highlight'>ĐIỀU KHIỂN</span>." data-en="Not just chat.<br>But <span class='ai-highlight'>CONTROL</span>.">Không chỉ chat.<br>Mà <span class="ai-highlight">ĐIỀU KHIỂN</span>.</h3>
+        <p data-vi="Các app AI khác chỉ cho bạn chat. ViAgent cho agent điều khiển cả điện thoại — tự đăng bài Facebook, tự trả lời Messenger, tự nhắn tin Zalo. Chạy 24/7, kể cả khi bạn ngủ." data-en="Other AI apps only let you chat. ViAgent lets agents control your entire phone — auto-post on Facebook, auto-reply Messenger, auto-message Zalo. Running 24/7, even while you sleep.">Các app AI khác chỉ cho bạn chat. ViAgent cho agent điều khiển cả điện thoại — tự đăng bài Facebook, tự trả lời Messenger, tự nhắn tin Zalo. Chạy 24/7, kể cả khi bạn ngủ.</p>
+        <div class="mode-pills">
+          <span class="mode-pill local">📱 LOCAL — Offline</span>
+          <span class="mode-pill remote">🌐 REMOTE — VPS/Pi</span>
+          <span class="mode-pill hybrid">🔀 HYBRID — Cả hai</span>
+        </div>
+        <ul class="app-control-list">
+          <li><span class="acl-icon">📘</span> <span data-vi="Facebook — tự đăng bài, bình luận, like" data-en="Facebook — auto-post, comment, like">Facebook — tự đăng bài, bình luận, like</span></li>
+          <li><span class="acl-icon">💬</span> <span data-vi="Messenger — tự trả lời tin nhắn" data-en="Messenger — auto-reply messages">Messenger — tự trả lời tin nhắn</span></li>
+          <li><span class="acl-icon">📨</span> <span data-vi="Zalo — tự nhắn tin liên hệ" data-en="Zalo — auto-message contacts">Zalo — tự nhắn tin liên hệ</span></li>
+          <li><span class="acl-icon">🔍</span> <span data-vi="Bất kỳ app — đọc màn hình, click, gõ text" data-en="Any app — read screen, click, type text">Bất kỳ app — đọc màn hình, click, gõ text</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="section-label" data-vi="BẮT ĐẦU NGAY" data-en="GET STARTED">BẮT ĐẦU NGAY</div>
+    <div class="section-title" data-vi="Có trợ lý AI riêng trong 3 phút" data-en="Your own AI assistant in 3 minutes">Có trợ lý AI riêng trong 3 phút</div>
+    <div class="section-desc" data-vi="Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn." data-en="No technical knowledge needed — sign up, configure, and let AI work for you.">Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn.</div>
+    <div class="steps">
+      <div class="step fade-up" style="--i:0">
+        <h4 data-vi="📝 Clone từ GitHub" data-en="📝 Clone from GitHub">📝 Clone từ GitHub</h4>
+        <p data-vi="Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn." data-en="Open source, MIT license — git clone, cargo build, run instantly. Free forever.">Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn.</p>
+      </div>
+      <div class="step fade-up" style="--i:1">
+        <h4 data-vi="⚙️ Cài đặt lên thiết bị" data-en="⚙️ Install on your device">⚙️ Cài đặt lên thiết bị</h4>
+        <p data-vi="Cài trên VPS, máy tính, hoặc Raspberry Pi bỏ túi mang theo. Kết nối Zalo, Telegram — chỉ 1 lệnh." data-en="Install on VPS, PC, or a pocket Raspberry Pi. Connect Zalo, Telegram — just one command.">Cài trên VPS, máy tính, hoặc Raspberry Pi bỏ túi mang theo. Kết nối Zalo, Telegram — chỉ 1 lệnh.</p>
+      </div>
+      <div class="step fade-up" style="--i:2">
+        <h4 data-vi="🚀 AI làm việc thay bạn!" data-en="🚀 AI works for you!">🚀 AI làm việc thay bạn!</h4>
+        <p data-vi="Trợ lý AI trả lời khách hàng trên Zalo, quản lý lịch, email — 24/7 kể cả khi bạn ngủ." data-en="Your AI replies to customers on Zalo, manages calendar, email — 24/7 even while you sleep.">Trợ lý AI trả lời khách hàng trên Zalo, quản lý lịch, email — 24/7 kể cả khi bạn ngủ.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 💰 TOKEN SAVINGS — KEY DIFFERENTIATOR -->
+<section id="token-savings" style="background:var(--bg2)">
+  <div class="container">
+    <div class="section-label" data-vi="ĐIỂM KHÁC BIỆT" data-en="KEY DIFFERENTIATOR">ĐIỂM KHÁC BIỆT</div>
+    <div class="section-title" data-vi="💰 Tiết kiệm 60-80% chi phí API" data-en="💰 Save 60-80% on API costs">💰 Tiết kiệm 60-80% chi phí API</div>
+    <div class="section-desc" data-vi="Mỗi Agent chọn Provider riêng — thay vì dùng 1 provider đắt tiền cho tất cả, hãy tối ưu theo vai trò." data-en="Each Agent picks its own Provider — instead of using one expensive provider for all, optimize by role.">Mỗi Agent chọn Provider riêng — thay vì dùng 1 provider đắt tiền cho tất cả, hãy tối ưu theo vai trò.</div>
+
+    <!-- Cost comparison table -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;overflow:hidden;position:relative" class="fade-up">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#34d399,#6366f1,#f472b6)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;font-size:14px">
+        <!-- Header -->
+        <div style="padding:14px 16px;background:var(--surface);font-weight:700;border-bottom:1px solid var(--border)" data-vi="Agent" data-en="Agent">Agent</div>
+        <div style="padding:14px 16px;background:var(--surface);font-weight:700;border-bottom:1px solid var(--border)" data-vi="Provider" data-en="Provider">Provider</div>
+        <div style="padding:14px 16px;background:var(--surface);font-weight:700;border-bottom:1px solid var(--border);text-align:center" data-vi="Chi phí" data-en="Cost">Chi phí</div>
+        <div style="padding:14px 16px;background:var(--surface);font-weight:700;border-bottom:1px solid var(--border)" data-vi="Lý do" data-en="Why">Lý do</div>
+        <!-- Rows -->
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">🌐 Dịch thuật</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--green);font-weight:600">Ollama/qwen3</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:var(--green)">$0</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px" data-vi="Miễn phí, chạy local" data-en="Free, runs locally">Miễn phí, chạy local</div>
+
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">💻 Full-Stack Dev</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--accent2);font-weight:600">Claude Sonnet</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:var(--orange)">$$$</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px" data-vi="Cần model mạnh nhất" data-en="Needs strongest model">Cần model mạnh nhất</div>
+
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">📣 Social Media</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--cyan);font-weight:600">Gemini Flash</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:var(--green)">$</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px" data-vi="Nhanh, giá rẻ" data-en="Fast, cheap">Nhanh, giá rẻ</div>
+
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">📊 Kế toán</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:#60a5fa;font-weight:600">DeepSeek Chat</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:#facc15">$$</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px" data-vi="Chất lượng / giá tốt nhất" data-en="Best quality/price">Chất lượng / giá tốt nhất</div>
+
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">📞 Helpdesk</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--pink);font-weight:600">Groq/Llama 3.3</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:var(--green)">$</div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px" data-vi="Latency thấp nhất" data-en="Lowest latency">Latency thấp nhất</div>
+
+        <div style="padding:12px 16px">🔒 Nội bộ</div>
+        <div style="padding:12px 16px;color:var(--orange);font-weight:600">Brain Engine</div>
+        <div style="padding:12px 16px;text-align:center;font-weight:700;color:var(--green)">$0</div>
+        <div style="padding:12px 16px;color:var(--muted);font-size:13px" data-vi="Offline, bảo mật tuyệt đối" data-en="Offline, absolute security">Offline, bảo mật tuyệt đối</div>
+      </div>
+
+      <div style="display:flex;gap:20px;margin-top:24px;justify-content:center;flex-wrap:wrap">
+        <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;color:var(--green)" data-vi="60-80%" data-en="60-80%">60-80%</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Tiết kiệm chi phí API" data-en="API cost savings">Tiết kiệm chi phí API</div>
+        </div>
+        <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;color:var(--accent2)" data-vi="15" data-en="15">15</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Nhà cung cấp hỗ trợ" data-en="Supported providers">Nhà cung cấp hỗ trợ</div>
+        </div>
+        <div style="background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.2);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;color:var(--pink)" data-vi="∞" data-en="∞">∞</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Agent, mỗi agent 1 provider" data-en="Agents, each with own provider">Agent, mỗi agent 1 provider</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 👥 GROUP CHAT SECTION -->
+<section id="group-chat">
+  <div class="container">
+    <div class="section-label" data-vi="CỘNG TÁC" data-en="COLLABORATION">CỘNG TÁC</div>
+    <div class="section-title" data-vi="👥 Group Chat — Đội ngũ Agent cộng tác" data-en="👥 Group Chat — Agent Team Collaboration">👥 Group Chat — Đội ngũ Agent cộng tác</div>
+    <div class="section-desc" data-vi="Tạo nhóm nhiều agent cùng nhà cung cấp khác nhau. Gửi 1 câu hỏi → tất cả agent phản hồi theo chuyên môn." data-en="Create groups of agents with different providers. Send 1 question → all agents respond with their expertise.">Tạo nhóm nhiều agent cùng nhà cung cấp khác nhau. Gửi 1 câu hỏi → tất cả agent phản hồi theo chuyên môn.</div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;position:relative;overflow:hidden" class="fade-up">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad2)"></div>
+      <!-- Chat simulation -->
+      <div style="max-width:600px;margin:0 auto">
+        <div style="background:var(--accent-glow);border:1px solid rgba(99,102,241,.3);border-radius:12px 12px 12px 4px;padding:14px 18px;margin-bottom:20px;font-size:14px">
+          <div style="font-weight:700;color:var(--accent2);font-size:12px;margin-bottom:4px" data-vi="👤 BẠN" data-en="👤 YOU">👤 BẠN</div>
+          <span data-vi="&quot;Chuẩn bị pitch cho nhà đầu tư Series A&quot;" data-en="&quot;Prepare a pitch for Series A investors&quot;">"Chuẩn bị pitch cho nhà đầu tư Series A"</span>
+        </div>
+
+        <div style="display:grid;gap:12px">
+          <div style="background:var(--surface);border:1px solid rgba(99,102,241,.15);border-radius:4px 12px 12px 12px;padding:14px 18px;font-size:13px">
+            <div style="font-weight:700;font-size:11px;margin-bottom:4px"><span style="color:var(--accent2)">🧑‍💼 Chiến lược</span> <span style="font-weight:400;color:var(--muted)">(Claude)</span></div>
+            <span data-vi="Phân tích TAM/SAM/SOM, USP, competitive moat..." data-en="TAM/SAM/SOM analysis, USP, competitive moat...">Phân tích TAM/SAM/SOM, USP, competitive moat...</span>
+          </div>
+          <div style="background:var(--surface);border:1px solid rgba(52,211,153,.15);border-radius:4px 12px 12px 12px;padding:14px 18px;font-size:13px">
+            <div style="font-weight:700;font-size:11px;margin-bottom:4px"><span style="color:var(--green)">📊 Tài chính</span> <span style="font-weight:400;color:var(--muted)">(DeepSeek)</span></div>
+            <span data-vi="Unit economics, revenue projections, burn rate..." data-en="Unit economics, revenue projections, burn rate...">Unit economics, revenue projections, burn rate...</span>
+          </div>
+          <div style="background:var(--surface);border:1px solid rgba(34,211,238,.15);border-radius:4px 12px 12px 12px;padding:14px 18px;font-size:13px">
+            <div style="font-weight:700;font-size:11px;margin-bottom:4px"><span style="color:var(--cyan)">📣 Marketing</span> <span style="font-weight:400;color:var(--muted)">(Gemini)</span></div>
+            <span data-vi="Brand story, go-to-market strategy, traction..." data-en="Brand story, go-to-market strategy, traction...">Brand story, go-to-market strategy, traction...</span>
+          </div>
+          <div style="background:var(--surface);border:1px solid rgba(251,146,60,.15);border-radius:4px 12px 12px 12px;padding:14px 18px;font-size:13px">
+            <div style="font-weight:700;font-size:11px;margin-bottom:4px"><span style="color:var(--orange)">⚖️ Pháp lý</span> <span style="font-weight:400;color:var(--muted)">(Groq)</span></div>
+            <span data-vi="Term sheet template, cap table, due diligence checklist..." data-en="Term sheet template, cap table, due diligence checklist...">Term sheet template, cap table, due diligence checklist...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY VIAGENT -->
+<section id="why">
+  <div class="container">
+    <div class="section-label" data-vi="TẠI SAO VIAGENT" data-en="WHY VIAGENT">TẠI SAO VIAGENT</div>
+    <div class="section-title" data-vi="Thế mạnh của ViAgent" data-en="ViAgent's Advantages">Thế mạnh của ViAgent</div>
+    <div class="section-desc" data-vi="Mã nguồn mở 100% — Miễn phí mãi mãi — License MIT — Tự triển khai trên thiết bị của bạn." data-en="100% Open Source — Free forever — MIT License — Self-deploy on your own device.">Mã nguồn mở 100% — Miễn phí mãi mãi — License MIT — Tự triển khai trên thiết bị của bạn.</div>
+
+    <!-- Feature Highlights -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:32px 0" id="feature-grid">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:0">
+        <div style="font-size:36px;margin-bottom:8px">🇻🇳</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="Zalo Native" data-en="Zalo Native">Zalo Native</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="Zalo OA Bot (API chính thức) + Zalo Cá nhân (zca-js v2) — kênh số 1 của 70 triệu người Việt" data-en="Zalo OA Bot (official API) + Personal Zalo (zca-js v2) — the #1 channel for 70M Vietnamese">Zalo OA Bot (API chính thức) + Zalo Cá nhân (zca-js v2) — kênh số 1 của 70 triệu người Việt</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:1">
+        <div style="font-size:36px;margin-bottom:8px">🧠</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="AI Offline" data-en="AI Offline">AI Offline</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="Brain Engine chạy LLM ngay trên máy — không cần internet, không cần API" data-en="Brain Engine runs LLM locally — no internet, no API needed">Brain Engine chạy LLM ngay trên máy — không cần internet, không cần API</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:2">
+        <div style="font-size:36px;margin-bottom:8px">📱</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="Pi Bỏ Túi" data-en="Pocket Pi">Pi Bỏ Túi</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="1 file duy nhất, chạy trên Raspberry Pi — 512MB RAM là đủ" data-en="Single binary, runs on Raspberry Pi — 512MB RAM is enough">1 file duy nhất, chạy trên Raspberry Pi — 512MB RAM là đủ</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:3">
+        <div style="font-size:36px;margin-bottom:8px">🏢</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="Multi-Tenant" data-en="Multi-Tenant">Multi-Tenant</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="Chạy 50+ AI Agent trên 1 VPS — mỗi agent có cấu hình riêng" data-en="Run 50+ AI Agents on 1 VPS — each with its own config">Chạy 50+ AI Agent trên 1 VPS — mỗi agent có cấu hình riêng</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:4">
+        <div style="font-size:36px;margin-bottom:8px">🔐</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="Bảo Mật" data-en="Security">Bảo Mật</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="Sandbox, allowlist, secrets mã hóa AES-256 — dữ liệu luôn thuộc về bạn" data-en="Sandbox, allowlist, AES-256 encrypted secrets — your data stays yours">Sandbox, allowlist, secrets mã hóa AES-256 — dữ liệu luôn thuộc về bạn</p>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center" class="fade-up" style="--i:5">
+        <div style="font-size:36px;margin-bottom:8px">🌐</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:6px" data-vi="15 AI Providers" data-en="15 AI Providers">15 AI Providers</h4>
+        <p style="font-size:13px;color:var(--muted)" data-vi="OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, llama.cpp + 8 providers khác" data-en="OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, llama.cpp + 8 more providers">OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, llama.cpp + 8 providers khác</p>
+      </div>
+    </div>
+
+    <!-- SaaS CTA Box -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-top:32px;position:relative;overflow:hidden" class="fade-up">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad1)"></div>
+      <div style="font-size:48px;margin-bottom:12px">🚀</div>
+      <h3 style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:800;margin-bottom:12px;color:#fff" data-vi="Nền tảng AI Agent cho Doanh nghiệp" data-en="AI Agent Platform for Business">Nền tảng AI Agent cho Doanh nghiệp</h3>
+      <p style="color:var(--muted);font-size:15px;margin-bottom:24px;max-width:700px;margin-inline:auto;line-height:1.6" data-vi="Đăng ký miễn phí — có hệ thống AI Agent riêng ngay lập tức. Nền tảng cloud, sử dụng ngay trên trình duyệt, không cần cài đặt." data-en="Register for free — get your own AI Agent system instantly. Cloud platform, use directly in browser, no installation needed.">Đăng ký miễn phí — có hệ thống AI Agent riêng ngay lập tức. Nền tảng cloud, sử dụng ngay trên trình duyệt, không cần cài đặt.</p>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:24px;text-align:left">
+        <div style="background:var(--surface);padding:16px;border-radius:12px;border:1px solid rgba(52,211,153,.2)">
+          <div style="color:var(--green);font-weight:700;margin-bottom:4px;font-size:14px" data-vi="🔒 Dữ liệu riêng tư" data-en="🔒 Private Data">🔒 Dữ liệu riêng tư</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Mỗi tài khoản có tenant riêng biệt, dữ liệu hoàn toàn cách ly." data-en="Each account gets its own isolated tenant with fully separated data.">Mỗi tài khoản có tenant riêng biệt, dữ liệu hoàn toàn cách ly.</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;border-radius:12px;border:1px solid rgba(34,211,238,.2)">
+          <div style="color:var(--cyan);font-weight:700;margin-bottom:4px;font-size:14px" data-vi="🌐 Dùng ngay trên trình duyệt" data-en="🌐 Use in browser">🌐 Dùng ngay trên trình duyệt</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Không cần cài đặt — đăng ký xong, Admin duyệt và bạn có hệ thống ngay." data-en="No installation — register, get approved by Admin, and your system is ready.">Không cần cài đặt — đăng ký xong, Admin duyệt và bạn có hệ thống ngay.</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;border-radius:12px;border:1px solid rgba(251,146,60,.2)">
+          <div style="color:var(--orange);font-weight:700;margin-bottom:4px;font-size:14px" data-vi="🤖 Miễn phí" data-en="🤖 Free">🤖 Miễn phí</div>
+          <div style="font-size:13px;color:var(--muted)" data-vi="Đăng ký miễn phí, không cần thẻ tín dụng. Dùng API key riêng của bạn." data-en="Free registration, no credit card. Use your own API keys.">Đăng ký miễn phí, không cần thẻ tín dụng. Dùng API key riêng của bạn.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:center">
+        <div style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.3);border-radius:12px;padding:12px 24px;color:var(--orange);font-weight:600;font-size:14px" data-vi="⏸️ Đăng ký Cloud tạm ngưng — Sẽ mở lại sớm" data-en="⏸️ Cloud registration paused — Reopening soon">⏸️ Đăng ký Cloud tạm ngưng — Sẽ mở lại sớm</div>
+        <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="btn-secondary" data-vi="⭐ Tự Host (GitHub)" data-en="⭐ Self-Host (GitHub)">⭐ Tự Host (GitHub)</a>
+      </div>
+      <p style="color:var(--muted);font-size:12px;margin-top:16px" data-vi="💻 Nền tảng cloud — sử dụng ngay trên trình duyệt, không cần cài đặt." data-en="💻 Cloud platform — use directly in browser, no installation needed.">💻 Nền tảng cloud — sử dụng ngay trên trình duyệt, không cần cài đặt.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section id="showcase">
+  <div class="container">
+    <div class="section-label" data-vi="SHOWCASE" data-en="SHOWCASE">SHOWCASE</div>
+    <div class="section-title" data-vi="Những gì ViAgent có thể làm" data-en="What ViAgent Can Do">Những gì ViAgent có thể làm</div>
+    <div class="section-desc" data-vi="Từ tự động hóa email đến quản lý đội ngũ AI agent — mọi thứ đều có thể." data-en="From email automation to managing AI agent teams — anything is possible.">Từ tự động hóa email đến quản lý đội ngũ AI agent — mọi thứ đều có thể.</div>
+    <div class="showcase-grid">
+
+      <div class="showcase-card fade-up" style="--i:0">
+        <div class="showcase-tag tag-automation" data-vi="🤖 Tự động hóa" data-en="🤖 Automation">🤖 Tự động hóa</div>
+        <h3 data-vi="Trợ lý Email & Lịch thông minh" data-en="Smart Email & Calendar Assistant">Trợ lý Email & Lịch thông minh</h3>
+        <ul>
+          <li data-vi="Kiểm tra email, lọc spam tự động" data-en="Check incoming mail, auto-filter spam">Kiểm tra email, lọc spam tự động</li>
+          <li data-vi="Quản lý lịch, giải quyết xung đột" data-en="Manage calendar, resolve conflicts">Quản lý lịch, giải quyết xung đột</li>
+          <li data-vi="Gửi báo cáo sáng: thời tiết, cuộc họp, việc cần làm" data-en="Morning brief: weather, meetings, todos">Gửi báo cáo sáng: thời tiết, cuộc họp, việc cần làm</li>
+          <li data-vi="Check-in chuyến bay, chọn ghế cửa sổ" data-en="Flight check-in, pick window seats">Check-in chuyến bay, chọn ghế cửa sổ</li>
+          <li data-vi="Theo dõi chi phí, chia bill sau chuyến đi" data-en="Track expenses, split bills after trips">Theo dõi chi phí, chia bill sau chuyến đi</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:1">
+        <div class="showcase-tag tag-developer" data-vi="💻 Developer" data-en="💻 Developer">💻 Developer</div>
+        <h3 data-vi="Agent Lập trình từ xa" data-en="Remote Coding Agent">Agent Lập trình từ xa</h3>
+        <ul>
+          <li data-vi="Build website từ Telegram trong khi nằm xem Netflix" data-en="Build websites from Telegram while watching Netflix">Build website từ Telegram trong khi nằm xem Netflix</li>
+          <li data-vi="Tạo GitHub issues, refactor PRs từ code review" data-en="Create GitHub issues, refactor PRs from code reviews">Tạo GitHub issues, refactor PRs từ code review</li>
+          <li data-vi="Build CLI tools, publish lên npm" data-en="Build CLI tools, publish to npm">Build CLI tools, publish lên npm</li>
+          <li data-vi="Review logs, fix lỗi deploy, auto-redeploy" data-en="Review logs, fix deploy errors, auto-redeploy">Review logs, fix lỗi deploy, auto-redeploy</li>
+          <li data-vi="Code agents chạy xuyên đêm khi bạn ngủ" data-en="Coding agents run overnight while you sleep">Code agents chạy xuyên đêm khi bạn ngủ</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:2">
+        <div class="showcase-tag tag-productivity" data-vi="📋 Năng suất" data-en="📋 Productivity">📋 Năng suất</div>
+        <h3 data-vi="Quản lý công việc thông minh" data-en="Smart Task Management">Quản lý công việc thông minh</h3>
+        <ul>
+          <li data-vi="Timeblock tasks trong calendar theo mức ưu tiên" data-en="Timeblock tasks in calendar by priority">Timeblock tasks trong calendar theo mức ưu tiên</li>
+          <li data-vi="Chấm điểm công việc theo urgency & importance" data-en="Score tasks by urgency & importance">Chấm điểm công việc theo urgency & importance</li>
+          <li data-vi="Tóm tắt 122 slides Google cho cuộc họp" data-en="Summarize 122 Google Slides for meetings">Tóm tắt 122 slides Google cho cuộc họp</li>
+          <li data-vi="Tạo hóa đơn, báo cáo công việc đẹp mắt" data-en="Create invoices, beautiful work summaries">Tạo hóa đơn, báo cáo công việc đẹp mắt</li>
+          <li data-vi="Xóa 10,000 email trong ngày đầu tiên" data-en="Clear 10,000 emails on day one">Xóa 10,000 email trong ngày đầu tiên</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:3">
+        <div class="showcase-tag tag-smarthome" data-vi="🏠 Smart Home" data-en="🏠 Smart Home">🏠 Smart Home</div>
+        <h3 data-vi="Nhà thông minh & Sức khỏe" data-en="Smart Home & Health">Nhà thông minh & Sức khỏe</h3>
+        <ul>
+          <li data-vi="Kết nối Garmin, WHOOP — theo dõi sức khỏe" data-en="Connect Garmin, WHOOP — track health metrics">Kết nối Garmin, WHOOP — theo dõi sức khỏe</li>
+          <li data-vi="Chạy trên Raspberry Pi với Cloudflare tunnel" data-en="Run on Raspberry Pi with Cloudflare tunnel">Chạy trên Raspberry Pi với Cloudflare tunnel</li>
+          <li data-vi="Điều khiển Home Assistant qua chat" data-en="Control Home Assistant via chat">Điều khiển Home Assistant qua chat</li>
+          <li data-vi="Nhắc nhở lịch, kỳ nghỉ, kiểm tra sức khỏe" data-en="Reminders for schedule, vacations, health checks">Nhắc nhở lịch, kỳ nghỉ, kiểm tra sức khỏe</li>
+          <li data-vi="Theo dõi bạn và nhắn tin nếu im lặng quá lâu" data-en="Check on you if you're quiet too long">Theo dõi bạn và nhắn tin nếu im lặng quá lâu</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:4">
+        <div class="showcase-tag tag-family" data-vi="👨‍👩‍👧 Gia đình" data-en="👨‍👩‍👧 Family">👨‍👩‍👧 Gia đình</div>
+        <h3 data-vi="Trợ lý Gia đình" data-en="Family Assistant">Trợ lý Gia đình</h3>
+        <ul>
+          <li data-vi="Lên thực đơn tuần trong Notion (365 ngày)" data-en="Weekly meal planning in Notion (365 days)">Lên thực đơn tuần trong Notion (365 ngày)</li>
+          <li data-vi="Danh sách mua sắm theo cửa hàng & kệ hàng" data-en="Shopping lists sorted by store & aisle">Danh sách mua sắm theo cửa hàng & kệ hàng</li>
+          <li data-vi="Thông báo lịch kiểm tra của con" data-en="Notify about kids' upcoming school tests">Thông báo lịch kiểm tra của con</li>
+          <li data-vi="Research và gửi roundup chủ nhật hàng tuần" data-en="Research & send weekly Sunday roundups">Research và gửi roundup chủ nhật hàng tuần</li>
+          <li data-vi="Dự báo thời tiết để gợi ý nấu nướng" data-en="Weather forecasts for cooking suggestions">Dự báo thời tiết để gợi ý nấu nướng</li>
+        </ul>
+      </div>
+
+      <div class="showcase-card fade-up" style="--i:5">
+        <div class="showcase-tag tag-poweruser" data-vi="🚀 Multi-Agent" data-en="🚀 Multi-Agent">🚀 Multi-Agent</div>
+        <h3 data-vi="Đội ngũ AI Agent" data-en="AI Agent Army">Đội ngũ AI Agent</h3>
+        <ul>
+          <li data-vi="15+ agents trên 1 VPS, rollcall hàng ngày" data-en="15+ agents on 1 VPS, daily roll call">15+ agents trên 1 VPS, rollcall hàng ngày</li>
+          <li data-vi="4 agents cho solo founder: Strategy, Dev, Marketing, Business" data-en="4 agents for solo founders: Strategy, Dev, Marketing, Business">4 agents cho solo founder: Strategy, Dev, Marketing, Business</li>
+          <li data-vi="Sub-agents chạy research qua đêm" data-en="Sub-agents run research overnight">Sub-agents chạy research qua đêm</li>
+          <li data-vi="Viết LinkedIn/X posts theo giọng nói của bạn" data-en="Draft LinkedIn/X posts in your voice">Viết LinkedIn/X posts theo giọng nói của bạn</li>
+          <li data-vi="Agents tự cập nhật, tự tạo skills mới" data-en="Agents self-update, create their own skills">Agents tự cập nhật, tự tạo skills mới</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- REGISTER / Cloud CTA — TEMPORARILY DISABLED -->
+<section id="register">
+  <div class="container" style="text-align:center">
+    <div class="section-label" data-vi="THÔNG BÁO" data-en="NOTICE">THÔNG BÁO</div>
+    <div class="section-title" data-vi="Đăng ký Cloud tạm ngưng" data-en="Cloud Registration Paused">Đăng ký Cloud tạm ngưng</div>
+    <div class="section-desc" style="margin:0 auto 32px" data-vi="Chúng tôi đang nâng cấp hệ thống. Đăng ký mới sẽ mở lại sớm. Bạn vẫn có thể tự host ViAgent trên thiết bị của mình." data-en="We are upgrading the system. New registration will reopen soon. You can still self-host ViAgent on your own device.">Chúng tôi đang nâng cấp hệ thống. Đăng ký mới sẽ mở lại sớm. Bạn vẫn có thể tự host ViAgent trên thiết bị của mình.</div>
+    
+    <div class="register-box" style="text-align:center">
+      <div style="font-size:64px;margin-bottom:16px">🔧</div>
+      <h2 data-vi="⏸️ Tạm ngưng đăng ký" data-en="⏸️ Registration Paused">⏸️ Tạm ngưng đăng ký</h2>
+      <p class="sub" data-vi="Hệ thống đang được nâng cấp để phục vụ bạn tốt hơn. Vui lòng quay lại sau hoặc tự host ViAgent ngay." data-en="System is being upgraded to serve you better. Please come back later or self-host ViAgent now.">Hệ thống đang được nâng cấp để phục vụ bạn tốt hơn. Vui lòng quay lại sau hoặc tự host ViAgent ngay.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px">
+        <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="btn-primary" data-vi="⭐ Tự Host trên GitHub" data-en="⭐ Self-Host on GitHub">⭐ Tự Host trên GitHub</a>
+        <a href="mailto:hello@viagent.vn" class="btn-secondary" data-vi="📧 Liên hệ hỗ trợ" data-en="📧 Contact support">📧 Liên hệ hỗ trợ</a>
+      </div>
+      <p class="form-note" data-vi="Mã nguồn mở · MIT License · Miễn phí vĩnh viễn" data-en="Open source · MIT License · Free forever">Mã nguồn mở · MIT License · Miễn phí vĩnh viễn</p>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- TECH -->
+<section>
+  <div class="container" style="text-align:center">
+    <div class="section-label" data-vi="CÔNG NGHỆ" data-en="TECHNOLOGY">CÔNG NGHỆ</div>
+    <div class="section-title" data-vi="Xây dựng bằng công nghệ hàng đầu" data-en="Built with cutting-edge technology">Xây dựng bằng công nghệ hàng đầu</div>
+    <div class="tech-badges" style="justify-content:center;margin-top:32px">
+      <div class="tech-badge">🦀 Rust</div>
+      <div class="tech-badge">🤖 Tokio</div>
+      <div class="tech-badge">🌐 Axum</div>
+      <div class="tech-badge">🗄️ SQLite</div>
+      <div class="tech-badge">🔮 GGUF</div>
+      <div class="tech-badge">🧮 SIMD</div>
+      <div class="tech-badge">🔐 JWT + bcrypt</div>
+      <div class="tech-badge">📡 WebSocket</div>
+      <div class="tech-badge">🔗 MCP Protocol</div>
+      <div class="tech-badge">🐳 Docker</div>
+      <div class="tech-badge">🐘 PostgreSQL</div>
+      <div class="tech-badge">📱 Android (Kotlin/Compose)</div>
+      <div class="tech-badge">♿ Accessibility Service</div>
+      <div class="tech-badge">📦 18 Crates</div>
+    </div>
+  </div>
+</section>
+
+<!-- SPONSOR -->
+<div class="sponsor-section">
+  <div class="container">
+    <div class="sponsor-label" data-vi="NHÀ TÀI TRỢ" data-en="SPONSOR">NHÀ TÀI TRỢ</div>
+    <a href="https://bizino.ai" target="_blank" class="sponsor-logo">
+      <img src="https://bizino.ai/assets/img/white-logo.png" alt="Bizino AI" style="height:40px;width:auto">
+      <div class="sp-text">
+        <div class="sp-name">Bizino AI</div>
+        <div class="sp-desc" data-vi="Premium Software Company — AI Solutions" data-en="Premium Software Company — AI Solutions">Premium Software Company — AI Solutions</div>
+      </div>
+    </a>
+    <div style="margin-top:24px;text-align:center">
+      <button onclick="openSponsor()" class="btn-secondary" style="font-size:14px" data-vi="❤️ Ủng hộ phát triển dự án" data-en="❤️ Support this project">❤️ Ủng hộ phát triển dự án</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPONSOR QR MODAL -->
+<div id="sponsor-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:460px;width:100%;position:relative;text-align:center">
+    <button onclick="closeSponsor()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer">&times;</button>
+    <div style="font-size:48px;margin-bottom:8px">❤️</div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px" data-vi="Ủng hộ ViAgent" data-en="Support ViAgent">Ủng hộ ViAgent</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:20px" data-vi="Mọi đóng góp đều giúp dự án phát triển tốt hơn 🙏" data-en="Every contribution helps the project grow 🙏">Mọi đóng góp đều giúp dự án phát triển tốt hơn 🙏</p>
+    <div style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px">
+      <img src="https://qr.sepay.vn/img?acc=0888468988&bank=MBBank&template=compact" alt="Sponsor QR" style="width:220px;height:220px">
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:left">
+      <p style="font-size:14px;margin-bottom:4px"><strong>Ngân hàng:</strong> MB Bank</p>
+      <p style="font-size:14px;margin-bottom:4px"><strong>STK:</strong> <span style="color:var(--accent2);font-weight:700;letter-spacing:1px">0888468988</span></p>
+      <p style="font-size:14px;margin-bottom:4px"><strong data-vi="Chủ TK:" data-en="Account holder:">Chủ TK:</strong> NGUYEN DUC HOAI</p>
+      <p style="font-size:14px"><strong data-vi="Nội dung:" data-en="Content:">Nội dung:</strong> <span style="color:var(--green);font-weight:600">SPONSOR VIAGENT</span></p>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px" data-vi="Cảm ơn bạn đã ủng hộ! ViAgent mãi mãi miễn phí và mã nguồn mở." data-en="Thank you for your support! ViAgent is forever free and open source.">Cảm ơn bạn đã ủng hộ! ViAgent mãi mãi miễn phí và mã nguồn mở.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>🤖 <strong>ViAgent</strong> — <span data-vi="Trợ lý AI bỏ túi cho Doanh Nghiệp — Mang theo bên mình, hoạt động 24/7" data-en="Pocket AI Assistant for Business — Carry it with you, runs 24/7">Trợ lý AI bỏ túi cho Doanh Nghiệp — Mang theo bên mình, hoạt động 24/7</span></p>
+    <p style="margin-top:8px">
+      <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank">GitHub</a> ·
+      <a href="/docs.html" data-vi="Hướng dẫn" data-en="Docs">Hướng dẫn</a> ·
+      <a href="mailto:hello@viagent.vn">hello@viagent.vn</a> ·
+      © 2026 ViAgent
+    </p>
+  </div>
+</footer>
+
+<script>
+// ═══ Language Toggle ═══
+let currentLang = 'vi';
+function toggleLang() {
+  currentLang = currentLang === 'vi' ? 'en' : 'vi';
+  document.querySelectorAll('[data-vi]').forEach(el => {
+    el.textContent = el.getAttribute('data-' + currentLang);
+  });
+  document.querySelector('.lang-toggle').textContent = currentLang === 'vi' ? '🌐 EN' : '🌐 VI';
+}
+
+// ═══ Navbar Scroll ═══
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ═══ Scroll Animations ═══
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ═══ Registration — Landing Page Cloud Signup ═══
+async function doLandingRegister() {
+  const errEl = document.getElementById('register-error-landing');
+  const company_name = document.getElementById('reg-company').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  
+  if(!company_name || !email || !password) {
+    errEl.textContent = currentLang === 'vi' ? 'Vui lòng nhập đủ thông tin' : 'Please fill in all fields';
+    errEl.style.display = 'block';
+    return;
+  }
+  if(password.length < 6) {
+    errEl.textContent = currentLang === 'vi' ? 'Mật khẩu phải có ít nhất 6 ký tự' : 'Password must be at least 6 characters';
+    errEl.style.display = 'block';
+    return;
+  }
+  
+  errEl.style.color = '#818cf8';
+  errEl.textContent = currentLang === 'vi' ? 'Đang khởi tạo hệ thống (vui lòng chờ)...' : 'Setting up your system (please wait)...';
+  errEl.style.display = 'block';
+  
+  try {
+    const host = location.hostname;
+    // Auto-detect domain: viagent.vn, viagent.vn, or localhost
+    const domain = host.endsWith('viagent.vn') ? 'viagent.vn' : host.endsWith('viagent.vn') ? 'viagent.vn' : null;
+    const apiBase = domain ? `https://apps.${domain}` : location.origin;
+    const res = await fetch(apiBase + '/api/admin/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({company_name, email, password})
+    });
+    const r = await res.json();
+    if(r.ok) {
+      // Hide form, show success
+      document.querySelector('.register-box').style.display = 'none';
+      const successEl = document.getElementById('register-success-landing');
+      successEl.style.display = 'block';
+      document.getElementById('register-success-msg').textContent = 
+        currentLang === 'vi' 
+          ? `Tài khoản đang chờ Admin duyệt. Bạn sẽ nhận thông báo khi được kích hoạt.`
+          : `Your account is pending admin approval. You will be notified when activated.`;
+      const dashboardUrl = domain ? `https://apps.${domain}` : location.origin;
+      document.getElementById('register-success-link').href = dashboardUrl;
+      document.getElementById('register-success-link').textContent = 
+        currentLang === 'vi' ? '🔑 Đăng nhập Admin Dashboard' : '🔑 Go to Admin Dashboard';
+    } else {
+      errEl.style.color = '#f85149';
+      errEl.textContent = r.error || 'Registration failed';
+    }
+  } catch(e) {
+    errEl.style.color = '#f85149';
+    errEl.textContent = e.message;
+  }
+}
+// ═══ Domain-aware Login ═══
+function goLogin() {
+  const h = location.hostname;
+  const domain = h.endsWith('viagent.vn') ? 'viagent.vn' : h.endsWith('viagent.vn') ? 'viagent.vn' : null;
+  window.location.href = domain ? `https://apps.${domain}` : '/';
+}
+
+// ═══ Sponsor QR Modal ═══
+function openSponsor() {
+  document.getElementById('sponsor-modal').style.display = 'flex';
+}
+function closeSponsor() {
+  document.getElementById('sponsor-modal').style.display = 'none';
+}
+document.getElementById('sponsor-modal')?.addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeSponsor();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeSponsor();
+});
+
+// ═══ Smooth scroll for anchor links ═══
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>

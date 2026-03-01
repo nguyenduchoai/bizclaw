@@ -44,6 +44,8 @@ const PAGES = [
   { id: 'chat', icon: '💬', label: 'nav.webchat' },
   { id: 'sep1', sep: true },
   { id: 'hands', icon: '🤚', label: 'Autonomous Hands' },
+  { id: 'workflows', icon: '🔄', label: 'nav.workflows' },
+  { id: 'skills', icon: '🧩', label: 'nav.skills' },
   { id: 'settings', icon: '⚙️', label: 'nav.settings' },
   { id: 'providers', icon: '🔌', label: 'nav.providers' },
   { id: 'channels', icon: '📱', label: 'nav.channels' },
@@ -1102,6 +1104,207 @@ function ActivityPage({ lang }) {
   </div>`;
 }
 
+// ═══ WORKFLOWS PAGE ═══
+function WorkflowsPage({ lang }) {
+  const [workflows, setWorkflows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedWf, setSelectedWf] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await authFetch('/api/v1/workflows');
+        const d = await r.json();
+        setWorkflows(d.workflows || []);
+      } catch (e) {
+        // Use built-in templates as fallback
+        setWorkflows([
+          { id: 'content_pipeline', name: 'Content Pipeline', description: t('wf.content_desc', lang), tags: ['content','writing'], steps: [
+            { name: 'Draft', type: 'Sequential', agent_role: 'Writer' },
+            { name: 'Review', type: 'Sequential', agent_role: 'Editor' },
+            { name: 'Polish', type: 'Sequential', agent_role: 'Proofreader' },
+          ]},
+          { id: 'expert_consensus', name: 'Expert Consensus', description: t('wf.expert_desc', lang), tags: ['analysis','multi-agent'], steps: [
+            { name: 'Expert Analysis', type: 'FanOut', agent_role: '3 Experts (parallel)' },
+            { name: 'Merge Results', type: 'Collect', agent_role: 'Synthesizer' },
+          ]},
+          { id: 'quality_pipeline', name: 'Quality Gate', description: t('wf.quality_desc', lang), tags: ['quality','loop'], steps: [
+            { name: 'Generate', type: 'Sequential', agent_role: 'Creator' },
+            { name: 'Evaluate', type: 'Loop', agent_role: 'Evaluator (until APPROVED)' },
+          ]},
+          { id: 'research_pipeline', name: 'Research Pipeline', description: t('wf.research_desc', lang), tags: ['research','data'], steps: [
+            { name: 'Search', type: 'Sequential', agent_role: 'Researcher' },
+            { name: 'Analyze', type: 'Sequential', agent_role: 'Analyst' },
+            { name: 'Synthesize', type: 'Sequential', agent_role: 'Writer' },
+            { name: 'Report', type: 'Transform', agent_role: 'Formatter' },
+          ]},
+          { id: 'translation_pipeline', name: 'Translation Pipeline', description: t('wf.translate_desc', lang), tags: ['language','translation'], steps: [
+            { name: 'Translate', type: 'Sequential', agent_role: 'Translator' },
+            { name: 'Verify Quality', type: 'Conditional', agent_role: 'QA Checker' },
+          ]},
+          { id: 'code_review', name: 'Code Review Pipeline', description: t('wf.codereview_desc', lang), tags: ['code','security'], steps: [
+            { name: 'Code Analysis', type: 'FanOut', agent_role: '3 Reviewers (parallel)' },
+            { name: 'Security Check', type: 'Sequential', agent_role: 'Security Auditor' },
+            { name: 'Summary', type: 'Collect', agent_role: 'Lead Reviewer' },
+          ]},
+        ]);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const stepTypeIcon = (type) => {
+    const icons = { Sequential: '➡️', FanOut: '🔀', Collect: '📥', Conditional: '🔀', Loop: '🔁', Transform: '✨' };
+    return icons[type] || '⚙️';
+  };
+  const stepTypeBadge = (type) => {
+    const colors = { Sequential: 'badge-blue', FanOut: 'badge-purple', Collect: 'badge-green', Conditional: 'badge-orange', Loop: 'badge-yellow', Transform: 'badge-blue' };
+    return colors[type] || 'badge-blue';
+  };
+
+  return html`<div>
+    <div class="page-header"><div>
+      <h1>🔄 ${t('wf.title', lang)}</h1>
+      <div class="sub">${t('wf.subtitle', lang)}</div>
+    </div></div>
+
+    <div class="stats">
+      <\${StatsCard} label=${t('wf.total', lang)} value=${workflows.length} color="accent" icon="🔄" />
+      <\${StatsCard} label=${t('wf.step_types', lang)} value="6" color="blue" icon="⚙️" />
+      <\${StatsCard} label=${t('wf.templates', lang)} value=${workflows.length} color="green" icon="📋" />
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <h3 style="margin-bottom:12px">⚙️ ${t('wf.step_types', lang)}</h3>
+        <div style="display:grid;gap:6px">
+          ${[['Sequential','➡️','Steps run one after another'],['FanOut','🔀','Multiple steps run in parallel'],['Collect','📥','Gather results (All/Best/Vote/Merge)'],['Conditional','🔀','If/else branching'],['Loop','🔁','Repeat until condition met'],['Transform','✨','Template transformation']].map(([name,icon,desc]) => html`
+            <div key=${name} style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border-radius:6px">
+              <span style="font-size:20px">${icon}</span>
+              <div style="flex:1"><strong style="font-size:13px">${name}</strong><div style="font-size:11px;color:var(--text2)">${desc}</div></div>
+              <span class="badge ${stepTypeBadge(name)}">${name}</span>
+            </div>
+          `)}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:12px">📋 ${t('wf.templates', lang)}</h3>
+        ${loading ? html`<div style="text-align:center;padding:20px;color:var(--text2)">Loading...</div>` : html`
+          <div style="display:grid;gap:8px">
+            ${workflows.map(wf => html`<div key=${wf.id} style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid ${selectedWf===wf.id?'var(--accent)':'var(--border)'};cursor:pointer" onClick=${()=>setSelectedWf(selectedWf===wf.id?null:wf.id)}>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <strong style="font-size:14px">${wf.name}</strong>
+                <div style="display:flex;gap:4px">${(wf.tags||[]).map(tag=>html`<span key=${tag} class="badge" style="font-size:10px">${tag}</span>`)}</div>
+              </div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${wf.description}</div>
+              ${selectedWf===wf.id && html`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+                ${(wf.steps||[]).map((s,i)=>html`<div key=${i} style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg);border-radius:4px;font-size:11px">
+                  <span>${stepTypeIcon(s.type)}</span>
+                  <strong>${s.name}</strong>
+                  <span style="color:var(--text2)">→ ${s.agent_role}</span>
+                  ${i<wf.steps.length-1?html`<span style="margin-left:4px">→</span>`:''}
+                </div>`)}
+              </div>`}
+            </div>`)}
+          </div>
+        `}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══ SKILLS MARKETPLACE PAGE ═══
+function SkillsPage({ lang }) {
+  const [skills, setSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await authFetch('/api/v1/skills');
+        const d = await r.json();
+        setSkills(d.skills || []);
+      } catch (e) {
+        setSkills([
+          { name: 'Rust Expert', icon: '🦀', category: 'coding', tags: ['rust','systems','performance'], version: '1.0.0', description: t('skill.rust_desc', lang), installed: true },
+          { name: 'Python Analyst', icon: '🐍', category: 'data', tags: ['python','pandas','visualization'], version: '1.0.0', description: t('skill.python_desc', lang), installed: true },
+          { name: 'Web Developer', icon: '🌐', category: 'coding', tags: ['react','typescript','css'], version: '1.0.0', description: t('skill.web_desc', lang), installed: true },
+          { name: 'DevOps Engineer', icon: '🔧', category: 'devops', tags: ['docker','k8s','ci-cd'], version: '1.0.0', description: t('skill.devops_desc', lang), installed: true },
+          { name: 'Content Writer', icon: '✍️', category: 'writing', tags: ['blog','seo','marketing'], version: '1.0.0', description: t('skill.content_desc', lang), installed: true },
+          { name: 'Security Auditor', icon: '🔒', category: 'security', tags: ['owasp','pentest','review'], version: '1.0.0', description: t('skill.security_desc', lang), installed: true },
+          { name: 'SQL Expert', icon: '🗄️', category: 'data', tags: ['postgresql','sqlite','optimization'], version: '1.0.0', description: t('skill.sql_desc', lang), installed: true },
+          { name: 'API Designer', icon: '🔌', category: 'coding', tags: ['rest','openapi','auth'], version: '1.0.0', description: t('skill.api_desc', lang), installed: true },
+          { name: 'Vietnamese Business', icon: '🇻🇳', category: 'business', tags: ['tax','labor','accounting'], version: '1.0.0', description: t('skill.vnbiz_desc', lang), installed: true },
+          { name: 'Git Workflow', icon: '📦', category: 'devops', tags: ['git','branching','review'], version: '1.0.0', description: t('skill.git_desc', lang), installed: true },
+        ]);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const categories = ['all','coding','data','devops','writing','security','business'];
+  const catIcons = { all:'🌐', coding:'💻', data:'📊', devops:'🔧', writing:'✍️', security:'🔒', business:'💼' };
+
+  const filtered = skills.filter(s => {
+    if (selectedCategory !== 'all' && s.category !== selectedCategory) return false;
+    if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase()) && !(s.tags||[]).some(t=>t.includes(searchQuery.toLowerCase()))) return false;
+    return true;
+  });
+
+  return html`<div>
+    <div class="page-header"><div>
+      <h1>🧩 ${t('skill.title', lang)}</h1>
+      <div class="sub">${t('skill.subtitle', lang)}</div>
+    </div></div>
+
+    <div class="stats">
+      <\${StatsCard} label=${t('skill.total', lang)} value=${skills.length} color="accent" icon="🧩" />
+      <\${StatsCard} label=${t('skill.installed', lang)} value=${skills.filter(s=>s.installed).length} color="green" icon="✅" />
+      <\${StatsCard} label=${t('skill.categories', lang)} value=${categories.length - 1} color="blue" icon="📁" />
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input placeholder=${t('skill.search', lang)} value=${searchQuery} onInput=${e=>setSearchQuery(e.target.value)}
+          style="flex:1;min-width:200px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px" />
+        <div style="display:flex;gap:4px">
+          ${categories.map(cat => html`<button key=${cat}
+            class="btn ${selectedCategory===cat?'':'btn-outline'} btn-sm"
+            style=${selectedCategory===cat?'background:var(--grad1);color:#fff':''}
+            onClick=${()=>setSelectedCategory(cat)}>${catIcons[cat]} ${cat}</button>`)}
+        </div>
+      </div>
+    </div>
+
+    ${loading ? html`<div class="card" style="text-align:center;padding:40px;color:var(--text2)">Loading...</div>` : html`
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+        ${filtered.map(skill => html`<div key=${skill.name} class="card" style="border-left:3px solid ${skill.installed?'var(--green)':'var(--border)'}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:32px">${skill.icon}</span>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:6px">
+                <strong style="font-size:15px">${skill.name}</strong>
+                <span class="badge" style="font-size:10px">v${skill.version}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text2)">${skill.category}</div>
+            </div>
+            ${skill.installed
+              ? html`<span class="badge badge-green">✅ ${t('skill.installed', lang)}</span>`
+              : html`<button class="btn btn-outline btn-sm">+ ${t('skill.install', lang)}</button>`}
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px">${skill.description}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            ${(skill.tags||[]).map(tag=>html`<span key=${tag} class="badge" style="font-size:10px">#${tag}</span>`)}
+          </div>
+        </div>`)}
+      </div>
+    `}
+  </div>`;
+}
+
 
 // ═══ MAIN APP ═══
 export function App() {
@@ -1254,6 +1457,8 @@ export function App() {
       case 'traces': return html`<${TracesPage} lang=${lang} />`;
       case 'cost': return html`<${CostPage} lang=${lang} />`;
       case 'activity': return html`<${ActivityPage} lang=${lang} />`;
+      case 'workflows': return html`<${WorkflowsPage} lang=${lang} />`;
+      case 'skills': return html`<${SkillsPage} lang=${lang} />`;
       default: return html`<div class="card" style="padding:40px;text-align:center"><div style="font-size:48px;margin-bottom:16px">📄</div><h2>${currentPage}</h2></div>`;
     }
   };

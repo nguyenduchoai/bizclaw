@@ -45,6 +45,8 @@ pub struct AppState {
     pub activity_tx: tokio::sync::broadcast::Sender<super::openai_compat::ActivityEvent>,
     /// Activity log — keeps recent events for REST polling.
     pub activity_log: Arc<Mutex<Vec<super::openai_compat::ActivityEvent>>>,
+    /// Rate limiter — IP → (count, window_start) for public endpoints.
+    pub rate_limiter: Arc<tokio::sync::Mutex<std::collections::HashMap<String, (u32, std::time::Instant)>>>,
 }
 
 /// State for an active Telegram bot connected to an agent.
@@ -160,6 +162,51 @@ async fn require_pairing(
             serde_json::json!({"ok": false, "error": "Unauthorized — invalid or missing pairing code"}).to_string()
         ))
         .unwrap()
+}
+
+/// Rate-limiting middleware for public endpoints.
+/// Allows 60 requests per minute per IP.
+async fn rate_limit(
+    State(state): State<Arc<AppState>>,
+    req: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let ip = req.headers()
+        .get("x-real-ip")
+        .or_else(|| req.headers().get("x-forwarded-for"))
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("unknown")
+        .split(',')
+        .next()
+        .unwrap_or("unknown")
+        .trim()
+        .to_string();
+
+    {
+        let mut limiter = state.rate_limiter.lock().await;
+        let entry = limiter.entry(ip.clone()).or_insert_with(|| (0, std::time::Instant::now()));
+
+        // Reset window after 60 seconds
+        if entry.1.elapsed().as_secs() >= 60 {
+            *entry = (0, std::time::Instant::now());
+        }
+
+        entry.0 += 1;
+
+        if entry.0 > 60 {
+            tracing::warn!("[rate-limit] IP {} exceeded 60 req/min", ip);
+            return axum::response::Response::builder()
+                .status(axum::http::StatusCode::TOO_MANY_REQUESTS)
+                .header("Content-Type", "application/json")
+                .header("Retry-After", "60")
+                .body(axum::body::Body::from(
+                    serde_json::json!({"ok": false, "error": "Rate limit exceeded. Max 60 requests per minute."}).to_string()
+                ))
+                .unwrap();
+        }
+    }
+
+    next.run(req).await
 }
 
 /// Verify pairing code endpoint (public).
@@ -373,6 +420,10 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route("/api/v1/activity", get(super::openai_compat::list_activity))
         // MCP Servers API (stub — returns configured MCP servers)
         .route("/api/v1/mcp/servers", get(super::routes::mcp_list_servers))
+        // Workflows + Skills + TTS API
+        .route("/api/v1/workflows", get(super::routes::workflows_list))
+        .route("/api/v1/skills", get(super::routes::skills_list))
+        .route("/api/v1/tts/voices", get(super::routes::tts_voices))
         .route("/ws", get(super::ws::ws_handler))
         .route_layer(axum::middleware::from_fn_with_state(
             shared.clone(),
@@ -393,9 +444,16 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         )
         // Webhook inbound — public, auth via HMAC signature in header
         .route("/api/v1/webhook/inbound", post(super::routes::webhook_inbound))
+        // Xiaozhi webhook — public, auth via header signature
+        .route("/api/v1/xiaozhi/webhook", post(super::routes::xiaozhi_webhook))
         // OpenAI-Compatible API — public with own auth (Bearer token)
         .route("/v1/chat/completions", post(super::openai_compat::chat_completions))
-        .route("/v1/models", get(super::openai_compat::list_models));
+        .route("/v1/models", get(super::openai_compat::list_models))
+        // Rate limiting for all public routes
+        .route_layer(axum::middleware::from_fn_with_state(
+            shared.clone(),
+            rate_limit,
+        ));
 
     // SPA fallback — serve dashboard HTML for all frontend routes
     // so that /dashboard, /chat, /settings etc. all work with path-based routing
@@ -674,6 +732,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         traces: Arc::new(Mutex::new(Vec::new())),
         activity_tx: activity_tx.clone(),
         activity_log: Arc::new(Mutex::new(Vec::new())),
+        rate_limiter: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
     };
 
     let state_arc = Arc::new(state);

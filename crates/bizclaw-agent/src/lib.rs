@@ -3,6 +3,7 @@
 //!
 //! ## Features (BizClaw agent features):
 //! - **Multi-round tool calling**: Up to 3 rounds of tool → LLM → tool loops
+//! - **Tool Loop Detection**: Detects and prevents infinite tool call loops (saves tokens)
 //! - **Memory retrieval (RAG)**: FTS5-powered search of past conversations
 //! - **Knowledge base integration**: Auto-search uploaded documents for context
 //! - **Auto-compaction**: Summarizes long conversations to prevent context overflow
@@ -12,6 +13,7 @@
 pub mod context;
 pub mod discovery;
 pub mod engine;
+pub mod loop_detector;
 pub mod orchestrator;
 pub mod proactive;
 
@@ -99,6 +101,8 @@ pub struct Agent {
     last_stats: ContextStats,
     /// 3-Tier Memory: daily log manager for persisting compaction summaries
     daily_log: bizclaw_memory::brain::DailyLogManager,
+    /// Tool loop detector — prevents infinite tool call loops
+    loop_detector: loop_detector::LoopDetector,
 }
 
 impl Agent {
@@ -146,6 +150,7 @@ impl Agent {
                 session_id: "default".to_string(),
             },
             daily_log,
+            loop_detector: loop_detector::LoopDetector::new(),
         })
     }
 
@@ -227,6 +232,7 @@ impl Agent {
             session_id: "default".to_string(),
             knowledge: None,
             daily_log,
+            loop_detector: loop_detector::LoopDetector::new(),
             last_stats: ContextStats {
                 message_count: 1,
                 estimated_tokens: 0,
@@ -332,6 +338,14 @@ impl Agent {
             let mut results = Vec::new();
             for tc in &resp.tool_calls {
                 tracing::info!("  → {}", tc.function.name);
+                // Tool loop detection — block repeated calls to save tokens
+                if self.loop_detector.check(&tc.function.name, &tc.function.arguments) {
+                    results.push(Message::tool(
+                        format!("⚠️ Loop detected: '{}' called repeatedly with same args — blocked to save tokens", tc.function.name),
+                        &tc.id,
+                    ));
+                    continue;
+                }
                 if tc.function.name == "shell"
                     && let Ok(args) = serde_json::from_str::<serde_json::Value>(&tc.function.arguments)
                     && let Some(cmd) = args["command"].as_str()

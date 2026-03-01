@@ -18,6 +18,8 @@ members = [
     "crates/bizclaw-db",
     "crates/bizclaw-hands",
     "crates/bizclaw-ffi",
+    "crates/bizclaw-workflows",
+    "crates/bizclaw-skills",
 ]
 
 [workspace.package]
