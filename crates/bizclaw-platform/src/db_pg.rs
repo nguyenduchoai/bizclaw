@@ -144,13 +144,16 @@ impl PgDb {
 
     /// Run schema migrations inline (for when docker-entrypoint-initdb.d wasn't used).
     async fn migrate(&self) -> Result<()> {
-        // Run the migration SQL embedded at compile time
-        sqlx::query(include_str!("../../../migrations/001_init.sql"))
+        // Run the migration SQL embedded at compile time using raw_sql
+        // which supports multiple statements (unlike sqlx::query which is single-statement)
+        let sql = include_str!("../../../migrations/001_init.sql");
+        sqlx::raw_sql(sql)
             .execute(&self.pool)
             .await
             .map_err(|e| {
+                let msg = e.to_string();
                 // Ignore "already exists" errors — migrations are idempotent
-                if e.to_string().contains("already exists") {
+                if msg.contains("already exists") || msg.contains("duplicate key") {
                     tracing::debug!("PG migration: tables already exist");
                     return BizClawError::Memory("OK".into());
                 }
@@ -159,6 +162,7 @@ impl PgDb {
             .ok();
         Ok(())
     }
+
 
     /// Get the underlying pool (for direct queries).
     pub fn pool(&self) -> &PgPool {
