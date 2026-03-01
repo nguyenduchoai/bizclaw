@@ -82,7 +82,12 @@ cd bizclaw && cargo build --release
 | **💬 9 Channels** | CLI, Telegram, Discord, Email (IMAP/SMTP), Webhook, WhatsApp, Zalo (Personal + Official) |
 | **🛠️ 13 Tools** | Shell, File, Edit File, Glob, Grep, Web Search, HTTP Request, Config Manager, Execute Code (9 ngôn ngữ), Plan Mode, Group Summarizer, Calendar, Document Reader, Memory Search, Session Context |
 | **🔗 MCP** | Model Context Protocol client — kết nối MCP servers bên ngoài, mở rộng tools không giới hạn |
-| **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log, Per-tenant SQLite DB |
+| **🏢 Multi-Tenant** | Admin Platform, JWT Auth, Tenant Manager, Pairing Codes, Audit Log, RBAC, Per-tenant isolation |
+| **🐘 PostgreSQL** | **MỚI v0.3** — Production database với connection pooling, 19 tables, async sqlx, persistent data |
+| **🧠 ReMe Memory** | **MỚI v0.3** — 4-type memory: Personal (preferences), Task (patterns), Tool (usage stats), Working (context compaction) + Hybrid Search |
+| **⏰ Heartbeat/Cron** | **MỚI v0.3** — Agent tự thức dậy, scheduled tasks, proactive notifications, cron expressions |
+| **🔧 Skills System** | **MỚI v0.3** — Plug-and-play skills, 10 built-in, hot-reload, per-tenant, multi-language (Python/JS/Shell) |
+| **👥 Agent Teams** | **MỚI v0.3** — Multi-agent collaboration, 5 team templates, workflow tracking, pipeline execution |
 | **🌐 Web Dashboard** | 15 trang UI (VI/EN), WebSocket real-time, chat, agents, providers, gallery, channels, brain, knowledge, scheduler, **LLM Traces, Cost Tracking, Activity Feed**, settings |
 | **📱 Android Agent** | App chạy agent 24/7, Foreground Service, Accessibility Service điều khiển Facebook/Messenger/Zalo, device tools (battery/GPS/notification) |
 | **🤖 51 Agent Templates** | 13 danh mục nghiệp vụ, system prompt chuyên sâu, cài 1 click |
@@ -90,7 +95,7 @@ cd bizclaw && cargo build --release
 | **🧠 3-Tier Memory** | Brain workspace (SOUL.md/MEMORY.md), Daily auto-compaction, FTS5 search |
 | **📚 Knowledge RAG** | Dual-mode: FTS5/BM25 (instant) + PageIndex MCP (reasoning-based, 98.7% accuracy) |
 | **⏰ Scheduler** | Tác vụ hẹn giờ, agent tự chạy background, **retry mechanism với exponential backoff** |
-| **💾 Persistence** | SQLite gateway.db (providers, agents, channels), agents.json backup, auto-restore |
+| **💾 Persistence** | PostgreSQL (production) + SQLite (edge), gateway.db, agents.json backup, auto-restore |
 | **🧠 Brain Engine** | GGUF inference: mmap, quantization, Flash Attention, SIMD (ARM NEON, x86 SSE2/AVX2) |
 | **🔄 Think-Act-Observe** | Agent loop 5 rounds max — tự suy luận, hành động, đánh giá |
 | **✅ Quality Gates** | Evaluator LLM tự review response, auto-revision nếu chưa đạt |
