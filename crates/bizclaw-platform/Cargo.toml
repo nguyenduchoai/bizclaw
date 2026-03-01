@@ -18,6 +18,7 @@ tracing.workspace = true
 axum.workspace = true
 reqwest.workspace = true
 rusqlite.workspace = true
+sqlx.workspace = true
 uuid = { version = "1", features = ["v4"] }
 bcrypt = "0.15"
 jsonwebtoken = "9"

@@ -1,11 +1,34 @@
 version: '3.8'
 
 # ═══════════════════════════════════════════════════════════════
-# BizClaw Production — Dual Domain Deployment
+# BizClaw Production — Dual Domain + PostgreSQL + CoPaw Features
 # bizclaw.vn + viagent.vn (independent instances)
 # ═══════════════════════════════════════════════════════════════
 
 services:
+  # ── PostgreSQL Database ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: bizclaw-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bizclaw
+      POSTGRES_USER: bizclaw
+      POSTGRES_PASSWORD: BizClaw@2026DB
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bizclaw"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bizclaw-net
+
   # ── BizClaw Instance ──
   bizclaw:
     build: .
@@ -31,7 +54,11 @@ services:
       - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
       - BIZCLAW_CORS_ORIGINS=https://bizclaw.vn,https://apps.bizclaw.vn
       - BIZCLAW_BIND_ALL=1
+      - DATABASE_URL=postgres://bizclaw:BizClaw@2026DB@postgres:5432/bizclaw
       - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
@@ -40,7 +67,7 @@ services:
     networks:
       - bizclaw-net
 
-  # ── Viagent Instance (separate data) ──
+  # ── Viagent Instance (separate data, shared DB) ──
   viagent:
     build: .
     container_name: viagent-app
@@ -56,7 +83,11 @@ services:
       - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
       - BIZCLAW_CORS_ORIGINS=https://viagent.vn,https://apps.viagent.vn
       - BIZCLAW_BIND_ALL=1
+      - DATABASE_URL=postgres://bizclaw:BizClaw@2026DB@postgres:5432/viagent
       - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
@@ -96,6 +127,8 @@ services:
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
+  pg_data:
+    driver: local
   bizclaw_data:
     driver: local
   viagent_data:
