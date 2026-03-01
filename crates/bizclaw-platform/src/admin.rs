@@ -255,6 +255,15 @@ fn sync_nginx_routing(state: &AdminState) {
         // Escape dots in domain for nginx regex
         let domain_regex = domain.replace('.', "\\.");
 
+        // Docker mode: use container hostname; Non-Docker: use 127.0.0.1
+        let upstream_host = if std::env::var("BIZCLAW_BIND_ALL").unwrap_or_default() == "1" {
+            // In Docker, nginx connects to the app container via network hostname
+            // The hostname matches the docker-compose service name
+            "bizclaw".to_string()
+        } else {
+            "127.0.0.1".to_string()
+        };
+
         let conf = format!(
             r#"# {domain} Dynamic Tenant Routing (auto-generated)
 map $subdomain_{domain_slug} $tenant_port_{domain_slug} {{
@@ -277,7 +286,7 @@ server {{
     }}
 
     location / {{
-        proxy_pass http://127.0.0.1:$tenant_port_{domain_slug};
+        proxy_pass http://{upstream_host}:$tenant_port_{domain_slug};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -291,27 +300,54 @@ server {{
 "#
         );
 
-        let conf_path = format!("/etc/nginx/conf.d/{domain_slug}-tenants.conf");
-        if let Err(e) = std::fs::write(&conf_path, &conf) {
-            tracing::warn!("nginx-sync[{domain}]: failed to write {conf_path}: {e}");
+        // Try multiple paths: shared Docker volume first, then traditional path
+        let conf_paths = [
+            format!("/etc/nginx/dynamic/{domain_slug}-tenants.conf"),
+            format!("/etc/nginx/conf.d/{domain_slug}-tenants.conf"),
+        ];
+
+        let mut written = false;
+        for conf_path in &conf_paths {
+            // Ensure directory exists
+            if let Some(parent) = std::path::Path::new(conf_path).parent() {
+                std::fs::create_dir_all(parent).ok();
+            }
+            if std::fs::write(conf_path, &conf).is_ok() {
+                tracing::info!("nginx-sync[{domain}]: wrote config to {conf_path}");
+                written = true;
+                break;
+            }
+        }
+
+        if !written {
+            tracing::warn!("nginx-sync[{domain}]: failed to write to any nginx config path");
             return;
         }
 
-        match std::process::Command::new("nginx").args(["-t"]).output() {
-            Ok(out) if out.status.success() => {
-                match std::process::Command::new("systemctl")
-                    .args(["reload", "nginx"])
-                    .output()
-                {
-                    Ok(_) => tracing::info!("nginx-sync[{domain}]: {} tenants synced, nginx reloaded", tenants.len()),
-                    Err(e) => tracing::warn!("nginx-sync[{domain}]: reload failed: {e}"),
-                }
+        // Try to reload nginx — multiple strategies for Docker vs bare-metal
+        // Strategy 1: nginx -s reload (works if nginx is in same container)
+        if let Ok(out) = std::process::Command::new("nginx").args(["-s", "reload"]).output() {
+            if out.status.success() {
+                tracing::info!("nginx-sync[{domain}]: {} tenants synced, nginx reloaded (nginx -s)", tenants.len());
+                return;
             }
-            Ok(out) => {
-                tracing::warn!("nginx-sync[{domain}]: config test failed: {}", String::from_utf8_lossy(&out.stderr));
-            }
-            Err(e) => tracing::warn!("nginx-sync[{domain}]: nginx -t failed: {e}"),
         }
+        // Strategy 2: systemctl reload nginx (bare-metal)
+        if let Ok(out) = std::process::Command::new("systemctl").args(["reload", "nginx"]).output() {
+            if out.status.success() {
+                tracing::info!("nginx-sync[{domain}]: {} tenants synced, nginx reloaded (systemctl)", tenants.len());
+                return;
+            }
+        }
+        // Strategy 3: send HUP to nginx master process (Docker — if pid is available)
+        if let Ok(out) = std::process::Command::new("sh").args(["-c", "kill -HUP $(cat /var/run/nginx.pid 2>/dev/null) 2>/dev/null"]).output() {
+            if out.status.success() {
+                tracing::info!("nginx-sync[{domain}]: {} tenants synced, nginx reloaded (HUP)", tenants.len());
+                return;
+            }
+        }
+        // If none worked, config is written but nginx needs manual reload
+        tracing::warn!("nginx-sync[{domain}]: config written ({} tenants) but nginx reload failed — may need manual reload", tenants.len());
     });
 }
 

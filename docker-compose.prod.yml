@@ -13,11 +13,19 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:3001:3001"    # Platform admin
-      - "127.0.0.1:10001:10001"  # Tenant gateway 1
-      - "127.0.0.1:10002:10002"  # Tenant gateway 2
-      - "127.0.0.1:10003:10003"  # Tenant gateway 3
+      - "127.0.0.1:10001:10001"  # Tenant port 1
+      - "127.0.0.1:10002:10002"  # Tenant port 2
+      - "127.0.0.1:10003:10003"  # Tenant port 3
+      - "127.0.0.1:10004:10004"  # Tenant port 4
+      - "127.0.0.1:10005:10005"  # Tenant port 5
+      - "127.0.0.1:10006:10006"  # Tenant port 6
+      - "127.0.0.1:10007:10007"  # Tenant port 7
+      - "127.0.0.1:10008:10008"  # Tenant port 8
+      - "127.0.0.1:10009:10009"  # Tenant port 9
+      - "127.0.0.1:10010:10010"  # Tenant port 10
     volumes:
       - bizclaw_data:/root/.bizclaw
+      - nginx_dynamic:/etc/nginx/dynamic
     environment:
       - RUST_LOG=info
       - BIZCLAW_CONFIG=/root/.bizclaw/config.toml
@@ -71,6 +79,7 @@ services:
       - ./deploy/viagent-landing:/var/www/viagent-landing:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
+      - nginx_dynamic:/etc/nginx/dynamic:ro
     depends_on:
       - bizclaw
       - viagent
@@ -94,6 +103,8 @@ volumes:
   certbot_data:
     driver: local
   certbot_www:
+    driver: local
+  nginx_dynamic:
     driver: local
 
 networks:
