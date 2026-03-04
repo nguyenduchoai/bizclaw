@@ -15,3 +15,8 @@ tracing.workspace = true
 chrono.workspace = true
 rusqlite.workspace = true
 dirs.workspace = true
+pdf_oxide = { workspace = true, optional = true }
+
+[features]
+default = ["pdf"]
+pdf = ["dep:pdf_oxide"]

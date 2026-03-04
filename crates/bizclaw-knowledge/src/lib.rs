@@ -27,5 +27,8 @@ pub mod chunker;
 pub mod search;
 pub mod store;
 
+#[cfg(feature = "pdf")]
+pub mod pdf;
+
 pub use search::SearchResult;
 pub use store::KnowledgeStore;

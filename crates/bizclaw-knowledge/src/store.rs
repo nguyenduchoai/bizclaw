@@ -91,6 +91,44 @@ impl KnowledgeStore {
         Ok(chunk_count)
     }
 
+    /// Add a PDF document from raw bytes.
+    /// Uses pdf_oxide for text extraction with markdown preservation.
+    /// Tries markdown extraction first (better RAG quality), falls back to plain text.
+    #[cfg(feature = "pdf")]
+    pub fn add_pdf_document(&self, name: &str, data: &[u8], source: &str) -> Result<usize, String> {
+        // Try markdown first (preserves headings, tables, layout)
+        // Fall back to plain text if markdown fails
+        let text = crate::pdf::extract_markdown_from_pdf(data)
+            .or_else(|_| crate::pdf::extract_text_from_pdf(data))?;
+
+        // Same chunking + indexing pipeline as text documents
+        let chunks = chunker::chunk_text(&text, 500);
+        let chunk_count = chunks.len();
+
+        // Insert document record
+        self.conn
+            .execute(
+                "INSERT INTO documents (name, source, chunk_count) VALUES (?1, ?2, ?3)",
+                params![name, source, chunk_count as i64],
+            )
+            .map_err(|e| format!("Insert doc error: {e}"))?;
+
+        let doc_id = self.conn.last_insert_rowid();
+
+        // Index chunks
+        for (idx, chunk) in chunks.iter().enumerate() {
+            self.conn
+                .execute(
+                    "INSERT INTO chunks (doc_id, chunk_idx, content) VALUES (?1, ?2, ?3)",
+                    params![doc_id.to_string(), idx.to_string(), chunk],
+                )
+                .map_err(|e| format!("Insert chunk error: {e}"))?;
+        }
+
+        tracing::info!("📄 Added PDF '{}' → {} chunks indexed", name, chunk_count);
+        Ok(chunk_count)
+    }
+
     /// Search the knowledge base using BM25 ranking.
     pub fn search(&self, query: &str, limit: usize) -> Vec<SearchResult> {
         let limit = limit.min(10); // Max 10 results

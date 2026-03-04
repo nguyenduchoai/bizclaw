@@ -335,6 +335,11 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             "/api/v1/knowledge/documents/{id}",
             axum::routing::delete(super::routes::knowledge_remove_doc),
         )
+        // PDF/File upload for knowledge base
+        .route(
+            "/api/v1/knowledge/upload",
+            post(super::routes::knowledge_upload_file),
+        )
         // Multi-Agent Orchestrator API
         .route("/api/v1/agents", get(super::routes::list_agents))
         .route("/api/v1/agents", post(super::routes::create_agent))

@@ -2115,6 +2115,93 @@ pub async fn knowledge_remove_doc(
     }
 }
 
+/// Upload a file (PDF, TXT, MD, etc.) to the knowledge base.
+/// Accepts multipart/form-data with a "file" field.
+/// PDFs are processed via pdf_oxide for text/markdown extraction.
+pub async fn knowledge_upload_file(
+    State(state): State<Arc<AppState>>,
+    mut multipart: axum::extract::Multipart,
+) -> Json<serde_json::Value> {
+    let mut file_name = String::new();
+    let mut file_data: Vec<u8> = Vec::new();
+
+    // Extract file from multipart
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or("").to_string();
+        if name == "file" {
+            file_name = field
+                .file_name()
+                .unwrap_or("unnamed.txt")
+                .to_string();
+            match field.bytes().await {
+                Ok(bytes) => file_data = bytes.to_vec(),
+                Err(e) => {
+                    return Json(serde_json::json!({
+                        "ok": false,
+                        "error": format!("Failed to read file: {e}")
+                    }));
+                }
+            }
+        }
+    }
+
+    if file_data.is_empty() {
+        return Json(serde_json::json!({
+            "ok": false,
+            "error": "No file uploaded. Use multipart/form-data with field name 'file'"
+        }));
+    }
+
+    let ext = file_name
+        .rsplit('.')
+        .next()
+        .unwrap_or("txt")
+        .to_lowercase();
+    let file_size = file_data.len();
+
+    tracing::info!(
+        "📤 Knowledge upload: {} ({} bytes, .{})",
+        file_name, file_size, ext
+    );
+
+    let kb = state.knowledge.lock().await;
+    match kb.as_ref() {
+        Some(store) => {
+            let result = match ext.as_str() {
+                "pdf" => {
+                    store.add_pdf_document(&file_name, &file_data, "upload")
+                }
+                _ => {
+                    // Text-based files: convert bytes to string
+                    match String::from_utf8(file_data) {
+                        Ok(content) => store.add_document(&file_name, &content, "upload"),
+                        Err(_) => Err("File is not valid UTF-8 text".into()),
+                    }
+                }
+            };
+
+            match result {
+                Ok(chunks) => Json(serde_json::json!({
+                    "ok": true,
+                    "name": file_name,
+                    "chunks": chunks,
+                    "size": file_size,
+                    "type": ext,
+                })),
+                Err(e) => Json(serde_json::json!({
+                    "ok": false,
+                    "error": e,
+                    "name": file_name,
+                })),
+            }
+        }
+        None => Json(serde_json::json!({
+            "ok": false,
+            "error": "Knowledge base not available"
+        })),
+    }
+}
+
 // ---- Multi-Agent Orchestrator API ----
 
 /// List all agents in the orchestrator.
