@@ -258,6 +258,16 @@ footer a{color:var(--accent2);text-decoration:none}
   #feature-grid{grid-template-columns:1fr!important}
 }
 @media(max-width:480px){h1{font-size:32px!important}}
+
+/* ═══ DEPLOY TABS ═══ */
+.deploy-tab{padding:12px 28px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s}
+.deploy-tab.active{background:var(--accent2);color:#fff;border-color:var(--accent2);box-shadow:0 4px 20px rgba(99,102,241,.3)}
+.deploy-tab:hover{border-color:var(--accent2);color:var(--accent2)}
+.deploy-tab.active:hover{color:#fff}
+#cloud-benefits-grid,#pricing-grid{transition:all .3s}
+@media(max-width:768px){
+  #cloud-benefits-grid,#pricing-grid{grid-template-columns:1fr!important}
+}
 </style>
 </head>
 <body>
@@ -499,28 +509,145 @@ footer a{color:var(--accent2);text-decoration:none}
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
+<!-- HOW IT WORKS — TABBED: Self-Hosted vs Cloud -->
 <section id="how">
   <div class="container">
     <div class="section-label" data-vi="BẮT ĐẦU NGAY" data-en="GET STARTED">BẮT ĐẦU NGAY</div>
-    <div class="section-title" data-vi="Có trợ lý AI riêng trong 3 phút" data-en="Your own AI assistant in 3 minutes">Có trợ lý AI riêng trong 3 phút</div>
-    <div class="section-desc" data-vi="Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn." data-en="No technical knowledge needed — sign up, configure, and let AI work for you.">Không cần kiến thức kỹ thuật — đăng ký, cấu hình, và để AI làm việc thay bạn.</div>
-    <div class="steps">
-      <div class="step fade-up" style="--i:0">
-        <h4 data-vi="📝 Clone từ GitHub" data-en="📝 Clone from GitHub">📝 Clone từ GitHub</h4>
-        <p data-vi="Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn." data-en="Open source, MIT license — git clone, cargo build, run instantly. Free forever.">Mã nguồn mở, license MIT — git clone, cargo build, chạy ngay. Miễn phí vĩnh viễn.</p>
+    <div class="section-title" data-vi="Chọn cách triển khai phù hợp" data-en="Choose your deployment">Chọn cách triển khai phù hợp</div>
+    <div class="section-desc" data-vi="Tự cài đặt miễn phí trên thiết bị của bạn, hoặc để chúng tôi lo hạ tầng với gói Cloud." data-en="Self-host for free on your own device, or let us handle infrastructure with Cloud plans.">Tự cài đặt miễn phí trên thiết bị của bạn, hoặc để chúng tôi lo hạ tầng với gói Cloud.</div>
+
+    <!-- Tab Buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:32px;justify-content:center">
+      <button onclick="showDeployTab('self')" id="tab-self" class="deploy-tab active" data-vi="🔧 Tự cài đặt (Miễn phí)" data-en="🔧 Self-Hosted (Free)">🔧 Tự cài đặt (Miễn phí)</button>
+      <button onclick="showDeployTab('cloud')" id="tab-cloud" class="deploy-tab" data-vi="☁️ Cloud (Trọn gói)" data-en="☁️ Cloud (Managed)">☁️ Cloud (Trọn gói)</button>
+    </div>
+
+    <!-- TAB 1: Self-Hosted -->
+    <div id="deploy-self" class="deploy-content">
+      <div class="steps">
+        <div class="step fade-up" style="--i:0">
+          <h4 data-vi="📥 1. Clone & Build" data-en="📥 1. Clone & Build">📥 1. Clone & Build</h4>
+          <div style="background:var(--surface);border-radius:10px;padding:16px;font-family:monospace;font-size:13px;margin-top:8px;color:var(--green);line-height:1.8">
+            git clone https://github.com/nguyenduchoai/bizclaw<br>
+            cd bizclaw && cargo build --release
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-top:8px" data-vi="Hoặc Docker: docker-compose up -d" data-en="Or Docker: docker-compose up -d">Hoặc Docker: docker-compose up -d</p>
+        </div>
+        <div class="step fade-up" style="--i:1">
+          <h4 data-vi="⚙️ 2. Cấu hình" data-en="⚙️ 2. Configure">⚙️ 2. Cấu hình</h4>
+          <div style="background:var(--surface);border-radius:10px;padding:16px;font-family:monospace;font-size:13px;margin-top:8px;color:var(--cyan);line-height:1.8">
+            ./target/release/bizclaw init<br>
+            # Wizard tương tác — chọn provider, nhập API key
+          </div>
+        </div>
+        <div class="step fade-up" style="--i:2">
+          <h4 data-vi="🚀 3. Chạy!" data-en="🚀 3. Run!">🚀 3. Chạy!</h4>
+          <div style="background:var(--surface);border-radius:10px;padding:16px;font-family:monospace;font-size:13px;margin-top:8px;color:var(--accent2);line-height:1.8">
+            ./target/release/bizclaw serve<br>
+            # → Dashboard tại http://localhost:3579
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-top:8px" data-vi="Đã có trợ lý AI — không cần PostgreSQL, Nginx, hay domain." data-en="You now have an AI assistant — no PostgreSQL, Nginx, or domain needed.">Đã có trợ lý AI — không cần PostgreSQL, Nginx, hay domain.</p>
+        </div>
       </div>
-      <div class="step fade-up" style="--i:1">
-        <h4 data-vi="⚙️ Cài đặt lên thiết bị" data-en="⚙️ Install on your device">⚙️ Cài đặt lên thiết bị</h4>
-        <p data-vi="Cài trên VPS, máy tính, hoặc Raspberry Pi bỏ túi mang theo. Kết nối Zalo, Telegram — chỉ 1 lệnh." data-en="Install on VPS, PC, or a pocket Raspberry Pi. Connect Zalo, Telegram — just one command.">Cài trên VPS, máy tính, hoặc Raspberry Pi bỏ túi mang theo. Kết nối Zalo, Telegram — chỉ 1 lệnh.</p>
+      <div style="text-align:center;margin-top:32px">
+        <a href="https://github.com/nguyenduchoai/bizclaw" target="_blank" class="btn-primary" data-vi="⭐ GitHub — Xem mã nguồn" data-en="⭐ GitHub — View Source">⭐ GitHub — Xem mã nguồn</a>
+        <a href="/docs.html" class="btn-secondary" data-vi="📖 Hướng dẫn cài đặt" data-en="📖 Installation Guide">📖 Hướng dẫn cài đặt</a>
       </div>
-      <div class="step fade-up" style="--i:2">
-        <h4 data-vi="🚀 AI làm việc thay bạn!" data-en="🚀 AI works for you!">🚀 AI làm việc thay bạn!</h4>
-        <p data-vi="Trợ lý AI trả lời khách hàng trên Zalo, quản lý lịch, email — 24/7 kể cả khi bạn ngủ." data-en="Your AI replies to customers on Zalo, manages calendar, email — 24/7 even while you sleep.">Trợ lý AI trả lời khách hàng trên Zalo, quản lý lịch, email — 24/7 kể cả khi bạn ngủ.</p>
+    </div>
+
+    <!-- TAB 2: Cloud -->
+    <div id="deploy-cloud" class="deploy-content" style="display:none">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;position:relative;overflow:hidden" class="fade-up">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad2)"></div>
+        <div style="text-align:center;margin-bottom:32px">
+          <div style="font-size:48px;margin-bottom:8px">☁️</div>
+          <h3 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700" data-vi="Không cần cài đặt — Dùng ngay" data-en="No installation — Start now">Không cần cài đặt — Dùng ngay</h3>
+          <p style="color:var(--muted);font-size:15px;max-width:500px;margin:12px auto" data-vi="Chúng tôi lo hạ tầng, bạn chỉ cần cấu hình AI Agent. Mọi thứ đã sẵn sàng trên cloud." data-en="We handle infrastructure, you just configure your AI Agents. Everything is ready on the cloud.">Chúng tôi lo hạ tầng, bạn chỉ cần cấu hình AI Agent. Mọi thứ đã sẵn sàng trên cloud.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px" id="cloud-benefits-grid">
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">🚀</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="Triển khai 30 giây" data-en="Deploy in 30s">Triển khai 30 giây</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="Đăng ký → Dashboard riêng → Cấu hình AI" data-en="Sign up → Own dashboard → Configure AI">Đăng ký → Dashboard riêng → Cấu hình AI</p>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">🔄</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="Cập nhật tự động" data-en="Auto updates">Cập nhật tự động</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="Không cần build hay deploy" data-en="No build or deploy needed">Không cần build hay deploy</p>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">🛡️</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="SSL & Bảo mật" data-en="SSL & Security">SSL & Bảo mật</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="HTTPS, backup, monitoring 24/7" data-en="HTTPS, backup, 24/7 monitoring">HTTPS, backup, monitoring 24/7</p>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">📞</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="Hỗ trợ ưu tiên" data-en="Priority support">Hỗ trợ ưu tiên</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="Zalo trực tiếp, onboarding 1-1" data-en="Direct Zalo, 1-on-1 onboarding">Zalo trực tiếp, onboarding 1-1</p>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">🤖</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="51 Agent sẵn dùng" data-en="51 Ready agents">51 Agent sẵn dùng</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="Chọn agent nghiệp vụ → Dùng ngay" data-en="Pick business agent → Use now">Chọn agent nghiệp vụ → Dùng ngay</p>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:20px;text-align:center">
+            <div style="font-size:28px;margin-bottom:8px">🌐</div>
+            <h4 style="font-size:14px;font-weight:700;margin-bottom:6px" data-vi="Subdomain riêng" data-en="Own subdomain">Subdomain riêng</h4>
+            <p style="font-size:12px;color:var(--muted)" data-vi="your-company.viagent.vn" data-en="your-company.viagent.vn">your-company.viagent.vn</p>
+          </div>
+        </div>
+        <h3 style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:24px" data-vi="📦 Gói dịch vụ" data-en="📦 Packages">📦 Gói dịch vụ</h3>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px" id="pricing-grid">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--green);letter-spacing:1px;margin-bottom:8px">STARTER</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:800;color:var(--text)">499K</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px" data-vi="/tháng" data-en="/month">/tháng</div>
+            <div style="text-align:left;font-size:13px;line-height:2">
+              ✅ 3 AI Agents<br>
+              ✅ 1 Channel (Zalo / Telegram)<br>
+              ✅ 1GB Knowledge Base<br>
+              ✅ Dashboard riêng<br>
+              ✅ SSL + HTTPS<br>
+              ⬜ Hỗ trợ qua email
+            </div>
+            <button onclick="contactOrder('Starter')" style="margin-top:20px;width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:600;cursor:pointer;font-size:14px" data-vi="📞 Liên hệ đặt hàng" data-en="📞 Contact to order">📞 Liên hệ đặt hàng</button>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(244,114,182,.08));border:2px solid var(--accent2);border-radius:16px;padding:28px;text-align:center;position:relative">
+            <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent2);color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px" data-vi="⭐ PHỔ BIẾN" data-en="⭐ POPULAR">⭐ PHỔ BIẾN</div>
+            <div style="font-size:13px;font-weight:600;color:var(--accent2);letter-spacing:1px;margin-bottom:8px">BUSINESS</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:800;color:var(--text)">1.5M</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px" data-vi="/tháng" data-en="/month">/tháng</div>
+            <div style="text-align:left;font-size:13px;line-height:2">
+              ✅ 10 AI Agents<br>
+              ✅ 5 Channels<br>
+              ✅ 5GB Knowledge Base<br>
+              ✅ Dashboard + Subdomain<br>
+              ✅ Hỗ trợ Zalo trực tiếp<br>
+              ✅ Onboarding 1-1
+            </div>
+            <button onclick="contactOrder('Business')" style="margin-top:20px;width:100%;padding:12px;background:var(--accent2);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:14px" data-vi="📞 Liên hệ đặt hàng" data-en="📞 Contact to order">📞 Liên hệ đặt hàng</button>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--orange);letter-spacing:1px;margin-bottom:8px">ENTERPRISE</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:800;color:var(--text)" data-vi="Liên hệ" data-en="Contact">Liên hệ</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px" data-vi="Tuỳ chỉnh theo nhu cầu" data-en="Custom pricing">Tuỳ chỉnh theo nhu cầu</div>
+            <div style="text-align:left;font-size:13px;line-height:2">
+              ✅ Không giới hạn Agents<br>
+              ✅ Tất cả channels<br>
+              ✅ VPS riêng (dedicated)<br>
+              ✅ Domain riêng<br>
+              ✅ Ollama / Brain Engine<br>
+              ✅ SLA uptime 99.9%
+            </div>
+            <button onclick="contactOrder('Enterprise')" style="margin-top:20px;width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-weight:600;cursor:pointer;font-size:14px" data-vi="📞 Liên hệ đặt hàng" data-en="📞 Contact to order">📞 Liên hệ đặt hàng</button>
+          </div>
+        </div>
+        <p style="text-align:center;font-size:13px;color:var(--muted)" data-vi="🔒 Đăng ký tạm đóng — Liên hệ Zalo: 0888 468 988 để đặt hàng" data-en="🔒 Registration paused — Contact Zalo: 0888 468 988 to order">🔒 Đăng ký tạm đóng — Liên hệ Zalo: 0888 468 988 để đặt hàng</p>
       </div>
     </div>
   </div>
 </section>
+
 
 <!-- 💰 TOKEN SAVINGS — KEY DIFFERENTIATOR -->
 <section id="token-savings" style="background:var(--bg2)">
@@ -1004,6 +1131,17 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+
+// ═══ Deploy Tab Toggle ═══
+function showDeployTab(tab) {
+  document.getElementById('deploy-self').style.display = tab === 'self' ? 'block' : 'none';
+  document.getElementById('deploy-cloud').style.display = tab === 'cloud' ? 'block' : 'none';
+  document.getElementById('tab-self').classList.toggle('active', tab === 'self');
+  document.getElementById('tab-cloud').classList.toggle('active', tab === 'cloud');
+}
+function contactOrder(pkg) {
+  window.open('https://zalo.me/0888468988', '_blank');
+}
 </script>
 </body>
 </html>
