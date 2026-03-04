@@ -167,20 +167,20 @@ section{padding:100px 24px}
 .sc-tab-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px}
 .sc-tab.active .sc-tab-title{color:var(--green2)}
 .sc-tab-desc{font-size:12px;color:var(--text2)}
-.showcase-preview{background:#0f172a;border-radius:16px;border:1px solid rgba(255,255,255,.06);overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.2)}
-.sc-preview-header{background:#1e293b;padding:12px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.05)}
-.sc-preview-title{color:#94a3b8;font-size:12px;font-family:'SF Mono','Fira Code',monospace;letter-spacing:.5px}
+.showcase-preview{background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-xl)}
+.sc-preview-header{background:var(--bg2);padding:12px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border-light)}
+.sc-preview-title{color:var(--text2);font-size:12px;font-family:'SF Mono','Fira Code',monospace;letter-spacing:.5px}
 .sc-preview-body{padding:28px;min-height:300px;position:relative}
 .sc-panel{display:none;animation:scFadeIn .4s ease}
 .sc-panel.active{display:block}
 @keyframes scFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.sc-flow-label{font-size:11px;font-weight:700;color:#64748b;letter-spacing:1.5px;margin-bottom:12px}
+.sc-flow-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1.5px;margin-bottom:12px}
 .sc-steps{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
-.sc-step{display:flex;align-items:center;gap:10px;font-size:14px;color:#64748b;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:all .3s}
-.sc-step.done{color:#cbd5e1;border-color:rgba(16,185,129,.1)}
-.sc-step.active{color:#fff;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2)}
-.sc-check{display:inline-flex;width:20px;height:20px;border-radius:50%;background:rgba(16,185,129,.15);color:#10b981;font-size:12px;align-items:center;justify-content:center;font-weight:700}
-.sc-circle{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid #334155}
+.sc-step{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text2);padding:8px 12px;border-radius:10px;background:var(--bg2);border:1px solid transparent;transition:all .3s}
+.sc-step.done{color:var(--text1);border-color:rgba(16,185,129,.15)}
+.sc-step.active{color:var(--text1);background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.25)}
+.sc-check{display:inline-flex;width:20px;height:20px;border-radius:50%;background:rgba(16,185,129,.12);color:#10b981;font-size:12px;align-items:center;justify-content:center;font-weight:700}
+.sc-circle{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid var(--border)}
 .sc-spinner{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid transparent;border-top-color:#10b981;border-right-color:#10b981;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sc-tools{display:flex;gap:8px;flex-wrap:wrap}
