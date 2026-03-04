@@ -2604,20 +2604,7 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
 
-  // Navigate: client-side state routing — NO full page reloads.
-  // IMPORTANT: NOT using useCallback to avoid stale closure issues.
-  // setCurrentPage is always stable (React/Preact guarantees this),
-  // so this function reference will change on each render but that's fine.
-  function navigate(pageId) {
-    const path = '/' + (pageId === 'dashboard' ? '' : pageId);
-    if (location.pathname !== path) {
-      history.pushState({}, '', path);
-    }
-    setCurrentPage(pageId);
-  }
 
-  // Global navigate — must be set AFTER navigate is created
-  window._navigate = navigate;
 
   const changeLang = useCallback((l) => {
     setLang(l);
@@ -2634,35 +2621,65 @@ export function App() {
   if (checkingPairing) return html`<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);color:var(--text2)">⏳ Loading...</div>`;
   if (!paired) return html`<${PairingGate} onSuccess=${() => setPaired(true)} />`;
 
-  // Inline page render function — bypasses component boundary diffing issues.
-  // PageRouter as a separate component with key prop was failing to re-render
-  // even when key changed. Inlining eliminates component boundary altogether.
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard': return html`<${DashboardPage} config=${config} lang=${lang} />`;
-      case 'chat': return html`<${ChatPage} config=${config} lang=${lang} />`;
-      case 'hands': return html`<${HandsPage} lang=${lang} />`;
-      case 'settings': return html`<${SettingsPage} config=${config} lang=${lang} />`;
-      case 'providers': return html`<${ProvidersPage} config=${config} lang=${lang} />`;
-      case 'channels': return html`<${ChannelsPage} lang=${lang} />`;
-      case 'tools': return html`<${ToolsPage} lang=${lang} />`;
-      case 'agents': return html`<${AgentsPage} config=${config} lang=${lang} />`;
-      case 'knowledge': return html`<${KnowledgePage} lang=${lang} />`;
-      case 'mcp': return html`<${McpPage} lang=${lang} />`;
-      case 'orchestration': return html`<${OrchestrationPage} lang=${lang} />`;
-      case 'gallery': return html`<${GalleryPage} lang=${lang} />`;
-      case 'brain': return html`<${SettingsPage} config=${config} lang=${lang} />`;
-      case 'configfile': return html`<${ConfigFilePage} lang=${lang} />`;
-      case 'scheduler': return html`<${SchedulerPage} lang=${lang} />`;
-      case 'traces': return html`<${TracesPage} lang=${lang} />`;
-      case 'cost': return html`<${CostPage} lang=${lang} />`;
-      case 'activity': return html`<${ActivityPage} lang=${lang} />`;
-      case 'workflows': return html`<${WorkflowsPage} lang=${lang} />`;
-      case 'skills': return html`<${SkillsPage} lang=${lang} />`;
-      case 'wiki': return html`<${WikiPage} lang=${lang} />`;
-      default: return html`<div class="card" style="padding:40px;text-align:center"><div style="font-size:48px;margin-bottom:16px">📄</div><h2>${currentPage}</h2></div>`;
+  // Navigate: use manual render() to swap page content.
+  // Preact+HTM's vdom diffing has a bug where <main> content is not updated
+  // even when state changes. This nuclear fix bypasses vdom entirely.
+  const mainRef = useRef(null);
+  
+  const doRenderPage = useCallback((pageId) => {
+    if (!mainRef.current) return;
+    const cfg = window.__bizclaw_config || config;
+    const ln = window.__bizclaw_lang || lang;
+    let pageVNode;
+    switch (pageId) {
+      case 'dashboard': pageVNode = html`<${DashboardPage} config=${cfg} lang=${ln} />`; break;
+      case 'chat': pageVNode = html`<${ChatPage} config=${cfg} lang=${ln} />`; break;
+      case 'hands': pageVNode = html`<${HandsPage} lang=${ln} />`; break;
+      case 'settings': pageVNode = html`<${SettingsPage} config=${cfg} lang=${ln} />`; break;
+      case 'providers': pageVNode = html`<${ProvidersPage} config=${cfg} lang=${ln} />`; break;
+      case 'channels': pageVNode = html`<${ChannelsPage} lang=${ln} />`; break;
+      case 'tools': pageVNode = html`<${ToolsPage} lang=${ln} />`; break;
+      case 'agents': pageVNode = html`<${AgentsPage} config=${cfg} lang=${ln} />`; break;
+      case 'knowledge': pageVNode = html`<${KnowledgePage} lang=${ln} />`; break;
+      case 'mcp': pageVNode = html`<${McpPage} lang=${ln} />`; break;
+      case 'orchestration': pageVNode = html`<${OrchestrationPage} lang=${ln} />`; break;
+      case 'gallery': pageVNode = html`<${GalleryPage} lang=${ln} />`; break;
+      case 'brain': pageVNode = html`<${SettingsPage} config=${cfg} lang=${ln} />`; break;
+      case 'configfile': pageVNode = html`<${ConfigFilePage} lang=${ln} />`; break;
+      case 'scheduler': pageVNode = html`<${SchedulerPage} lang=${ln} />`; break;
+      case 'traces': pageVNode = html`<${TracesPage} lang=${ln} />`; break;
+      case 'cost': pageVNode = html`<${CostPage} lang=${ln} />`; break;
+      case 'activity': pageVNode = html`<${ActivityPage} lang=${ln} />`; break;
+      case 'workflows': pageVNode = html`<${WorkflowsPage} lang=${ln} />`; break;
+      case 'skills': pageVNode = html`<${SkillsPage} lang=${ln} />`; break;
+      case 'wiki': pageVNode = html`<${WikiPage} lang=${ln} />`; break;
+      default: pageVNode = html`<div class="card" style="padding:40px;text-align:center"><div style="font-size:48px;margin-bottom:16px">📄</div><h2>${pageId}</h2></div>`; break;
     }
-  };
+    // Manual render into <main> — bypasses parent vdom diffing entirely
+    render(pageVNode, mainRef.current);
+  }, [config, lang]);
+
+  // Render initial page when mainRef is available
+  useEffect(() => {
+    if (mainRef.current) doRenderPage(currentPage);
+  }, [currentPage, doRenderPage]);
+
+  // Keep globals in sync for doRenderPage closure
+  window.__bizclaw_config = config;
+  window.__bizclaw_lang = lang;
+
+  function navigate(pageId) {
+    const path = '/' + (pageId === 'dashboard' ? '' : pageId);
+    if (location.pathname !== path) {
+      history.pushState({}, '', path);
+    }
+    setCurrentPage(pageId);
+    // Also trigger immediate render (don't wait for state update)
+    setTimeout(() => doRenderPage(pageId), 0);
+  }
+
+  // Global navigate — must be set AFTER navigate is created
+  window._navigate = navigate;
 
   return html`
     <${AppContext.Provider} value=${{ config, lang, t: (k) => t(k, lang), showToast, navigate, wsStatus }}>
@@ -2675,8 +2692,7 @@ export function App() {
           wsStatus=${wsStatus}
           agentName=${config?.agent_name || 'BizClaw Agent'}
         />
-        <main class="main" key=${currentPage}>
-          ${renderPage()}
+        <main class="main" ref=${mainRef}>
         </main>
       </div>
       <${Toast} ...${toast || {}} />
