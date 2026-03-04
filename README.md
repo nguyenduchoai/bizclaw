@@ -13,7 +13,7 @@
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen)]()
 [![Website](https://img.shields.io/badge/🌐_Website-bizclaw.vn-blue)](https://bizclaw.vn)
 [![Facebook](https://img.shields.io/badge/📘_Fanpage-bizclaw.vn-1877F2?logo=facebook)](https://www.facebook.com/bizclaw.vn)
 
@@ -78,10 +78,11 @@ curl -sSL https://bizclaw.vn/install.sh | sudo bash
 | **🔗 MCP** | Model Context Protocol — kết nối MCP servers bên ngoài, mở rộng tools không giới hạn |
 | **🧠 Brain Engine** | GGUF inference offline: mmap, quantization, Flash Attention, SIMD (ARM NEON, x86 AVX2) |
 | **🤖 51 Agent Templates** | 13 danh mục nghiệp vụ HR, Sales, Finance, Marketing... cài 1 click |
-| **📚 Knowledge RAG** | Upload tài liệu → AI tự tìm kiếm & trả lời dựa trên nội dung |
-| **⏰ Scheduler** | Tác vụ hẹn giờ, agent tự chạy background |
+| **📚 Knowledge RAG** | Hybrid search (FTS5 + Vector cosine similarity). Upload tài liệu → AI tự trả lời |
+| **⏰ Scheduler** | Cron, interval, one-time tasks. Agent tự chạy background, gửi kết quả qua Telegram/Email/Webhook |
+| **🔀 Workflow Rules** | Tự động hóa: 6 loại trigger → 4 loại action. Visual builder trong dashboard |
 | **🌐 Web Dashboard** | 20+ trang UI (VI/EN), WebSocket real-time, Full CRUD |
-| **🔒 Bảo mật** | AES-256, Command allowlist, HMAC-SHA256, rate limiting |
+| **🔒 Bảo mật** | AES-256, Command allowlist, Runtime sandbox, HMAC-SHA256, rate limiting |
 
 ---
 
@@ -274,8 +275,7 @@ args = ["-y", "@modelcontextprotocol/server-github"]
 | **Language** | 100% Rust + Kotlin (Android) |
 | **Crates** | 19 |
 | **Lines of Code** | ~48,000 |
-| **Tests** | 240 passing |
-| **Clippy Warnings** | **0** ✅ |
+| **Tests** | 144 passing |
 | **Binary Size** | bizclaw 12MB |
 | **Last Updated** | 2026-03-05 |
 
@@ -304,8 +304,10 @@ cd bizclaw && cargo build --release
 - **13 Tools** + MCP support for unlimited extensions
 - **51 Agent Templates** — Pre-built for HR, Sales, Finance, Marketing, Legal, IT
 - **Android Agent** — On-device LLM with 20 device tools, runs offline
-- **Knowledge RAG** — Upload documents, AI learns from your content
-- **AES-256 Security** — Encrypted credentials, command allowlists
+- **Knowledge RAG** — Hybrid FTS5 + Vector search. Upload docs, AI answers from your content
+- **Workflow Rules** — Event-driven automation: 6 trigger types → 4 action types
+- **Scheduler** — Cron, interval, one-time tasks with multi-channel notification
+- **AES-256 Security** — Encrypted credentials, command allowlists, runtime sandbox
 
 > ☁️ **Want the hosted version?** Visit [bizclaw.vn](https://bizclaw.vn) — Cloud tab.
 
@@ -327,4 +329,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**BizClaw** v0.2.0 — *AI riêng, chạy mọi nơi. / Your own AI, runs everywhere.*
+**BizClaw** v0.3.0 — *AI riêng, chạy mọi nơi. / Your own AI, runs everywhere.*
