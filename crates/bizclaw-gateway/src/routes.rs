@@ -4193,19 +4193,388 @@ pub async fn workflows_run(
 
 // ═══ Skills API ═══
 
-/// List available skills.
-pub async fn skills_list() -> Json<serde_json::Value> {
-    let skills = vec![
-        serde_json::json!({"name":"Rust Expert","icon":"🦀","category":"coding","tags":["rust","systems","performance"],"version":"1.0.0","description":"Rust expert: ownership, async, performance tuning","installed":true}),
-        serde_json::json!({"name":"Python Analyst","icon":"🐍","category":"data","tags":["python","pandas","visualization"],"version":"1.0.0","description":"Python data analysis: pandas, numpy, visualization","installed":true}),
-        serde_json::json!({"name":"Web Developer","icon":"🌐","category":"coding","tags":["react","typescript","css"],"version":"1.0.0","description":"Full-stack web: React, TypeScript, CSS, Node.js","installed":true}),
-        serde_json::json!({"name":"DevOps Engineer","icon":"🔧","category":"devops","tags":["docker","k8s","ci-cd"],"version":"1.0.0","description":"DevOps: Docker, K8s, CI/CD, Terraform","installed":true}),
-        serde_json::json!({"name":"Content Writer","icon":"✍️","category":"writing","tags":["blog","seo","marketing"],"version":"1.0.0","description":"Content writing: blog, marketing, SEO","installed":true}),
-        serde_json::json!({"name":"Security Auditor","icon":"🔒","category":"security","tags":["owasp","pentest","review"],"version":"1.0.0","description":"Security auditing: OWASP Top 10, code review","installed":true}),
-        serde_json::json!({"name":"SQL Expert","icon":"🗄️","category":"data","tags":["postgresql","sqlite","optimization"],"version":"1.0.0","description":"SQL expert: PostgreSQL, optimization, window functions","installed":true}),
-        serde_json::json!({"name":"API Designer","icon":"🔌","category":"coding","tags":["rest","openapi","auth"],"version":"1.0.0","description":"API design: REST, OpenAPI, authentication","installed":true}),
-        serde_json::json!({"name":"Vietnamese Business","icon":"🇻🇳","category":"business","tags":["tax","labor","accounting"],"version":"1.0.0","description":"Vietnamese business: tax law, labor, accounting","installed":true}),
-        serde_json::json!({"name":"Git Workflow","icon":"📦","category":"devops","tags":["git","branching","review"],"version":"1.0.0","description":"Git workflow: branching, commits, code review","installed":true}),
+fn skills_dir(state: &AppState) -> std::path::PathBuf {
+    state.config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("skills")
+}
+
+fn installed_skills_path(state: &AppState) -> std::path::PathBuf {
+    state.config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("skills-installed.json")
+}
+
+fn load_installed_set(state: &AppState) -> std::collections::HashSet<String> {
+    let path = installed_skills_path(state);
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+        .unwrap_or_default()
+        .into_iter()
+        .collect()
+}
+
+fn save_installed_set(state: &AppState, set: &std::collections::HashSet<String>) {
+    let path = installed_skills_path(state);
+    let list: Vec<&String> = set.iter().collect();
+    if let Ok(json) = serde_json::to_string_pretty(&list) {
+        let _ = std::fs::write(&path, json);
+    }
+}
+
+/// List available skills (built-in + user-created).
+pub async fn skills_list(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let installed = load_installed_set(&state);
+
+    let builtin = vec![
+        serde_json::json!({"id":"rust-expert","name":"Rust Expert","icon":"🦀","category":"coding","tags":["rust","systems","performance"],"version":"1.0.0","description":"Rust expert: ownership, async, performance tuning","builtin":true,
+            "system_prompt":"You are a Rust programming expert. Help with ownership, borrowing, lifetimes, async/await, error handling, and performance optimization. Write idiomatic, safe Rust code."}),
+        serde_json::json!({"id":"python-analyst","name":"Python Analyst","icon":"🐍","category":"data","tags":["python","pandas","visualization"],"version":"1.0.0","description":"Python data analysis: pandas, numpy, visualization","builtin":true,
+            "system_prompt":"You are a Python data analyst. Expert in pandas, numpy, matplotlib, seaborn, scikit-learn. Help with data cleaning, analysis, visualization, and machine learning."}),
+        serde_json::json!({"id":"web-developer","name":"Web Developer","icon":"🌐","category":"coding","tags":["react","typescript","css"],"version":"1.0.0","description":"Full-stack web: React, TypeScript, CSS, Node.js","builtin":true,
+            "system_prompt":"You are a full-stack web developer. Expert in React, TypeScript, CSS, Node.js, Next.js. Build responsive, accessible, performant web applications."}),
+        serde_json::json!({"id":"devops-engineer","name":"DevOps Engineer","icon":"🔧","category":"devops","tags":["docker","k8s","ci-cd"],"version":"1.0.0","description":"DevOps: Docker, K8s, CI/CD, Terraform","builtin":true,
+            "system_prompt":"You are a DevOps engineer. Expert in Docker, Kubernetes, CI/CD pipelines, Terraform, monitoring, and cloud infrastructure."}),
+        serde_json::json!({"id":"content-writer","name":"Content Writer","icon":"✍️","category":"writing","tags":["blog","seo","marketing"],"version":"1.0.0","description":"Content writing: blog, marketing, SEO","builtin":true,
+            "system_prompt":"You are a professional content writer. Expert in blog posts, marketing copy, SEO optimization, and engaging storytelling."}),
+        serde_json::json!({"id":"security-auditor","name":"Security Auditor","icon":"🔒","category":"security","tags":["owasp","pentest","review"],"version":"1.0.0","description":"Security auditing: OWASP Top 10, code review","builtin":true,
+            "system_prompt":"You are a security auditor. Expert in OWASP Top 10, penetration testing, code review for vulnerabilities, and security best practices."}),
+        serde_json::json!({"id":"sql-expert","name":"SQL Expert","icon":"🗄️","category":"data","tags":["postgresql","sqlite","optimization"],"version":"1.0.0","description":"SQL expert: PostgreSQL, optimization, window functions","builtin":true,
+            "system_prompt":"You are an SQL expert. Expert in PostgreSQL, SQLite, query optimization, window functions, CTEs, and database design."}),
+        serde_json::json!({"id":"api-designer","name":"API Designer","icon":"🔌","category":"coding","tags":["rest","openapi","auth"],"version":"1.0.0","description":"API design: REST, OpenAPI, authentication","builtin":true,
+            "system_prompt":"You are an API designer. Expert in REST, OpenAPI/Swagger, authentication (OAuth2, JWT), rate limiting, and API versioning."}),
+        serde_json::json!({"id":"vietnamese-business","name":"Vietnamese Business","icon":"🇻🇳","category":"business","tags":["tax","labor","accounting"],"version":"1.0.0","description":"Vietnamese business: tax law, labor, accounting","builtin":true,
+            "system_prompt":"Bạn là chuyên gia kinh doanh Việt Nam. Tư vấn về luật thuế, luật lao động, kế toán, bảo hiểm xã hội, hợp đồng, và quy định doanh nghiệp."}),
+        serde_json::json!({"id":"git-workflow","name":"Git Workflow","icon":"📦","category":"devops","tags":["git","branching","review"],"version":"1.0.0","description":"Git workflow: branching, commits, code review","builtin":true,
+            "system_prompt":"You are a Git workflow expert. Help with branching strategies, commit conventions, code review, merge conflicts, and CI/CD integration."}),
     ];
+
+    let mut skills: Vec<serde_json::Value> = builtin.into_iter().map(|mut s| {
+        let id = s["id"].as_str().unwrap_or("").to_string();
+        s["installed"] = serde_json::json!(installed.contains(&id));
+        s
+    }).collect();
+
+    // Load user-created skills
+    let dir = skills_dir(&state);
+    if dir.exists() {
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "json").unwrap_or(false) {
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        if let Ok(mut sk) = serde_json::from_str::<serde_json::Value>(&content) {
+                            let id = sk["id"].as_str().unwrap_or("").to_string();
+                            sk["installed"] = serde_json::json!(installed.contains(&id));
+                            skills.push(sk);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Json(serde_json::json!({"ok": true, "skills": skills}))
 }
+
+/// Create a new custom skill.
+pub async fn skills_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let name = body["name"].as_str().unwrap_or("Untitled Skill");
+    let icon = body["icon"].as_str().unwrap_or("🧩");
+    let category = body["category"].as_str().unwrap_or("custom");
+    let description = body["description"].as_str().unwrap_or("");
+    let system_prompt = body["system_prompt"].as_str().unwrap_or("");
+    let tags: Vec<String> = body["tags"].as_array()
+        .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .unwrap_or_default();
+
+    let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis();
+    let id = format!("skill-{:x}-{:x}", ts as u64, std::process::id());
+
+    let skill = serde_json::json!({
+        "id": id,
+        "name": name,
+        "icon": icon,
+        "category": category,
+        "description": description,
+        "system_prompt": system_prompt,
+        "tags": tags,
+        "version": "1.0.0",
+        "builtin": false,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let dir = skills_dir(&state);
+    let _ = std::fs::create_dir_all(&dir);
+    let path = dir.join(format!("{}.json", id));
+    if let Ok(json) = serde_json::to_string_pretty(&skill) {
+        let _ = std::fs::write(&path, json);
+    }
+
+    tracing::info!("✅ Skill created: {} ({})", name, id);
+    Json(serde_json::json!({"ok": true, "id": id, "skill": skill}))
+}
+
+/// Update a custom skill.
+pub async fn skills_update(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let dir = skills_dir(&state);
+    let path = dir.join(format!("{}.json", id));
+    if !path.exists() {
+        return Json(serde_json::json!({"ok": false, "error": "Skill not found or is built-in"}));
+    }
+
+    let mut skill: serde_json::Value = std::fs::read_to_string(&path)
+        .ok().and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(serde_json::json!({}));
+
+    if let Some(v) = body["name"].as_str() { skill["name"] = serde_json::json!(v); }
+    if let Some(v) = body["icon"].as_str() { skill["icon"] = serde_json::json!(v); }
+    if let Some(v) = body["category"].as_str() { skill["category"] = serde_json::json!(v); }
+    if let Some(v) = body["description"].as_str() { skill["description"] = serde_json::json!(v); }
+    if let Some(v) = body["system_prompt"].as_str() { skill["system_prompt"] = serde_json::json!(v); }
+    if body.get("tags").is_some() { skill["tags"] = body["tags"].clone(); }
+    skill["updated_at"] = serde_json::json!(chrono::Utc::now().to_rfc3339());
+
+    if let Ok(json) = serde_json::to_string_pretty(&skill) {
+        let _ = std::fs::write(&path, json);
+    }
+
+    tracing::info!("✅ Skill updated: {}", id);
+    Json(serde_json::json!({"ok": true, "skill": skill}))
+}
+
+/// Delete a custom skill.
+pub async fn skills_delete(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
+    let dir = skills_dir(&state);
+    let path = dir.join(format!("{}.json", id));
+    if path.exists() {
+        let _ = std::fs::remove_file(&path);
+        tracing::info!("🗑️ Skill deleted: {}", id);
+        Json(serde_json::json!({"ok": true}))
+    } else {
+        Json(serde_json::json!({"ok": false, "error": "Skill not found or is built-in"}))
+    }
+}
+
+/// Install a skill (toggle installed state).
+pub async fn skills_install(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let skill_id = body["skill"].as_str().unwrap_or("");
+    if skill_id.is_empty() {
+        return Json(serde_json::json!({"ok": false, "error": "skill ID is required"}));
+    }
+    let mut installed = load_installed_set(&state);
+    installed.insert(skill_id.to_string());
+    save_installed_set(&state, &installed);
+    tracing::info!("✅ Skill installed: {}", skill_id);
+    Json(serde_json::json!({"ok": true}))
+}
+
+/// Uninstall a skill.
+pub async fn skills_uninstall(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let skill_id = body["skill"].as_str().unwrap_or("");
+    if skill_id.is_empty() {
+        return Json(serde_json::json!({"ok": false, "error": "skill ID is required"}));
+    }
+    let mut installed = load_installed_set(&state);
+    installed.remove(skill_id);
+    save_installed_set(&state, &installed);
+    tracing::info!("🗑️ Skill uninstalled: {}", skill_id);
+    Json(serde_json::json!({"ok": true}))
+}
+
+/// Get details of a single skill.
+pub async fn skills_detail(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
+    // Check user skills first
+    let dir = skills_dir(&state);
+    let path = dir.join(format!("{}.json", id));
+    if path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&path) {
+            if let Ok(skill) = serde_json::from_str::<serde_json::Value>(&content) {
+                return Json(serde_json::json!({"ok": true, "skill": skill}));
+            }
+        }
+    }
+    // Check built-in
+    let list_resp = skills_list(State(state.clone())).await;
+    let skills = list_resp.0["skills"].as_array().cloned().unwrap_or_default();
+    if let Some(skill) = skills.into_iter().find(|s| s["id"].as_str() == Some(&id)) {
+        return Json(serde_json::json!({"ok": true, "skill": skill}));
+    }
+    Json(serde_json::json!({"ok": false, "error": "Skill not found"}))
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TOOLS CRUD — custom tools stored in ~/.bizclaw/tools/
+// ═══════════════════════════════════════════════════════════════════════
+
+fn tools_dir(state: &AppState) -> std::path::PathBuf {
+    let dir = state.config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("tools");
+    let _ = std::fs::create_dir_all(&dir);
+    dir
+}
+
+/// List all tools (built-in + custom)
+pub async fn tools_list(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let mut tools: Vec<serde_json::Value> = vec![
+        serde_json::json!({"name":"shell","icon":"🖥️","desc":"Execute system commands (sandboxed)","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"file","icon":"📁","desc":"Read/write/list files","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"edit_file","icon":"✏️","desc":"Precise text replacements in files","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"glob","icon":"🔍","desc":"Find files by pattern","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"grep","icon":"🔎","desc":"Search file contents with regex","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"http_request","icon":"🌐","desc":"Call external APIs","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"execute_code","icon":"⚡","desc":"Run Python, JS, Go, Rust, C code","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"web_search","icon":"🔍","desc":"DuckDuckGo, SearXNG","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"plan","icon":"📋","desc":"Task decomposition with dependencies","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"session_context","icon":"📊","desc":"Session info: provider, tokens, tools","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"config_manager","icon":"⚙️","desc":"Read/write config.toml at runtime","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"memory_search","icon":"🧠","desc":"Search past conversations via FTS5","enabled":true,"builtin":true}),
+        serde_json::json!({"name":"doc_reader","icon":"📄","desc":"PDF, DOCX, Excel, CSV extraction","enabled":true,"builtin":true}),
+    ];
+    // Load custom tools
+    let dir = tools_dir(&state);
+    if let Ok(entries) = std::fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            if entry.path().extension().map_or(false, |e| e == "json") {
+                if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                    if let Ok(tool) = serde_json::from_str::<serde_json::Value>(&content) {
+                        tools.push(tool);
+                    }
+                }
+            }
+        }
+    }
+    // Load disabled state
+    let disabled_path = state.config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("tools-disabled.json");
+    let disabled: Vec<String> = std::fs::read_to_string(&disabled_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    for tool in tools.iter_mut() {
+        if let Some(name) = tool["name"].as_str() {
+            if disabled.contains(&name.to_string()) {
+                tool["enabled"] = serde_json::Value::Bool(false);
+            }
+        }
+    }
+    Json(serde_json::json!({"tools": tools}))
+}
+
+/// Create a custom tool
+pub async fn tools_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let name = body["name"].as_str().unwrap_or("").trim();
+    if name.is_empty() {
+        return Json(serde_json::json!({"ok": false, "error": "Tool name required"}));
+    }
+    let id = name.to_lowercase().replace(|c: char| !c.is_alphanumeric() && c != '-' && c != '_', "-");
+    let tool = serde_json::json!({
+        "name": id,
+        "icon": body["icon"].as_str().unwrap_or("🔧"),
+        "desc": body["desc"].as_str().unwrap_or(""),
+        "enabled": true,
+        "builtin": false,
+        "command": body["command"].as_str().unwrap_or(""),
+        "args": body["args"].as_str().unwrap_or(""),
+        "created_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let dir = tools_dir(&state);
+    let path = dir.join(format!("{}.json", id));
+    if let Err(e) = std::fs::write(&path, serde_json::to_string_pretty(&tool).unwrap_or_default()) {
+        return internal_error("tools_create", e);
+    }
+    tracing::info!("🔧 Custom tool created: {}", id);
+    Json(serde_json::json!({"ok": true, "tool": tool}))
+}
+
+/// Toggle tool enabled/disabled
+pub async fn tools_toggle(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    let enabled = body["enabled"].as_bool().unwrap_or(true);
+    let disabled_path = state.config_path.parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("tools-disabled.json");
+    let mut disabled: Vec<String> = std::fs::read_to_string(&disabled_path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    if enabled {
+        disabled.retain(|n| n != &name);
+    } else if !disabled.contains(&name) {
+        disabled.push(name.clone());
+    }
+    let _ = std::fs::write(&disabled_path, serde_json::to_string(&disabled).unwrap_or_default());
+    tracing::info!("🔧 Tool {}: {}", name, if enabled { "enabled" } else { "disabled" });
+    Json(serde_json::json!({"ok": true, "enabled": enabled}))
+}
+
+/// Delete a custom tool
+pub async fn tools_delete(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+) -> Json<serde_json::Value> {
+    let dir = tools_dir(&state);
+    let path = dir.join(format!("{}.json", name));
+    if path.exists() {
+        if let Err(e) = std::fs::remove_file(&path) {
+            return internal_error("tools_delete", e);
+        }
+        tracing::info!("🗑️ Custom tool deleted: {}", name);
+        Json(serde_json::json!({"ok": true}))
+    } else {
+        Json(serde_json::json!({"ok": false, "error": "Cannot delete built-in tool"}))
+    }
+}
+
+/// Clear all traces
+pub async fn clear_traces(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let mut traces = state.traces.lock().unwrap();
+    let count = traces.len();
+    traces.clear();
+    tracing::info!("🗑️ Cleared {} LLM traces", count);
+    Json(serde_json::json!({"ok": true, "cleared": count}))
+}
+
+/// Clear activity
+pub async fn clear_activity(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let mut events = state.activity_log.lock().unwrap();
+    let count = events.len();
+    events.clear();
+    tracing::info!("🗑️ Cleared {} activity events", count);
+    Json(serde_json::json!({"ok": true, "cleared": count}))
+}
+

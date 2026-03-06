@@ -32,7 +32,7 @@ export const en = {
   'status.connected':'Connected','status.disconnected':'Disconnected',
   // Settings
   'settings.title':'Agent Settings','settings.subtitle':'Configure your AI agent — provider, model, identity, security',
-  'settings.save':'💾 Save Settings',
+  'settings.save':'Save Settings',
   'set.provider_section':'AI Provider','set.provider':'Provider','set.model':'Model',
   'set.apikey':'API Key','set.baseurl':'Custom API Base URL','set.loading_models':'Loading models...',
   'set.model_path':'Model Path','set.scan':'Scan','set.threads':'Threads',

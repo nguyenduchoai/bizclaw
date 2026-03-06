@@ -32,7 +32,7 @@ export const vi = {
   'status.connected':'Đã kết nối','status.disconnected':'Đã ngắt kết nối',
   // Settings
   'settings.title':'Cài đặt Agent','settings.subtitle':'Cấu hình AI agent — nhà cung cấp, mô hình, danh tính, bảo mật',
-  'settings.save':'💾 Lưu cài đặt',
+  'settings.save':'Lưu cài đặt',
   'set.provider_section':'Nhà cung cấp AI','set.provider':'Nhà cung cấp','set.model':'Mô hình',
   'set.apikey':'Khóa API','set.baseurl':'URL API tùy chỉnh','set.loading_models':'Đang tải mô hình...',
   'set.model_path':'Đường dẫn mô hình','set.scan':'Quét','set.threads':'Luồng xử lý',

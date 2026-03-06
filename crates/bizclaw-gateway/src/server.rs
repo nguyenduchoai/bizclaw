@@ -425,8 +425,15 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route("/api/v1/health", get(super::routes::system_health_check))
         // LLM Traces & Cost API
         .route("/api/v1/traces", get(super::openai_compat::list_traces))
+        .route("/api/v1/traces", axum::routing::delete(super::routes::clear_traces))
         .route("/api/v1/traces/cost", get(super::openai_compat::cost_breakdown))
         .route("/api/v1/activity", get(super::openai_compat::list_activity))
+        .route("/api/v1/activity", axum::routing::delete(super::routes::clear_activity))
+        // Tools CRUD API
+        .route("/api/v1/tools", get(super::routes::tools_list))
+        .route("/api/v1/tools", post(super::routes::tools_create))
+        .route("/api/v1/tools/{name}/toggle", post(super::routes::tools_toggle))
+        .route("/api/v1/tools/{name}", axum::routing::delete(super::routes::tools_delete))
         // MCP Servers API (stub — returns configured MCP servers)
         .route("/api/v1/mcp/servers", get(super::routes::mcp_list_servers))
         // Workflows + Skills + TTS API
@@ -439,6 +446,12 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route("/api/v1/workflow-rules", post(super::routes::workflow_rules_add))
         .route("/api/v1/workflow-rules/{id}", axum::routing::delete(super::routes::workflow_rules_delete))
         .route("/api/v1/skills", get(super::routes::skills_list))
+        .route("/api/v1/skills", post(super::routes::skills_create))
+        .route("/api/v1/skills/install", post(super::routes::skills_install))
+        .route("/api/v1/skills/uninstall", post(super::routes::skills_uninstall))
+        .route("/api/v1/skills/{id}", get(super::routes::skills_detail))
+        .route("/api/v1/skills/{id}", axum::routing::put(super::routes::skills_update))
+        .route("/api/v1/skills/{id}", axum::routing::delete(super::routes::skills_delete))
         .route("/api/v1/tts/voices", get(super::routes::tts_voices))
         .route("/ws", get(super::ws::ws_handler))
         .route_layer(axum::middleware::from_fn_with_state(

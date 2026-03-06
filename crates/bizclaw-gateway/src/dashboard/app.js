@@ -66,6 +66,8 @@ const PAGES = [
   { id: 'workflows', icon: '🔄', label: 'nav.workflows' },
   { id: 'skills', icon: '🧩', label: 'nav.skills' },
   { id: 'orchestration', icon: '🔀', label: 'nav.orchestration' },
+  { id: 'orgmap', icon: '🗺️', label: 'Org Map' },
+  { id: 'kanban', icon: '📋', label: 'Kanban Board' },
   { id: 'gallery', icon: '📦', label: 'nav.gallery' },
   { id: 'scheduler', icon: '⏰', label: 'nav.scheduler' },
   { id: 'traces', icon: '📊', label: 'LLM Traces' },
@@ -543,10 +545,13 @@ function DashboardPage({ config, lang }) {
 
 // ═══ SCHEDULER PAGE (with retry UI) ═══
 function SchedulerPage({ lang }) {
+  const { showToast } = useContext(AppContext);
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({name:'',cron:'0 9 * * *',prompt:'',max_retries:'3'});
 
   const loadData = async () => {
     try {
@@ -564,6 +569,26 @@ function SchedulerPage({ lang }) {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  const createTask = async () => {
+    if(!form.name.trim()) { showToast('⚠️ Nhập tên task','error'); return; }
+    try {
+      const r = await authFetch('/api/v1/scheduler/tasks', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name: form.name,
+          task_type: { Cron: { expression: form.cron } },
+          action: { AgentPrompt: { prompt: form.prompt } },
+          retry: { max_retries: parseInt(form.max_retries)||3, delay_secs: 60 },
+        })
+      });
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const txt = await r.text();
+      let d; try { d = JSON.parse(txt); } catch(e) { d = {ok: true}; }
+      if(d.ok !== false) { showToast('✅ Đã tạo task: '+form.name,'success'); setShowForm(false); setForm({name:'',cron:'0 9 * * *',prompt:'',max_retries:'3'}); loadData(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
 
   const toggleTask = async (id, enabled) => {
     await authFetch('/api/v1/scheduler/tasks/' + id + '/toggle', {
@@ -610,11 +635,15 @@ function SchedulerPage({ lang }) {
   const retrying = tasks.filter(t => t.status && typeof t.status === 'object' && t.status.RetryPending).length;
   const failed = tasks.filter(t => t.status && typeof t.status === 'object' && t.status.Failed && t.fail_count >= (t.retry?.max_retries || 3)).length;
 
+  const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
+
   return html`<div>
     <div class="page-header"><div>
       <h1>⏰ ${t('sched.title', lang)}</h1>
       <div class="sub">${t('sched.subtitle', lang)}</div>
-    </div></div>
+    </div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${()=>setShowForm(!showForm)}>+ Tạo Task</button>
+    </div>
 
     <div class="stats">
       <${StatsCard} label="Total Tasks" value=${tasks.length} color="accent" />
@@ -622,6 +651,30 @@ function SchedulerPage({ lang }) {
       <${StatsCard} label=${t('sched.retrying', lang)} value=${retrying} color="orange" />
       <${StatsCard} label=${t('sched.failed', lang)} value=${failed} color="red" />
     </div>
+
+    ${showForm && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>➕ Tạo Task mới</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowForm(false)}>✕ Đóng</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <label>Tên Task<input style="${inp}" value=${form.name} onInput=${e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Daily Report" /></label>
+          <label>Cron Expression
+            <input style="${inp}" value=${form.cron} onInput=${e=>setForm(f=>({...f,cron:e.target.value}))} placeholder="0 9 * * *" />
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">0 9 * * * = 9:00 mỗi ngày | */30 * * * * = mỗi 30p | 0 8 * * 1 = T2 8:00</div>
+          </label>
+          <label style="grid-column:span 2">Prompt (Agent sẽ chạy)
+            <textarea style="${inp};min-height:80px;resize:vertical" value=${form.prompt} onInput=${e=>setForm(f=>({...f,prompt:e.target.value}))} placeholder="Tóm tắt tin tức hôm nay và gửi báo cáo..." />
+          </label>
+          <label>Max Retries<input type="number" style="${inp}" value=${form.max_retries} onInput=${e=>setForm(f=>({...f,max_retries:e.target.value}))} min="0" max="10" /></label>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowForm(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${createTask}>💾 Tạo</button>
+        </div>
+      </div>
+    `}
 
     <div class="card">
       <h3 style="margin-bottom:12px">📋 Tasks (${tasks.length})</h3>
@@ -1099,7 +1152,7 @@ function SettingsPage({ config, lang }) {
           </div>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <span style="font-size:12px;color:var(--text2)">${brainForm.enabled?'Đang bật':'Đang tắt'}</span>
-            <div style="position:relative;width:44px;height:24px;background:${brainForm.enabled?'var(--green)':'var(--bg3)'};border-radius:12px;cursor:pointer;transition:background 0.3s" onClick=${()=>setBrainForm(f=>({...f,enabled:!f.enabled}))}>
+            <div style="position:relative;width:44px;height:24px;background:${brainForm.enabled?'var(--green)':'var(--border)'};border-radius:12px;cursor:pointer;transition:background 0.3s" onClick=${()=>setBrainForm(f=>({...f,enabled:!f.enabled}))}>
               <div style="position:absolute;top:2px;left:${brainForm.enabled?'22px':'2px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>
             </div>
           </label>
@@ -1161,13 +1214,15 @@ function SettingsPage({ config, lang }) {
   </div>`;
 }
 
-// ═══ PROVIDERS PAGE (with Configure + Activate) ═══
+// ═══ PROVIDERS PAGE (Full CRUD) ═══
 function ProvidersPage({ config, lang }) {
   const { showToast } = useContext(AppContext);
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [configProv, setConfigProv] = useState(null);
   const [provForm, setProvForm] = useState({api_key:'',base_url:'',model:''});
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({name:'',label:'',api_key:'',base_url:'',model:'',provider_type:'cloud'});
 
   const load = async () => {
     try { const r=await authFetch('/api/v1/providers'); const d=await r.json(); setProviders(d.providers||[]); } catch(e){}
@@ -1207,14 +1262,64 @@ function ProvidersPage({ config, lang }) {
     } catch(e) { showToast('❌ '+e.message,'error'); }
   };
 
+  const createProvider = async () => {
+    if(!createForm.name.trim()) { showToast('⚠️ Nhập tên provider','error'); return; }
+    try {
+      const r = await authFetch('/api/v1/providers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(createForm)
+      });
+      const d=await r.json();
+      if(d.ok) { showToast('✅ Đã tạo provider: '+createForm.name,'success'); setShowCreate(false); setCreateForm({name:'',label:'',api_key:'',base_url:'',model:'',provider_type:'cloud'}); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const deleteProvider = async (name) => {
+    if(!confirm('Xoá provider "'+name+'"?')) return;
+    try {
+      const r = await authFetch('/api/v1/providers/'+encodeURIComponent(name), {method:'DELETE'});
+      const d=await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá: '+name,'success'); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
   const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
 
   return html`<div>
-    <div class="page-header"><div><h1>🔌 ${t('providers.title',lang)}</h1><div class="sub">${t('providers.subtitle',lang)}</div></div></div>
+    <div class="page-header"><div><h1>🔌 ${t('providers.title',lang)}</h1><div class="sub">${t('providers.subtitle',lang)}</div></div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${()=>setShowCreate(!showCreate)}>+ Thêm Provider</button>
+    </div>
     <div class="stats">
       <${StatsCard} label=${t('providers.active_label',lang)} value=${active||'—'} color="green" icon="⚡" />
       <${StatsCard} label=${t('providers.total_label',lang)} value=${providers.length} color="accent" icon="🔌" />
     </div>
+
+    ${showCreate && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>🔌 Thêm Provider mới</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowCreate(false)}>✕ Đóng</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <label>Tên (ID)<input style="${inp}" value=${createForm.name} onInput=${e=>setCreateForm(f=>({...f,name:e.target.value}))} placeholder="my-openai" /></label>
+          <label>Label<input style="${inp}" value=${createForm.label} onInput=${e=>setCreateForm(f=>({...f,label:e.target.value}))} placeholder="My OpenAI" /></label>
+          <label>API Key<input style="${inp}" type="password" value=${createForm.api_key} onInput=${e=>setCreateForm(f=>({...f,api_key:e.target.value}))} placeholder="sk-..." /></label>
+          <label>Base URL<input style="${inp}" value=${createForm.base_url} onInput=${e=>setCreateForm(f=>({...f,base_url:e.target.value}))} placeholder="https://api.openai.com/v1" /></label>
+          <label>Default Model<input style="${inp}" value=${createForm.model} onInput=${e=>setCreateForm(f=>({...f,model:e.target.value}))} placeholder="gpt-4o" /></label>
+          <label>Type
+            <select style="${inp};cursor:pointer" value=${createForm.provider_type} onChange=${e=>setCreateForm(f=>({...f,provider_type:e.target.value}))}>
+              <option value="cloud">Cloud</option><option value="local">Local</option><option value="proxy">Proxy</option>
+            </select>
+          </label>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowCreate(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${createProvider}>💾 Tạo</button>
+        </div>
+      </div>
+    `}
 
     ${configProv && html`
       <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
@@ -1239,6 +1344,7 @@ function ProvidersPage({ config, lang }) {
         <td style="text-align:right;white-space:nowrap">
           <button class="btn btn-outline btn-sm" onClick=${()=>openConfig(p)} title="Cấu hình">🔑</button>
           ${p.name!==active?html`<button class="btn btn-outline btn-sm" style="margin-left:4px" onClick=${()=>activateProvider(p.name,(p.models||[])[0])} title="Kích hoạt">⚡</button>`:''}
+          <button class="btn btn-outline btn-sm" style="margin-left:4px;color:var(--red)" onClick=${()=>deleteProvider(p.name)} title="Xoá">🗑️</button>
         </td>
       </tr>`)}
     </tbody></table>`}</div>
@@ -1557,52 +1663,106 @@ function ChannelsPage({ lang }) {
 // ═══ TOOLS PAGE (with Enable/Disable) ═══
 function ToolsPage({ lang }) {
   const { showToast } = useContext(AppContext);
-  const defaultTools = [
-    {name:'shell',icon:'🖥️',desc:t('tool.shell_desc',lang),enabled:true},{name:'file',icon:'📁',desc:t('tool.file_desc',lang),enabled:true},
-    {name:'edit_file',icon:'✏️',desc:t('tool.editfile_desc',lang),enabled:true},{name:'glob',icon:'🔍',desc:t('tool.glob_desc',lang),enabled:true},
-    {name:'grep',icon:'🔎',desc:t('tool.grep_desc',lang),enabled:true},{name:'http_request',icon:'🌐',desc:t('tool.httpreq_desc',lang),enabled:true},
-    {name:'execute_code',icon:'⚡',desc:t('tool.execcode_desc',lang),enabled:true},{name:'web_search',icon:'🔍',desc:'DuckDuckGo, SearXNG',enabled:true},
-    {name:'plan',icon:'📋',desc:t('tool.plan_desc',lang),enabled:true},{name:'session_context',icon:'📊',desc:t('tool.sessionctx_desc',lang),enabled:true},
-    {name:'config_manager',icon:'⚙️',desc:t('tool.configmgr_desc',lang),enabled:true},{name:'memory_search',icon:'🧠',desc:t('tool.memsearch_desc',lang),enabled:true},
-    {name:'doc_reader',icon:'📄',desc:t('tool.docreader_desc',lang),enabled:true},
-  ];
-  const [tools, setTools] = useState(defaultTools);
+  const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({name:'',icon:'🔧',desc:'',command:'',args:''});
 
-  useEffect(() => {
-    (async () => {
-      try { const r=await authFetch('/api/v1/tools'); const d=await r.json(); if(d.tools && d.tools.length) setTools(d.tools); else setTools(defaultTools); }
-      catch(e) { setTools(defaultTools); }
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    try { const r=await authFetch('/api/v1/tools'); const d=await r.json(); setTools(d.tools||[]); }
+    catch(e) { console.error('Tools load:', e); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const createTool = async () => {
+    if(!form.name.trim()) { showToast('⚠️ Nhập tên tool','error'); return; }
+    try {
+      const r = await authFetch('/api/v1/tools', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(form)
+      });
+      const d=await r.json();
+      if(d.ok) { showToast('✅ Đã tạo tool: '+form.name,'success'); setShowForm(false); setForm({name:'',icon:'🔧',desc:'',command:'',args:''}); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
 
   const toggleTool = async (name) => {
-    const updated = tools.map(t => t.name===name ? {...t,enabled:!t.enabled} : t);
-    setTools(updated);
+    const tool = tools.find(t=>t.name===name);
+    const newEnabled = !(tool?.enabled);
     try {
       await authFetch('/api/v1/tools/'+name+'/toggle', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({enabled:!tools.find(t=>t.name===name).enabled})
+        body:JSON.stringify({enabled:newEnabled})
       });
-      showToast((updated.find(t=>t.name===name).enabled?'✅ Bật':'⏸ Tắt')+': '+name,'success');
-    } catch(e) { /* API may not exist yet, local toggle is fine */ }
+      showToast((newEnabled?'✅ Bật':'⏸ Tắt')+': '+name,'success');
+      load();
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const deleteTool = async (name) => {
+    if(!confirm('Xoá custom tool "'+name+'"?')) return;
+    try {
+      const r = await authFetch('/api/v1/tools/'+name, {method:'DELETE'});
+      const d=await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá: '+name,'success'); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
   };
 
   const active = tools.filter(t=>t.enabled).length;
+  const custom = tools.filter(t=>!t.builtin).length;
+  const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
+  const icons = ['🔧','🛠️','⚡','🔌','📡','🤖','🧰','🔬','📊','🌐','💎','🎯'];
 
   return html`<div>
-    <div class="page-header"><div><h1>🛠️ ${t('tools.title',lang)}</h1><div class="sub">${t('tools.subtitle',lang)}</div></div></div>
-    <div class="stats"><${StatsCard} label="Native Tools" value=${tools.length} color="accent" icon="🛠️" /><${StatsCard} label="Enabled" value=${active} color="green" icon="✅" /><${StatsCard} label="MCP Tools" value="∞" color="blue" icon="🔗" /></div>
+    <div class="page-header"><div><h1>🛠️ ${t('tools.title',lang)}</h1><div class="sub">${t('tools.subtitle',lang)}</div></div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${()=>setShowForm(!showForm)}>+ Tạo Tool</button>
+    </div>
+    <div class="stats"><${StatsCard} label="Total Tools" value=${tools.length} color="accent" icon="🛠️" /><${StatsCard} label="Enabled" value=${active} color="green" icon="✅" /><${StatsCard} label="Custom" value=${custom} color="blue" icon="🔧" /><${StatsCard} label="MCP Tools" value="∞" color="orange" icon="🔗" /></div>
+
+    ${showForm && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>🔧 Tạo Custom Tool</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowForm(false)}>✕ Đóng</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <label>Tên Tool<input style="${inp}" value=${form.name} onInput=${e=>setForm(f=>({...f,name:e.target.value}))} placeholder="my-custom-tool" /></label>
+          <label>Icon
+            <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">${icons.map(ic=>html`<button key=${ic} class="btn btn-outline btn-sm" style="${form.icon===ic?'background:var(--accent);color:#fff':''};font-size:16px;padding:4px 8px" onClick=${()=>setForm(f=>({...f,icon:ic}))}>${ic}</button>`)}</div>
+          </label>
+          <label style="grid-column:span 2">Mô tả<input style="${inp}" value=${form.desc} onInput=${e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="What this tool does..." /></label>
+          <label>Command<input style="${inp}" value=${form.command} onInput=${e=>setForm(f=>({...f,command:e.target.value}))} placeholder="python3, node, curl..." /></label>
+          <label>Arguments<input style="${inp}" value=${form.args} onInput=${e=>setForm(f=>({...f,args:e.target.value}))} placeholder="script.py --arg1 value" /></label>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowForm(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${createTool}>💾 Tạo</button>
+        </div>
+      </div>
+    `}
+
     <div class="card"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
       ${tools.map(tl=>html`<div key=${tl.name} style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);opacity:${tl.enabled?1:0.5}">
         <span style="font-size:24px">${tl.icon}</span>
-        <div style="flex:1"><strong style="font-size:13px">${tl.name}</strong><div style="font-size:11px;color:var(--text2);margin-top:2px">${tl.desc}</div></div>
-        <button class="btn btn-outline btn-sm" onClick=${()=>toggleTool(tl.name)} title=${tl.enabled?'Tắt':'Bật'}>${tl.enabled?'✅':'⏸'}</button>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px">
+            <strong style="font-size:13px">${tl.name}</strong>
+            ${!tl.builtin && html`<span class="badge badge-green" style="font-size:9px">CUSTOM</span>`}
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${tl.desc}</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn btn-outline btn-sm" onClick=${()=>toggleTool(tl.name)} title=${tl.enabled?'Tắt':'Bật'}>${tl.enabled?'✅':'⏸'}</button>
+          ${!tl.builtin && html`<button class="btn btn-sm" style="background:var(--red);color:#fff" onClick=${()=>deleteTool(tl.name)} title="Xoá">🗑</button>`}
+        </div>
       </div>`)}
     </div></div>
   </div>`;
 }
+
 
 // ═══ MCP SERVERS PAGE (with Add/Remove) ═══
 function McpPage({ lang }) {
@@ -2131,7 +2291,348 @@ function OrchestrationPage({ lang }) {
   </div>`;
 }
 
-// ═══ GALLERY PAGE (with Install) ═══
+// ═══ ORG MAP PAGE — Interactive Agent Hierarchy ═══
+function OrgMapPage({ lang }) {
+  const { showToast, navigate } = useContext(AppContext);
+  const [agents,setAgents] = useState([]);
+  const [links,setLinks] = useState([]);
+  const [loading,setLoading] = useState(true);
+  const [selected,setSelected] = useState(null);
+  const [view,setView] = useState('tree'); // tree | grid
+
+  useEffect(()=>{
+    (async()=>{
+      try {
+        const [agRes, orchRes] = await Promise.all([authFetch('/api/v1/agents'), authFetch('/api/v1/orchestration')]);
+        const agData=await agRes.json(); const orchData=await orchRes.json();
+        setAgents(agData.agents||[]);
+        setLinks(orchData.links||orchData.delegations||[]);
+      } catch(e){}
+      setLoading(false);
+    })();
+  },[]);
+
+  if(loading) return html`<div style="text-align:center;padding:60px;color:var(--text2)">⏳ Loading Org Map...</div>`;
+
+  // Build hierarchy tree
+  const agentMap = {};
+  agents.forEach(a => { agentMap[a.name] = {...a, children: []}; });
+  // Add default agent
+  if(!agentMap['default']) agentMap['default'] = {name:'BizClaw',role:'main',provider:'',model:'',description:'Main Agent',children:[]};
+  
+  links.forEach(l => {
+    const from = l.from_agent || l.source;
+    const to = l.to_agent || l.target;
+    if(agentMap[from] && agentMap[to]) agentMap[from].children.push(to);
+  });
+
+  // Find roots (agents not referenced as children)
+  const childSet = new Set();
+  links.forEach(l=>childSet.add(l.to_agent||l.target));
+  const roots = Object.keys(agentMap).filter(k=>!childSet.has(k));
+  if(roots.length===0 && agents.length>0) roots.push(agents[0].name);
+  if(roots.length===0) roots.push('default');
+
+  const colors = ['var(--accent)','var(--green)','var(--blue)','var(--orange)','var(--pink)','var(--cyan)'];
+  const roleIcons = {main:'👑',sales:'💰',coder:'💻',writer:'✍️',analyst:'📊',support:'🎧',general:'🤖',hr:'🧑‍💼'};
+
+  // SVG-based org chart
+  const nodeW=180, nodeH=70, gapX=40, gapY=80;
+  const nodePositions = {};
+  let maxX=0, maxY=0;
+
+  const layoutNode = (name, x, y, depth) => {
+    nodePositions[name] = {x,y,depth};
+    maxX=Math.max(maxX,x+nodeW); maxY=Math.max(maxY,y+nodeH);
+    const ch=(agentMap[name]||{}).children||[];
+    const totalW=ch.length*(nodeW+gapX)-gapX;
+    let startX=x-(totalW/2)+(nodeW/2);
+    ch.forEach((c,i)=>{ layoutNode(c, startX+i*(nodeW+gapX), y+nodeH+gapY, depth+1); });
+  };
+  const rootWidth = roots.length*(nodeW+gapX*3)-gapX*3;
+  roots.forEach((r,i)=>layoutNode(r, 200+i*(nodeW+gapX*3), 30, 0));
+
+  const svgW = Math.max(maxX+100, 600);
+  const svgH = Math.max(maxY+100, 300);
+
+  return html`<div>
+    <div class="page-header"><div>
+      <h1>🗺️ Org Map</h1>
+      <div class="sub">Agent hierarchy — click agent to view details</div>
+    </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn ${view==='tree'?'':'btn-outline'}" style="padding:6px 14px" onClick=${()=>setView('tree')}>🌳 Tree</button>
+        <button class="btn ${view==='grid'?'':'btn-outline'}" style="padding:6px 14px" onClick=${()=>setView('grid')}>📊 Grid</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <${StatsCard} label="Agents" value=${agents.length} color="accent" icon="🤖" />
+      <${StatsCard} label="Links" value=${links.length} color="blue" icon="🔗" />
+      <${StatsCard} label="Root Nodes" value=${roots.length} color="green" icon="👑" />
+    </div>
+
+    ${view==='tree' ? html`
+      <div class="card" style="overflow:auto;min-height:400px;position:relative">
+        <svg width=${svgW} height=${svgH} style="font-family:var(--font)">
+          <!-- Connection lines -->
+          ${links.map((l,i)=>{
+            const from = nodePositions[l.from_agent||l.source];
+            const to = nodePositions[l.to_agent||l.target];
+            if(!from||!to) return null;
+            const x1=from.x+nodeW/2, y1=from.y+nodeH;
+            const x2=to.x+nodeW/2, y2=to.y;
+            const midY=(y1+y2)/2;
+            return html`<path key=${'line'+i} d="M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-opacity="0.4" stroke-dasharray=${l.link_type==='handoff'?'6,4':''} />`;
+          })}
+          <!-- Agent nodes -->
+          ${Object.entries(nodePositions).map(([name,pos],i)=>{
+            const a=agentMap[name]||{name,role:'',children:[]};
+            const col=colors[pos.depth%colors.length];
+            const isSelected=selected===name;
+            return html`<g key=${name} style="cursor:pointer" onClick=${()=>setSelected(isSelected?null:name)}>
+              <rect x=${pos.x} y=${pos.y} width=${nodeW} height=${nodeH} rx="10" ry="10"
+                fill="var(--surface)" stroke=${isSelected?col:'var(--border)'} stroke-width=${isSelected?2.5:1.5}
+                style="filter:${isSelected?'drop-shadow(0 4px 12px rgba(99,102,241,.3))':''}" />
+              <text x=${pos.x+14} y=${pos.y+26} font-size="13" font-weight="700" fill="var(--text)">
+                ${(roleIcons[a.role]||'🤖')} ${name.length>14?name.slice(0,12)+'..':name}
+              </text>
+              <text x=${pos.x+14} y=${pos.y+44} font-size="10" fill="var(--text2)">
+                ${a.provider||'default'} / ${(a.model||'—').length>16?(a.model||'—').slice(0,14)+'..':a.model||'—'}
+              </text>
+              <text x=${pos.x+14} y=${pos.y+58} font-size="9" fill=${col}>
+                ${a.role||'agent'} ${(a.channels||[]).length>0?'📡'+a.channels.length:''}
+              </text>
+            </g>`;
+          })}
+        </svg>
+      </div>
+    ` : html`
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+        ${agents.length===0?html`<div class="card" style="text-align:center;grid-column:span 3;padding:30px;color:var(--text2)">Chưa có agent. Vào AI Agent → Tạo agent!</div>`:''}
+        ${agents.map((a,i)=>html`<div key=${a.name} class="card" style="cursor:pointer;border-left:3px solid ${colors[i%colors.length]}" onClick=${()=>setSelected(selected===a.name?null:a.name)}>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:24px">${roleIcons[a.role]||'🤖'}</span>
+            <div><strong style="font-size:14px">${a.name}</strong><div style="font-size:11px;color:var(--text2)">${a.role||'agent'}</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${a.description||'—'}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <span class="badge badge-blue">${a.provider||'—'}</span>
+            <span class="badge">${a.model||'—'}</span>
+          </div>
+        </div>`)}
+      </div>
+    `}
+
+    ${selected && html`
+      <div class="card" style="margin-top:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>${roleIcons[(agentMap[selected]||{}).role]||'🤖'} ${selected}</h3>
+          <div style="display:flex;gap:6px">
+            <button class="btn" style="background:var(--grad1);color:#fff;padding:6px 16px" onClick=${()=>navigate('chat')}>💬 Chat</button>
+            <button class="btn btn-outline btn-sm" onClick=${()=>setSelected(null)}>✕</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:13px">
+          ${[['Vai trò',(agentMap[selected]||{}).role||'—'],['Provider',(agentMap[selected]||{}).provider||'default'],['Model',(agentMap[selected]||{}).model||'—'],
+            ['Channels',((agentMap[selected]||{}).channels||[]).join(', ')||'—'],['Description',(agentMap[selected]||{}).description||'—'],
+            ['Delegates to',((agentMap[selected]||{}).children||[]).join(', ')||'none']
+          ].map(([k,v])=>html`<div key=${k} style="padding:8px 12px;background:var(--bg2);border-radius:6px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:2px">${k}</div><strong>${v}</strong></div>`)}
+        </div>
+      </div>
+    `}
+  </div>`;
+}
+
+// ═══ KANBAN BOARD — Drag-and-Drop Task Management ═══
+function KanbanPage({ lang }) {
+  const { showToast } = useContext(AppContext);
+  const COLUMNS = [
+    {id:'inbox',title:'📥 Inbox',color:'var(--text2)'},
+    {id:'in_progress',title:'🔄 Đang làm',color:'var(--blue)'},
+    {id:'review',title:'👀 Review',color:'var(--orange)'},
+    {id:'done',title:'✅ Hoàn thành',color:'var(--green)'}
+  ];
+  const PRIORITIES = [{id:'low',label:'Thấp',color:'var(--text2)'},{id:'normal',label:'Bình thường',color:'var(--blue)'},{id:'high',label:'Cao',color:'var(--orange)'},{id:'urgent',label:'Khẩn cấp',color:'var(--red)'}];
+
+  const loadTickets = () => {
+    try { return JSON.parse(localStorage.getItem('bizclaw_kanban')||'[]'); } catch(e){ return []; }
+  };
+  const saveTickets = (t) => { localStorage.setItem('bizclaw_kanban',JSON.stringify(t)); setTickets(t); };
+
+  const [tickets,setTickets] = useState(loadTickets);
+  const [agents,setAgents] = useState([]);
+  const [showCreate,setShowCreate] = useState(false);
+  const [selectedTicket,setSelectedTicket] = useState(null);
+  const [dragOver,setDragOver] = useState(null);
+  const [form,setForm] = useState({title:'',description:'',priority:'normal',assigned_agent:'',status:'inbox'});
+  const [filterAgent,setFilterAgent] = useState('');
+
+  useEffect(()=>{
+    (async()=>{try{const r=await authFetch('/api/v1/agents');const d=await r.json();setAgents(d.agents||[]);}catch(e){}})();
+  },[]);
+
+  const createTicket = () => {
+    if(!form.title.trim()){showToast('⚠️ Nhập tiêu đề','error');return;}
+    const t={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      title:form.title, description:form.description, priority:form.priority,
+      assigned_agent:form.assigned_agent, status:'inbox',
+      created_at:new Date().toISOString(), updated_at:new Date().toISOString()};
+    saveTickets([...tickets,t]);
+    showToast('✅ Đã tạo task: '+form.title,'success');
+    setForm({title:'',description:'',priority:'normal',assigned_agent:'',status:'inbox'});
+    setShowCreate(false);
+  };
+
+  const moveTicket = (ticketId, newStatus) => {
+    saveTickets(tickets.map(t=>t.id===ticketId?{...t,status:newStatus,updated_at:new Date().toISOString()}:t));
+  };
+
+  const deleteTicket = (id) => {
+    if(!confirm('Xoá task này?'))return;
+    saveTickets(tickets.filter(t=>t.id!==id));
+    setSelectedTicket(null);
+    showToast('🗑️ Đã xoá task','success');
+  };
+
+  const updateTicket = (id, updates) => {
+    saveTickets(tickets.map(t=>t.id===id?{...t,...updates,updated_at:new Date().toISOString()}:t));
+    if(selectedTicket?.id===id) setSelectedTicket(prev=>({...prev,...updates}));
+  };
+
+  const onDragStart = (e, ticketId) => { e.dataTransfer.setData('ticketId', ticketId); };
+  const onDragOverCol = (e, colId) => { e.preventDefault(); setDragOver(colId); };
+  const onDragLeave = () => setDragOver(null);
+  const onDropCol = (e, colId) => {
+    e.preventDefault(); setDragOver(null);
+    const ticketId=e.dataTransfer.getData('ticketId');
+    if(ticketId) moveTicket(ticketId, colId);
+  };
+
+  const priColor = (p) => PRIORITIES.find(pr=>pr.id===p)?.color||'var(--text2)';
+  const fmtTime = (t) => { if(!t)return'—'; const d=new Date(t); const now=new Date(); const diff=now-d;
+    if(diff<60000)return'vừa xong'; if(diff<3600000)return Math.floor(diff/60000)+'p trước';
+    if(diff<86400000)return Math.floor(diff/3600000)+'h trước'; return Math.floor(diff/86400000)+'d trước'; };
+
+  const filtered = filterAgent ? tickets.filter(t=>t.assigned_agent===filterAgent) : tickets;
+  const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
+
+  return html`<div>
+    <div class="page-header"><div>
+      <h1>📋 Kanban Board</h1>
+      <div class="sub">Quản lý công việc — kéo thả để chuyển trạng thái</div>
+    </div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${()=>setShowCreate(true)}>+ Tạo Task</button>
+    </div>
+
+    <div class="stats">
+      <${StatsCard} label="Tổng Tasks" value=${tickets.length} color="accent" icon="📋" />
+      <${StatsCard} label="Đang làm" value=${tickets.filter(t=>t.status==='in_progress').length} color="blue" icon="🔄" />
+      <${StatsCard} label="Review" value=${tickets.filter(t=>t.status==='review').length} color="orange" icon="👀" />
+      <${StatsCard} label="Done" value=${tickets.filter(t=>t.status==='done').length} color="green" icon="✅" />
+    </div>
+
+    ${agents.length>0 && html`
+      <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center;overflow-x:auto;padding-bottom:4px">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">Filter:</span>
+        <button class="btn btn-sm ${!filterAgent?'':'btn-outline'}" onClick=${()=>setFilterAgent('')}>Tất cả</button>
+        ${agents.map(a=>html`<button key=${a.name} class="btn btn-sm ${filterAgent===a.name?'':'btn-outline'}" onClick=${()=>setFilterAgent(filterAgent===a.name?'':a.name)}>🤖 ${a.name}</button>`)}
+      </div>
+    `}
+
+    ${showCreate && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>➕ Tạo Task mới</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowCreate(false)}>✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <label>Tiêu đề<input style="${inp}" value=${form.title} onInput=${e=>setForm(f=>({...f,title:e.target.value}))} placeholder="Bug fix login page..." /></label>
+          <label>Ưu tiên<select style="${inp};cursor:pointer" value=${form.priority} onChange=${e=>setForm(f=>({...f,priority:e.target.value}))}>
+            ${PRIORITIES.map(p=>html`<option key=${p.id} value=${p.id}>${p.label}</option>`)}
+          </select></label>
+          <label style="grid-column:span 2">Mô tả<textarea style="${inp};min-height:60px;resize:vertical" value=${form.description} onInput=${e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Chi tiết task..." /></label>
+          <label>Gán Agent<select style="${inp};cursor:pointer" value=${form.assigned_agent} onChange=${e=>setForm(f=>({...f,assigned_agent:e.target.value}))}>
+            <option value="">— Chưa gán —</option>
+            ${agents.map(a=>html`<option key=${a.name} value=${a.name}>🤖 ${a.name}</option>`)}
+          </select></label>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowCreate(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${createTicket}>💾 Tạo</button>
+        </div>
+      </div>
+    `}
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-height:400px">
+      ${COLUMNS.map(col=>{
+        const colTickets=filtered.filter(t=>t.status===col.id);
+        return html`<div key=${col.id}
+          style="background:var(--bg2);border-radius:10px;padding:12px;border:2px solid ${dragOver===col.id?'var(--accent)':'transparent'};transition:border-color .2s"
+          onDragOver=${e=>onDragOverCol(e,col.id)} onDragLeave=${onDragLeave} onDrop=${e=>onDropCol(e,col.id)}>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:${col.color}">${col.title}</div>
+            <span class="badge" style="font-size:10px">${colTickets.length}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;min-height:100px">
+            ${colTickets.map(t=>html`<div key=${t.id} draggable="true" onDragStart=${e=>onDragStart(e,t.id)}
+              style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:grab;border-left:3px solid ${priColor(t.priority)};transition:transform .15s,box-shadow .15s"
+              onMouseOver=${e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,.2)'}}
+              onMouseOut=${e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow=''}}
+              onClick=${()=>setSelectedTicket(t)}>
+              <div style="font-size:13px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>
+              ${t.description?html`<div style="font-size:11px;color:var(--text2);margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${t.description}</div>`:''}
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;gap:4px;align-items:center">
+                  ${t.assigned_agent?html`<span class="badge badge-blue" style="font-size:9px">🤖 ${t.assigned_agent}</span>`:''}
+                  <span style="width:6px;height:6px;border-radius:50%;background:${priColor(t.priority)};display:inline-block" title=${t.priority}></span>
+                </div>
+                <span style="font-size:10px;color:var(--text2)">${fmtTime(t.updated_at)}</span>
+              </div>
+            </div>`)}
+            ${colTickets.length===0?html`<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px;border:1px dashed var(--border);border-radius:8px">Kéo task vào đây</div>`:''}
+          </div>
+        </div>`;
+      })}
+    </div>
+
+    ${selectedTicket && html`
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center" onClick=${e=>{if(e.target===e.currentTarget)setSelectedTicket(null)}}>
+        <div class="card" style="width:500px;max-height:80vh;overflow-y:auto;border:1px solid var(--accent)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="flex:1;overflow:hidden;text-overflow:ellipsis">${selectedTicket.title}</h3>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-outline btn-sm" style="color:var(--red)" onClick=${()=>deleteTicket(selectedTicket.id)}>🗑️</button>
+              <button class="btn btn-outline btn-sm" onClick=${()=>setSelectedTicket(null)}>✕</button>
+            </div>
+          </div>
+          <div style="display:grid;gap:10px;font-size:13px">
+            <label>Tiêu đề<input style="${inp}" value=${selectedTicket.title} onInput=${e=>updateTicket(selectedTicket.id,{title:e.target.value})} /></label>
+            <label>Mô tả<textarea style="${inp};min-height:80px;resize:vertical" value=${selectedTicket.description||''} onInput=${e=>updateTicket(selectedTicket.id,{description:e.target.value})} /></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <label>Trạng thái<select style="${inp};cursor:pointer" value=${selectedTicket.status} onChange=${e=>{moveTicket(selectedTicket.id,e.target.value);setSelectedTicket(prev=>({...prev,status:e.target.value}))}}>
+                ${COLUMNS.map(c=>html`<option key=${c.id} value=${c.id}>${c.title}</option>`)}
+              </select></label>
+              <label>Ưu tiên<select style="${inp};cursor:pointer" value=${selectedTicket.priority} onChange=${e=>updateTicket(selectedTicket.id,{priority:e.target.value})}>
+                ${PRIORITIES.map(p=>html`<option key=${p.id} value=${p.id}>${p.label}</option>`)}
+              </select></label>
+              <label>Gán Agent<select style="${inp};cursor:pointer" value=${selectedTicket.assigned_agent||''} onChange=${e=>updateTicket(selectedTicket.id,{assigned_agent:e.target.value})}>
+                <option value="">— Chưa gán —</option>
+                ${agents.map(a=>html`<option key=${a.name} value=${a.name}>🤖 ${a.name}</option>`)}
+              </select></label>
+              <div style="padding:8px 0">
+                <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Tạo lúc</div>
+                <div style="font-size:12px">${selectedTicket.created_at?new Date(selectedTicket.created_at).toLocaleString('vi-VN'):'—'}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `}
+  </div>`;
+}
+
+// ═══ GALLERY PAGE (Full CRUD) ═══
 function GalleryPage({ lang }) {
   const { showToast } = useContext(AppContext);
   const [allSkills,setAllSkills] = useState([]);
@@ -2140,8 +2641,11 @@ function GalleryPage({ lang }) {
   const [selectedSkill,setSelectedSkill] = useState(null);
   const [cloning,setCloning] = useState(false);
   const [search,setSearch] = useState('');
+  const [showForm,setShowForm] = useState(false);
+  const [gForm,setGForm] = useState({name:'',icon:'🤖',cat:'productivity',desc:'',role:'assistant',prompt:''});
 
-  useEffect(()=>{ (async()=>{ try{const r=await authFetch('/api/v1/gallery');const d=await r.json();setAllSkills(d.skills||[]);}catch(e){} setLoading(false); })(); },[]);
+  const load = async () => { try{const r=await authFetch('/api/v1/gallery');const d=await r.json();setAllSkills(d.skills||[]);}catch(e){} setLoading(false); };
+  useEffect(()=>{ load(); },[]);
 
   const catMap = {
     hr:{icon:'🧑‍💼',label:'Nhân sự (HR)'},sales:{icon:'💰',label:'Kinh doanh'},finance:{icon:'📊',label:'Tài chính'},
@@ -2189,6 +2693,29 @@ function GalleryPage({ lang }) {
     setCloning(false);
   };
 
+  const createTemplate = async () => {
+    if(!gForm.name.trim()) { showToast('⚠️ Nhập tên template','error'); return; }
+    try {
+      const r = await authFetch('/api/v1/gallery', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:gForm.name.toLowerCase().replace(/\s+/g,'-'), ...gForm})
+      });
+      const d=await r.json();
+      if(d.ok||d.id) { showToast('✅ Đã tạo template: '+gForm.name,'success'); setShowForm(false); setGForm({name:'',icon:'🤖',cat:'productivity',desc:'',role:'assistant',prompt:''}); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const deleteTemplate = async (id, name) => {
+    if(!confirm('Xoá template "'+name+'"?')) return;
+    try {
+      const r = await authFetch('/api/v1/gallery/'+encodeURIComponent(id), {method:'DELETE'});
+      const d=await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá: '+name,'success'); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
   if(loading) return html`<div style="text-align:center;padding:60px;color:var(--text2)">⏳ Loading Gallery...</div>`;
 
   // Detail view
@@ -2223,12 +2750,38 @@ function GalleryPage({ lang }) {
   }
 
   return html`<div>
-    <div class="page-header"><div><h1>📦 ${t('gallery.title',lang)}</h1><div class="sub">${t('gallery.subtitle',lang)} — ${allSkills.length} mẫu agent, ${categories.length} danh mục</div></div></div>
+    <div class="page-header"><div><h1>📦 ${t('gallery.title',lang)}</h1><div class="sub">${t('gallery.subtitle',lang)} — ${allSkills.length} mẫu agent, ${categories.length} danh mục</div></div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${()=>setShowForm(!showForm)}>+ Tạo Template</button>
+    </div>
     <div class="stats">
       <${StatsCard} label="Templates" value=${allSkills.length} color="accent" icon="📦" />
       <${StatsCard} label="Danh mục" value=${categories.length} color="blue" icon="📁" />
       <${StatsCard} label=${selectedCat?(catMap[selectedCat]||{}).label||selectedCat:'Tất cả'} value=${filtered.length} color="green" icon="🔍" />
     </div>
+
+    ${showForm && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>📦 Tạo Template mới</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowForm(false)}>✕ Đóng</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <label>Tên<input style="width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px" value=${gForm.name} onInput=${e=>setGForm(f=>({...f,name:e.target.value}))} placeholder="My Agent Template" /></label>
+          <label>Danh mục
+            <select style="width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer" value=${gForm.cat} onChange=${e=>setGForm(f=>({...f,cat:e.target.value}))}>
+              ${categories.map(c=>html`<option key=${c} value=${c}>${(catMap[c]||{}).label||c}</option>`)}
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <label style="grid-column:span 2">Mô tả<input style="width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px" value=${gForm.desc} onInput=${e=>setGForm(f=>({...f,desc:e.target.value}))} placeholder="What this template does..." /></label>
+          <label style="grid-column:span 2">System Prompt<textarea style="width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;min-height:100px;resize:vertical;font-family:var(--mono)" value=${gForm.prompt} onInput=${e=>setGForm(f=>({...f,prompt:e.target.value}))} placeholder="You are an expert in..." /></label>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowForm(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${createTemplate}>💾 Tạo</button>
+        </div>
+      </div>
+    `}
 
     <div style="margin-bottom:14px"><input type="text" placeholder="🔍 Tìm template... (tên, mô tả, danh mục)" value=${search} onInput=${e=>setSearch(e.target.value)}
       style="width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px" /></div>
@@ -2255,7 +2808,10 @@ function GalleryPage({ lang }) {
               <strong style="font-size:13px;display:block">${s.name}</strong>
               <span class="badge" style="font-size:10px;margin-top:2px">${(catMap[s.cat]||{}).label||s.cat}</span>
             </div>
-            <button class="btn btn-outline btn-sm" onClick=${e=>{e.stopPropagation();cloneAsAgent(s)}} title="Clone thành Agent">🤖+</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-outline btn-sm" onClick=${e=>{e.stopPropagation();cloneAsAgent(s)}} title="Clone thành Agent">🤖+</button>
+              <button class="btn btn-outline btn-sm" style="color:var(--red)" onClick=${e=>{e.stopPropagation();deleteTemplate(s.id,s.name)}} title="Xoá">🗑</button>
+            </div>
           </div>
           <div style="font-size:12px;color:var(--text2);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${s.desc||''}</div>
         </div>`)}
@@ -2412,21 +2968,31 @@ function ConfigFilePage({ lang }) {
 
 // ═══ LLM TRACES PAGE ═══
 function TracesPage({ lang }) {
+  const { showToast } = useContext(AppContext);
   const [traces, setTraces] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await authFetch('/api/v1/traces');
-        const data = await res.json();
-        setTraces(data.traces || []);
-        setStats(data.stats || {});
-      } catch (e) { console.error('Traces load:', e); }
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    try {
+      const res = await authFetch('/api/v1/traces');
+      const data = await res.json();
+      setTraces(data.traces || []);
+      setStats(data.stats || {});
+    } catch (e) { console.error('Traces load:', e); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const clearTraces = async () => {
+    if(!confirm('Xoá tất cả traces?')) return;
+    try {
+      const r = await authFetch('/api/v1/traces', {method:'DELETE'});
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá '+d.cleared+' traces','success'); setTraces([]); setStats({}); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
 
   const fmtLatency = (ms) => ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(1) + 's';
   const fmtCost = (c) => c < 0.001 ? '<$0.001' : '$' + c.toFixed(4);
@@ -2436,7 +3002,9 @@ function TracesPage({ lang }) {
     <div class="page-header"><div>
       <h1>📊 LLM Traces</h1>
       <div class="sub">Monitor every LLM call — tokens, latency, cost</div>
-    </div></div>
+    </div>
+      <button class="btn btn-outline" style="color:var(--red);padding:8px 18px" onClick=${clearTraces}>🗑️ Xoá Traces</button>
+    </div>
 
     <div class="stats">
       <${StatsCard} label="Total Calls" value=${stats.total_calls || 0} color="accent" />
@@ -2475,21 +3043,31 @@ function TracesPage({ lang }) {
 
 // ═══ COST TRACKING PAGE ═══
 function CostPage({ lang }) {
+  const { showToast } = useContext(AppContext);
   const [breakdown, setBreakdown] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await authFetch('/api/v1/traces/cost');
-        const data = await res.json();
-        setBreakdown(data.breakdown || []);
-        setTotal(data.total_cost_usd || 0);
-      } catch (e) { console.error('Cost load:', e); }
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    try {
+      const res = await authFetch('/api/v1/traces/cost');
+      const data = await res.json();
+      setBreakdown(data.breakdown || []);
+      setTotal(data.total_cost_usd || 0);
+    } catch (e) { console.error('Cost load:', e); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const clearCost = async () => {
+    if(!confirm('Xoá dữ liệu cost?')) return;
+    try {
+      const r = await authFetch('/api/v1/traces', {method:'DELETE'});
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Đã reset cost data','success'); setBreakdown([]); setTotal(0); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
 
   const fmtCost = (c) => c < 0.001 ? '<$0.001' : '$' + c.toFixed(4);
   const sorted = [...breakdown].sort((a, b) => b.cost_usd - a.cost_usd);
@@ -2498,7 +3076,9 @@ function CostPage({ lang }) {
     <div class="page-header"><div>
       <h1>💰 Cost Tracking</h1>
       <div class="sub">LLM cost breakdown by model (session)</div>
-    </div></div>
+    </div>
+      <button class="btn btn-outline" style="color:var(--red);padding:8px 18px" onClick=${clearCost}>🗑️ Reset Cost</button>
+    </div>
 
     <div class="stats">
       <${StatsCard} label="Total Cost" value=${fmtCost(total)} color="orange" icon="💰" />
@@ -2532,6 +3112,7 @@ function CostPage({ lang }) {
 
 // ═══ ACTIVITY FEED PAGE ═══
 function ActivityPage({ lang }) {
+  const { showToast } = useContext(AppContext);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -2549,6 +3130,16 @@ function ActivityPage({ lang }) {
     const timer = setInterval(loadEvents, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  const clearActivity = async () => {
+    if(!confirm('Xoá tất cả activity?')) return;
+    try {
+      const r = await authFetch('/api/v1/activity', {method:'DELETE'});
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá '+(d.cleared||0)+' events','success'); setEvents([]); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
 
   const fmtTime = (t) => new Date(t).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const typeIcon = (t) => {
@@ -2569,7 +3160,9 @@ function ActivityPage({ lang }) {
     <div class="page-header"><div>
       <h1>⚡ Activity Feed</h1>
       <div class="sub">Real-time system events (auto-refreshes every 5s)</div>
-    </div></div>
+    </div>
+      <button class="btn btn-outline" style="color:var(--red);padding:8px 18px" onClick=${clearActivity}>🗑️ Xoá Activity</button>
+    </div>
 
     <div class="stats">
       <${StatsCard} label="Events" value=${events.length} color="accent" icon="⚡" />
@@ -2865,58 +3458,113 @@ function WorkflowsPage({ lang }) {
   </div>`;
 }
 
-// ═══ SKILLS MARKETPLACE PAGE (with Install/Uninstall) ═══
+// ═══ SKILLS MARKETPLACE PAGE (Full CRUD) ═══
 function SkillsPage({ lang }) {
   const { showToast } = useContext(AppContext);
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editSkill, setEditSkill] = useState(null);
+  const [detailSkill, setDetailSkill] = useState(null);
+  const [form, setForm] = useState({name:'',icon:'🧩',category:'custom',description:'',system_prompt:'',tags:''});
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await authFetch('/api/v1/skills');
-        const d = await r.json();
-        setSkills(d.skills || []);
-      } catch (e) {
-        setSkills([
-          { name: 'Rust Expert', icon: '🦀', category: 'coding', tags: ['rust','systems','performance'], version: '1.0.0', description: t('skill.rust_desc', lang), installed: true },
-          { name: 'Python Analyst', icon: '🐍', category: 'data', tags: ['python','pandas','visualization'], version: '1.0.0', description: t('skill.python_desc', lang), installed: true },
-          { name: 'Web Developer', icon: '🌐', category: 'coding', tags: ['react','typescript','css'], version: '1.0.0', description: t('skill.web_desc', lang), installed: true },
-          { name: 'DevOps Engineer', icon: '🔧', category: 'devops', tags: ['docker','k8s','ci-cd'], version: '1.0.0', description: t('skill.devops_desc', lang), installed: true },
-          { name: 'Content Writer', icon: '✍️', category: 'writing', tags: ['blog','seo','marketing'], version: '1.0.0', description: t('skill.content_desc', lang), installed: true },
-          { name: 'Security Auditor', icon: '🔒', category: 'security', tags: ['owasp','pentest','review'], version: '1.0.0', description: t('skill.security_desc', lang), installed: true },
-          { name: 'SQL Expert', icon: '🗄️', category: 'data', tags: ['postgresql','sqlite','optimization'], version: '1.0.0', description: t('skill.sql_desc', lang), installed: true },
-          { name: 'API Designer', icon: '🔌', category: 'coding', tags: ['rest','openapi','auth'], version: '1.0.0', description: t('skill.api_desc', lang), installed: true },
-          { name: 'Vietnamese Business', icon: '🇻🇳', category: 'business', tags: ['tax','labor','accounting'], version: '1.0.0', description: t('skill.vnbiz_desc', lang), installed: true },
-          { name: 'Git Workflow', icon: '📦', category: 'devops', tags: ['git','branching','review'], version: '1.0.0', description: t('skill.git_desc', lang), installed: true },
-        ]);
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  const categories = ['all','coding','data','devops','writing','security','business'];
-  const catIcons = { all:'🌐', coding:'💻', data:'📊', devops:'🔧', writing:'✍️', security:'🔒', business:'💼' };
-
-  const installSkill = async (name) => {
+  const load = async () => {
     try {
-      const r = await authFetch('/api/v1/skills/install', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({skill:name})});
-      const d=await r.json();
-      if(d.ok) { showToast('✅ Installed: '+name,'success'); setSkills(prev=>prev.map(s=>s.name===name?{...s,installed:true}:s)); }
-      else showToast('❌ '+(d.error||'Lỗi'),'error');
-    } catch(e) { setSkills(prev=>prev.map(s=>s.name===name?{...s,installed:true}:s)); showToast('✅ '+name+' installed','success'); }
+      const r = await authFetch('/api/v1/skills');
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d = await r.json();
+      setSkills(d.skills || []);
+    } catch (e) {
+      console.error('Skills load:', e);
+      setSkills([]);
+    }
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const categories = ['all','coding','data','devops','writing','security','business','custom'];
+  const catIcons = { all:'🌐', coding:'💻', data:'📊', devops:'🔧', writing:'✍️', security:'🔒', business:'💼', custom:'🧩' };
+  const emojiOptions = ['🧩','🤖','📊','🔍','💡','🎯','📝','🏗️','🧪','⚡','🎨','📚','🔐','🌍','💬','📈','🛡️','🔬','🎓','🏥'];
+
+  const openCreate = () => {
+    setEditSkill(null);
+    setForm({name:'',icon:'🧩',category:'custom',description:'',system_prompt:'',tags:''});
+    setShowForm(true);
+  };
+  const openEdit = (skill) => {
+    if(skill.builtin) { showToast('ℹ️ Skill built-in không chỉnh sửa được','info'); return; }
+    setEditSkill(skill);
+    setForm({
+      name: skill.name||'',
+      icon: skill.icon||'🧩',
+      category: skill.category||'custom',
+      description: skill.description||'',
+      system_prompt: skill.system_prompt||'',
+      tags: (skill.tags||[]).join(', '),
+    });
+    setShowForm(true);
   };
 
-  const uninstallSkill = async (name) => {
-    if(!confirm('Gỡ cài "'+name+'"?')) return;
+  const saveSkill = async () => {
+    if(!form.name.trim()) { showToast('⚠️ Nhập tên skill','error'); return; }
+    const body = {
+      name: form.name, icon: form.icon, category: form.category,
+      description: form.description, system_prompt: form.system_prompt,
+      tags: form.tags.split(',').map(t=>t.trim()).filter(Boolean),
+    };
     try {
-      const r = await authFetch('/api/v1/skills/uninstall', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({skill:name})});
-      const d=await r.json();
-      if(d.ok) { showToast('🗑️ Uninstalled: '+name,'success'); setSkills(prev=>prev.map(s=>s.name===name?{...s,installed:false}:s)); }
+      if(editSkill && editSkill.id) {
+        const r = await authFetch('/api/v1/skills/'+encodeURIComponent(editSkill.id), {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+        });
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+        if(d.ok) { showToast('✅ Đã cập nhật: '+form.name,'success'); setShowForm(false); load(); }
+        else showToast('❌ '+(d.error||'Lỗi'),'error');
+      } else {
+        const r = await authFetch('/api/v1/skills', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+        });
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const d = await r.json();
+        if(d.ok) { showToast('✅ Đã tạo: '+form.name,'success'); setShowForm(false); load(); }
+        else showToast('❌ '+(d.error||'Lỗi'),'error');
+      }
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const installSkill = async (skill) => {
+    try {
+      const r = await authFetch('/api/v1/skills/install', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({skill:skill.id})});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d = await r.json();
+      if(d.ok) { showToast('✅ Installed: '+skill.name,'success'); load(); }
       else showToast('❌ '+(d.error||'Lỗi'),'error');
-    } catch(e) { setSkills(prev=>prev.map(s=>s.name===name?{...s,installed:false}:s)); showToast('🗑️ '+name+' uninstalled','success'); }
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const uninstallSkill = async (skill) => {
+    try {
+      const r = await authFetch('/api/v1/skills/uninstall', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({skill:skill.id})});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Uninstalled: '+skill.name,'success'); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
+  };
+
+  const deleteSkill = async (skill) => {
+    if(skill.builtin) { showToast('ℹ️ Không thể xoá skill built-in','info'); return; }
+    if(!confirm('Xoá skill "'+skill.name+'"?')) return;
+    try {
+      const r = await authFetch('/api/v1/skills/'+encodeURIComponent(skill.id), {method:'DELETE'});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Đã xoá: '+skill.name,'success'); load(); }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(e) { showToast('❌ '+e.message,'error'); }
   };
 
   const filtered = skills.filter(s => {
@@ -2925,17 +3573,92 @@ function SkillsPage({ lang }) {
     return true;
   });
 
+  const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
+
   return html`<div>
     <div class="page-header"><div>
       <h1>🧩 ${t('skill.title', lang)}</h1>
       <div class="sub">${t('skill.subtitle', lang)}</div>
-    </div></div>
+    </div>
+      <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 18px" onClick=${openCreate}>+ Tạo Skill</button>
+    </div>
 
     <div class="stats">
       <${StatsCard} label=${t('skill.total', lang)} value=${skills.length} color="accent" icon="🧩" />
       <${StatsCard} label=${t('skill.installed', lang)} value=${skills.filter(s=>s.installed).length} color="green" icon="✅" />
+      <${StatsCard} label="Custom" value=${skills.filter(s=>!s.builtin).length} color="purple" icon="✨" />
       <${StatsCard} label=${t('skill.categories', lang)} value=${categories.length - 1} color="blue" icon="📁" />
     </div>
+
+    ${showForm && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>${editSkill ? '✏️ Sửa: '+editSkill.name : '➕ Tạo Skill mới'}</h3>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setShowForm(false)}>✕ Đóng</button>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:10px;font-size:13px;align-items:end">
+          <label>Icon
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+              ${emojiOptions.map(e=>html`<button key=${e} class="btn btn-outline btn-sm" style=${form.icon===e?'background:var(--accent);color:#fff;font-size:18px':'font-size:18px'} onClick=${()=>setForm(f=>({...f,icon:e}))}>${e}</button>`)}
+            </div>
+          </label>
+          <label>Tên Skill<input style="${inp}" value=${form.name} onInput=${e=>setForm(f=>({...f,name:e.target.value}))} placeholder="My Skill" /></label>
+          <label>Category
+            <select style="${inp};cursor:pointer" value=${form.category} onChange=${e=>setForm(f=>({...f,category:e.target.value}))}>
+              ${['coding','data','devops','writing','security','business','custom'].map(c=>html`<option key=${c} value=${c}>${catIcons[c]} ${c}</option>`)}
+            </select>
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;font-size:13px">
+          <label>Mô tả<input style="${inp}" value=${form.description} onInput=${e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả ngắn..." /></label>
+          <label>Tags (phân cách bằng dấu phẩy)<input style="${inp}" value=${form.tags} onInput=${e=>setForm(f=>({...f,tags:e.target.value}))} placeholder="rust, async, performance" /></label>
+        </div>
+        <label style="display:block;margin-top:10px;font-size:13px">System Prompt (hướng dẫn AI khi dùng skill này)
+          <textarea style="${inp};min-height:100px;resize:vertical;font-family:monospace" value=${form.system_prompt} onInput=${e=>setForm(f=>({...f,system_prompt:e.target.value}))} placeholder="You are an expert in ... Help with ..." />
+        </label>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onClick=${()=>setShowForm(false)}>Huỷ</button>
+          <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${saveSkill}>💾 ${editSkill?'Cập nhật':'Tạo'}</button>
+        </div>
+      </div>
+    `}
+
+    ${detailSkill && html`
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--accent)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:40px">${detailSkill.icon}</span>
+            <div>
+              <h3 style="margin:0">${detailSkill.name}</h3>
+              <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+                <span class="badge" style="font-size:10px">v${detailSkill.version}</span>
+                <span class="badge ${detailSkill.builtin?'':'badge-green'}" style="font-size:10px">${detailSkill.builtin?'built-in':'custom'}</span>
+                <span class="badge" style="font-size:10px">${catIcons[detailSkill.category]} ${detailSkill.category}</span>
+                ${detailSkill.installed ? html`<span class="badge badge-green" style="font-size:10px">✅ Installed</span>` : html`<span class="badge" style="font-size:10px;opacity:0.5">Not installed</span>`}
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-outline btn-sm" onClick=${()=>setDetailSkill(null)}>✕ Đóng</button>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px">${detailSkill.description}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+          ${(detailSkill.tags||[]).map(tag=>html`<span key=${tag} class="badge" style="font-size:10px">#${tag}</span>`)}
+        </div>
+        ${detailSkill.system_prompt && html`
+          <div style="margin-top:8px">
+            <strong style="font-size:12px;color:var(--text2)">📋 System Prompt:</strong>
+            <pre style="font-size:12px;white-space:pre-wrap;background:var(--bg2);padding:10px;border-radius:6px;margin-top:6px;max-height:200px;overflow-y:auto;border:1px solid var(--border)">${detailSkill.system_prompt}</pre>
+          </div>
+        `}
+        <div style="margin-top:12px;display:flex;gap:8px">
+          ${detailSkill.installed
+            ? html`<button class="btn btn-sm" style="background:var(--red);color:#fff" onClick=${()=>{uninstallSkill(detailSkill);setDetailSkill(null);}}>🗑️ Gỡ cài</button>`
+            : html`<button class="btn btn-sm" style="background:var(--green);color:#fff" onClick=${()=>{installSkill(detailSkill);setDetailSkill(null);}}>+ Cài đặt</button>`}
+          ${!detailSkill.builtin && html`<button class="btn btn-outline btn-sm" onClick=${()=>{openEdit(detailSkill);setDetailSkill(null);}}>✏️ Sửa</button>`}
+          ${!detailSkill.builtin && html`<button class="btn btn-outline btn-sm" style="color:var(--red)" onClick=${()=>{deleteSkill(detailSkill);setDetailSkill(null);}}>🗑️ Xoá</button>`}
+        </div>
+      </div>
+    `}
 
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -2952,19 +3675,24 @@ function SkillsPage({ lang }) {
 
     ${loading ? html`<div class="card" style="text-align:center;padding:40px;color:var(--text2)">Loading...</div>` : html`
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
-        ${filtered.map(skill => html`<div key=${skill.name} class="card" style="border-left:3px solid ${skill.installed?'var(--green)':'var(--border)'}">
+        ${filtered.map(skill => html`<div key=${skill.id||skill.name} class="card" style="border-left:3px solid ${skill.installed?'var(--green)':'var(--border)'};cursor:pointer" onClick=${()=>setDetailSkill(skill)}>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
             <span style="font-size:32px">${skill.icon}</span>
             <div style="flex:1">
               <div style="display:flex;align-items:center;gap:6px">
                 <strong style="font-size:15px">${skill.name}</strong>
                 <span class="badge" style="font-size:10px">v${skill.version}</span>
+                ${skill.builtin ? html`<span class="badge" style="font-size:9px;opacity:0.6">built-in</span>` : html`<span class="badge badge-green" style="font-size:9px">custom</span>`}
               </div>
               <div style="font-size:11px;color:var(--text2)">${skill.category}</div>
             </div>
-            ${skill.installed
-              ? html`<button class="btn btn-sm" style="background:var(--green);color:#fff;font-size:11px" onClick=${()=>uninstallSkill(skill.name)}>✅ Gỡ cài</button>`
-              : html`<button class="btn btn-outline btn-sm" onClick=${()=>installSkill(skill.name)}>+ ${t('skill.install', lang)}</button>`}
+            <div style="display:flex;gap:4px;align-items:center" onClick=${e=>e.stopPropagation()}>
+              ${skill.installed
+                ? html`<button class="btn btn-sm" style="background:var(--green);color:#fff;font-size:11px" onClick=${()=>uninstallSkill(skill)}>✅ Gỡ cài</button>`
+                : html`<button class="btn btn-outline btn-sm" onClick=${()=>installSkill(skill)}>+ Cài đặt</button>`}
+              ${!skill.builtin && html`<button class="btn btn-outline btn-sm" onClick=${()=>openEdit(skill)} title="Sửa">✏️</button>`}
+              ${!skill.builtin && html`<button class="btn btn-outline btn-sm" style="color:var(--red)" onClick=${()=>deleteSkill(skill)} title="Xoá">🗑️</button>`}
+            </div>
           </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:8px">${skill.description}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
@@ -3301,6 +4029,8 @@ function PageRouter({ page, config, lang }) {
     case 'knowledge': return html`<${KnowledgePage} lang=${lang} />`;
     case 'mcp': return html`<${McpPage} lang=${lang} />`;
     case 'orchestration': return html`<${OrchestrationPage} lang=${lang} />`;
+    case 'orgmap': return html`<${OrgMapPage} lang=${lang} />`;
+    case 'kanban': return html`<${KanbanPage} lang=${lang} />`;
     case 'gallery': return html`<${GalleryPage} lang=${lang} />`;
     case 'brain': return html`<${SettingsPage} config=${config} lang=${lang} />`;
     case 'configfile': return html`<${ConfigFilePage} lang=${lang} />`;
