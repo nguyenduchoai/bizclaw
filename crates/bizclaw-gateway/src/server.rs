@@ -650,6 +650,37 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         }
     }
 
+    // Seed demo agents if DB is completely empty (first-time install)
+    // Creates 5 agents in 2 departments + orchestration links for demo
+    let db_agents_after = gateway_db.list_agents().unwrap_or_default();
+    if db_agents_after.is_empty() {
+        let prov = full_config.default_provider.as_str();
+        let model = full_config.default_model.as_str();
+        match gateway_db.seed_demo_agents(prov, model) {
+            Ok(count) if count > 0 => {
+                tracing::info!("🎉 Demo seeded: {} agents across 2 departments", count);
+                // Seed orchestration links between demo agents
+                // These will be visible in Org Map page
+                let demo_links: Vec<(&str, &str)> = vec![
+                    // Phòng KD: Sales ↔ Marketing
+                    ("sales-bot", "marketing-bot"),
+                    // Phòng KT: Coder → Support, Analyst aggregates
+                    ("support-bot", "coder-bot"),
+                    ("analyst-bot", "sales-bot"),
+                    ("analyst-bot", "marketing-bot"),
+                    ("analyst-bot", "coder-bot"),
+                ];
+                for (src, tgt) in &demo_links {
+                    let link = bizclaw_core::types::AgentLink::new(src, tgt, bizclaw_core::types::LinkDirection::Outbound);
+                    let _ = orch_store.create_link(&link).await;
+                }
+                tracing::info!("  🔗 Seeded {} orchestration links", demo_links.len());
+            }
+            Ok(_) => {} // DB already had agents, no seeding
+            Err(e) => tracing::warn!("⚠️ Demo agent seeding failed: {e}"),
+        }
+    }
+
     // Restore agents from DB (using sync Agent::new — no MCP to avoid startup hang)
     let db_agents = gateway_db.list_agents().unwrap_or_default();
     if !db_agents.is_empty() {

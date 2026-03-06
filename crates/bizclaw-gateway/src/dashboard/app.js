@@ -1026,6 +1026,16 @@ function SettingsPage({ config, lang }) {
     if(!newFileName.trim())return; const fname=newFileName.endsWith('.md')?newFileName:newFileName+'.md';
     try{const r=await authFetch('/api/v1/brain/files/'+encodeURIComponent(fname),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:'# '+fname+'\n\n'})});const d=await r.json();if(d.ok){showToast('✅ Đã tạo: '+fname,'success');setShowNewFile(false);setNewFileName('');try{const r2=await authFetch('/api/v1/brain/files');const d2=await r2.json();setBrainFiles(d2.files||[]);}catch(e){}openFile(fname);}else showToast('❌ '+(d.error||'Lỗi'),'error');}catch(e){showToast('❌ '+e.message,'error');}
   };
+  const deleteFile = async (fname, e) => {
+    e && e.stopPropagation();
+    if(!confirm('Xóa file "'+fname+'"? Hành động này không thể hoàn tác.')) return;
+    try {
+      const r = await authFetch('/api/v1/brain/files/'+encodeURIComponent(fname), {method:'DELETE'});
+      const d = await r.json();
+      if(d.ok) { showToast('🗑️ Đã xóa: '+fname,'success'); if(editFile===fname){setEditFile(null);setFileContent('');} try{const r2=await authFetch('/api/v1/brain/files');const d2=await r2.json();setBrainFiles(d2.files||[]);}catch(ex){} }
+      else showToast('❌ '+(d.error||'Lỗi'),'error');
+    } catch(ex) { showToast('❌ '+ex.message,'error'); }
+  };
 
   if(loading) return html`<div class="card" style="text-align:center;padding:40px;color:var(--text2)">Loading...</div>`;
 
@@ -1198,9 +1208,16 @@ function SettingsPage({ config, lang }) {
           <textarea value=${fileContent} onInput=${e=>setFileContent(e.target.value)} style="width:100%;min-height:200px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical" />
         </div>`}
         ${brainFiles.length===0 ? html`<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">Workspace trống. Click "+ Tạo file" để bắt đầu.</div>` : html`<div style="display:grid;gap:4px">
-          ${brainFiles.map(f=>html`<div key=${f.name||f} style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border-radius:4px;font-size:13px;cursor:pointer" onClick=${()=>openFile(f.name||f)}>
-            <span>📄</span><span style="flex:1">${f.name||f}</span><span style="color:var(--text2);font-size:11px">${f.size||''}</span><span class="badge badge-blue" style="font-size:10px">✏️ Edit</span>
-          </div>`)}
+          ${brainFiles.map(f=>{ const fname=f.filename||f.name||f; return html`<div key=${fname} style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:6px;font-size:13px;cursor:pointer;border:1px solid transparent;transition:border-color .2s" onClick=${()=>openFile(fname)} onMouseOver=${e=>e.currentTarget.style.borderColor='var(--accent)'} onMouseOut=${e=>e.currentTarget.style.borderColor='transparent'}>
+            <span style="font-size:16px">${f.is_custom?'📝':'📄'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">${fname}</div>
+              ${f.section?html`<div style="font-size:10px;color:var(--text2);margin-top:1px">${f.section}</div>`:''}
+            </div>
+            <span style="color:var(--text2);font-size:11px;white-space:nowrap">${f.size?f.size+' B':''}</span>
+            <span class="badge badge-blue" style="font-size:10px;cursor:pointer" onClick=${(e)=>{e.stopPropagation();openFile(fname);}}>✏️ Sửa</span>
+            <span class="badge" style="font-size:10px;cursor:pointer;background:var(--red);color:#fff" onClick=${(e)=>deleteFile(fname,e)}>🗑️ Xóa</span>
+          </div>`; })}
         </div>`}
       </div>
     `}
@@ -2303,10 +2320,10 @@ function OrgMapPage({ lang }) {
   useEffect(()=>{
     (async()=>{
       try {
-        const [agRes, orchRes] = await Promise.all([authFetch('/api/v1/agents'), authFetch('/api/v1/orchestration')]);
+        const [agRes, orchRes] = await Promise.all([authFetch('/api/v1/agents'), authFetch('/api/v1/orchestration/links')]);
         const agData=await agRes.json(); const orchData=await orchRes.json();
         setAgents(agData.agents||[]);
-        setLinks(orchData.links||orchData.delegations||[]);
+        setLinks(orchData.links||[]);
       } catch(e){}
       setLoading(false);
     })();
@@ -2317,8 +2334,6 @@ function OrgMapPage({ lang }) {
   // Build hierarchy tree
   const agentMap = {};
   agents.forEach(a => { agentMap[a.name] = {...a, children: []}; });
-  // Add default agent
-  if(!agentMap['default']) agentMap['default'] = {name:'BizClaw',role:'main',provider:'',model:'',description:'Main Agent',children:[]};
   
   links.forEach(l => {
     const from = l.from_agent || l.source;
@@ -2331,29 +2346,79 @@ function OrgMapPage({ lang }) {
   links.forEach(l=>childSet.add(l.to_agent||l.target));
   const roots = Object.keys(agentMap).filter(k=>!childSet.has(k));
   if(roots.length===0 && agents.length>0) roots.push(agents[0].name);
-  if(roots.length===0) roots.push('default');
 
   const colors = ['var(--accent)','var(--green)','var(--blue)','var(--orange)','var(--pink)','var(--cyan)'];
-  const roleIcons = {main:'👑',sales:'💰',coder:'💻',writer:'✍️',analyst:'📊',support:'🎧',general:'🤖',hr:'🧑‍💼'};
+  const roleIcons = {main:'👑',sales:'💰',marketing:'📢',coder:'💻',writer:'✍️',analyst:'📊',support:'🎧',general:'🤖',hr:'🧑‍💼'};
 
-  // SVG-based org chart
-  const nodeW=180, nodeH=70, gapX=40, gapY=80;
+  // SVG-based org chart — proper non-overlapping tree layout
+  const nodeW=180, nodeH=70, gapX=50, gapY=90;
   const nodePositions = {};
   let maxX=0, maxY=0;
 
-  const layoutNode = (name, x, y, depth) => {
-    nodePositions[name] = {x,y,depth};
-    maxX=Math.max(maxX,x+nodeW); maxY=Math.max(maxY,y+nodeH);
-    const ch=(agentMap[name]||{}).children||[];
-    const totalW=ch.length*(nodeW+gapX)-gapX;
-    let startX=x-(totalW/2)+(nodeW/2);
-    ch.forEach((c,i)=>{ layoutNode(c, startX+i*(nodeW+gapX), y+nodeH+gapY, depth+1); });
-  };
-  const rootWidth = roots.length*(nodeW+gapX*3)-gapX*3;
-  roots.forEach((r,i)=>layoutNode(r, 200+i*(nodeW+gapX*3), 30, 0));
+  // Deduplicate children: each node appears under ONE parent only (first link wins)
+  const claimed = new Set();
+  const treeChildren = {};
+  roots.forEach(r => { treeChildren[r] = []; });
+  Object.keys(agentMap).forEach(k => { if(!treeChildren[k]) treeChildren[k] = []; });
 
-  const svgW = Math.max(maxX+100, 600);
-  const svgH = Math.max(maxY+100, 300);
+  // BFS from roots to assign children without duplication
+  const queue = [...roots];
+  const visited = new Set(roots);
+  while(queue.length > 0) {
+    const node = queue.shift();
+    const ch = (agentMap[node]||{}).children||[];
+    ch.forEach(c => {
+      if(!claimed.has(c)) {
+        claimed.add(c);
+        if(!treeChildren[node]) treeChildren[node] = [];
+        treeChildren[node].push(c);
+        if(!visited.has(c)) { visited.add(c); queue.push(c); }
+      }
+    });
+  }
+
+  // Bottom-up subtree width calculation
+  const subtreeWidth = {};
+  const calcWidth = (name) => {
+    const ch = treeChildren[name] || [];
+    if(ch.length === 0) { subtreeWidth[name] = nodeW; return nodeW; }
+    let total = 0;
+    ch.forEach((c,i) => { total += calcWidth(c); if(i < ch.length-1) total += gapX; });
+    subtreeWidth[name] = Math.max(total, nodeW);
+    return subtreeWidth[name];
+  };
+  roots.forEach(r => calcWidth(r));
+
+  // Position nodes top-down
+  const layoutNode = (name, x, y, depth) => {
+    const w = subtreeWidth[name] || nodeW;
+    const nodeX = x + (w - nodeW) / 2;
+    nodePositions[name] = { x: nodeX, y, depth };
+    maxX = Math.max(maxX, nodeX + nodeW);
+    maxY = Math.max(maxY, y + nodeH);
+    const ch = treeChildren[name] || [];
+    let childX = x;
+    ch.forEach(c => {
+      layoutNode(c, childX, y + nodeH + gapY, depth + 1);
+      childX += (subtreeWidth[c] || nodeW) + gapX;
+    });
+  };
+
+  let startX = 30;
+  roots.forEach(r => {
+    layoutNode(r, startX, 30, 0);
+    startX += (subtreeWidth[r] || nodeW) + gapX * 2;
+  });
+
+  const svgW = Math.max(maxX + 60, 600);
+  const svgH = Math.max(maxY + 60, 300);
+
+  // Build link pairs from original data (not tree-deduplicated) for drawing all connections
+  const linkPairs = links.map(l => ({
+    from: l.from_agent || l.source,
+    to: l.to_agent || l.target,
+    type: l.link_type || l.direction || ''
+  }));
 
   return html`<div>
     <div class="page-header"><div>
@@ -2375,15 +2440,21 @@ function OrgMapPage({ lang }) {
     ${view==='tree' ? html`
       <div class="card" style="overflow:auto;min-height:400px;position:relative">
         <svg width=${svgW} height=${svgH} style="font-family:var(--font)">
-          <!-- Connection lines -->
-          ${links.map((l,i)=>{
-            const from = nodePositions[l.from_agent||l.source];
-            const to = nodePositions[l.to_agent||l.target];
+          <!-- Connection lines (from ALL original links, including cross-links) -->
+          ${linkPairs.map((l,i)=>{
+            const from = nodePositions[l.from];
+            const to = nodePositions[l.to];
             if(!from||!to) return null;
             const x1=from.x+nodeW/2, y1=from.y+nodeH;
             const x2=to.x+nodeW/2, y2=to.y;
-            const midY=(y1+y2)/2;
-            return html`<path key=${'line'+i} d="M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-opacity="0.4" stroke-dasharray=${l.link_type==='handoff'?'6,4':''} />`;
+            // Curved connector — vertical if same column, bezier otherwise
+            const midY = (y1+y2)/2;
+            const isCross = from.depth >= to.depth; // cross-link (not parent→child)
+            return html`<path key=${'line'+i}
+              d="M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}"
+              fill="none" stroke=${isCross?'var(--orange)':'var(--accent)'}
+              stroke-width=${isCross?1.5:2} stroke-opacity=${isCross?0.5:0.4}
+              stroke-dasharray=${isCross?'6,4':''} />`;
           })}
           <!-- Agent nodes -->
           ${Object.entries(nodePositions).map(([name,pos],i)=>{
