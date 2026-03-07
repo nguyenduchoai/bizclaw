@@ -82,7 +82,7 @@ impl PgDb {
         limit: i64,
     ) -> Result<Vec<Task>> {
         // Build query dynamically (sqlx doesn't support dynamic WHERE easily, use raw)
-        let mut conds = vec!["1=1"];
+        let _conds = vec!["1=1"];
         // We build a static query with all optional conditions but use NULLIF trick
         let rows = sqlx::query(
             "SELECT t.id::text, t.tenant_id::text, t.title, t.description, t.status,

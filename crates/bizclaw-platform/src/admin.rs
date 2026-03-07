@@ -2020,7 +2020,7 @@ async fn set_quota(
 
 async fn mc_list_tasks(
     State(state): State<Arc<AdminState>>,
-    Extension(claims): Extension<crate::auth::Claims>,
+    Extension(_claims): Extension<crate::auth::Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
     match &state.pg_db {
@@ -2078,7 +2078,7 @@ async fn mc_create_task(
 
 async fn mc_kanban_board(
     State(state): State<Arc<AdminState>>,
-    Extension(claims): Extension<crate::auth::Claims>,
+    Extension(_claims): Extension<crate::auth::Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
     match &state.pg_db {
@@ -2095,7 +2095,7 @@ async fn mc_kanban_board(
 
 async fn mc_pending_reviews(
     State(state): State<Arc<AdminState>>,
-    Extension(claims): Extension<crate::auth::Claims>,
+    Extension(_claims): Extension<crate::auth::Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
     match &state.pg_db {

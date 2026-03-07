@@ -2091,7 +2091,7 @@ pub async fn workflow_rules_add(
         Ok(db) => db,
         Err(e) => return Json(serde_json::json!({"ok": false, "error": e})),
     };
-    db.save_workflow_rule(&rule);
+    let _ = db.save_workflow_rule(&rule);
 
     Json(serde_json::json!({"ok": true, "id": rule.id}))
 }
@@ -2109,7 +2109,7 @@ pub async fn workflow_rules_delete(
         Ok(db) => db,
         Err(e) => return Json(serde_json::json!({"ok": false, "error": e})),
     };
-    db.delete_workflow_rule(&id);
+    let _ = db.delete_workflow_rule(&id);
     Json(serde_json::json!({"ok": true}))
 }
 
