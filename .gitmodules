@@ -1,0 +1,3 @@
+[submodule "android/llama.cpp"]
+	path = android/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git

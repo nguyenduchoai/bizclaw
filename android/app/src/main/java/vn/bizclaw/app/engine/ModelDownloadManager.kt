@@ -11,6 +11,7 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -35,10 +36,10 @@ class ModelDownloadManager(private val context: Context) {
 
     // ── Download state ──
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
-    val downloadState: Flow<DownloadState> = _downloadState.asStateFlow()
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
     private val _downloadedModels = MutableStateFlow<List<LocalModel>>(emptyList())
-    val downloadedModels: Flow<List<LocalModel>> = _downloadedModels.asStateFlow()
+    val downloadedModels: StateFlow<List<LocalModel>> = _downloadedModels.asStateFlow()
 
     private var currentDownloadId: Long = -1
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager

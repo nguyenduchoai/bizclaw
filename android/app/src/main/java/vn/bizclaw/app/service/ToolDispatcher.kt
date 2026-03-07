@@ -135,8 +135,8 @@ When you're done and have the final answer, respond normally without tool_call t
 
     private fun messengerRead(): ToolResult {
         val ctrl = AppController(context)
-        val messages = ctrl.messengerReadMessages()
-        return ToolResult(true, "Messages read:\n${messages.joinToString("\n")}")
+        val result = ctrl.messengerReadMessages()
+        return ToolResult(result.success, result.message)
     }
 
     private suspend fun zaloSend(args: JsonObject): ToolResult {
@@ -242,24 +242,24 @@ When you're done and have the final answer, respond normally without tool_call t
     private fun openApp(args: JsonObject): ToolResult {
         val pkg = args["package_name"]?.jsonPrimitive?.content ?: return ToolResult(false, "Missing 'package_name'")
         val ctrl = AppController(context)
-        val result = ctrl.openApp(pkg)
-        return ToolResult(result.success, result.message)
+        ctrl.openApp(pkg)
+        return ToolResult(true, "Opened app")
     }
 
     private fun openUrl(args: JsonObject): ToolResult {
         val url = args["url"]?.jsonPrimitive?.content ?: return ToolResult(false, "Missing 'url'")
         val ctrl = AppController(context)
-        val result = ctrl.openUrl(url)
-        return ToolResult(result.success, result.message)
+        ctrl.openUrl(url)
+        return ToolResult(true, "Opened url")
     }
 
     private fun deviceInfo(): ToolResult {
         val caps = DeviceCapabilities(context)
         return ToolResult(true, buildString {
             appendLine("📱 Device Info:")
-            appendLine("  Battery: ${caps.getBatteryLevel()}%")
-            appendLine("  Storage Free: ${caps.getStorageFreeGB()} GB")
-            appendLine("  RAM Free: ${caps.getAvailableRamMB()} MB")
+            appendLine("  Battery: ${caps.getBatteryInfo().level}%")
+            appendLine("  Storage Free: ${caps.getStorageInfo().freeGb} GB")
+            appendLine("  RAM Free: ${caps.getDeviceInfo().freeRamMb} MB")
             appendLine("  CPU Cores: ${Runtime.getRuntime().availableProcessors()}")
             appendLine("  Android: ${android.os.Build.VERSION.RELEASE}")
             appendLine("  Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")

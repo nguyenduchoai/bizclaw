@@ -73,8 +73,9 @@ fun LocalLLMScreen(onBack: () -> Unit) {
     var isBenching by remember { mutableStateOf(false) }
 
     // Get local model files
-    val localModels = remember(statusMessage) {
-        downloadManager.getDownloadedModels()
+    val downloadedModels by downloadManager.downloadedModels.collectAsState(initial = emptyList())
+    val localModels = remember(downloadedModels) {
+        downloadedModels.map { it.name to it.path }
     }
 
     // Cleanup
@@ -168,20 +169,7 @@ fun LocalLLMScreen(onBack: () -> Unit) {
                     onDownload = { model ->
                         scope.launch {
                             statusMessage = "Downloading ${model.name}..."
-                            downloadManager.downloadModel(
-                                model = model,
-                                onProgress = { progress ->
-                                    downloadProgress = downloadProgress + (model.name to progress)
-                                },
-                                onComplete = { path ->
-                                    downloadProgress = downloadProgress - model.name
-                                    statusMessage = "✅ ${model.name} downloaded!"
-                                },
-                                onError = { error ->
-                                    downloadProgress = downloadProgress - model.name
-                                    statusMessage = "❌ Download failed: $error"
-                                },
-                            )
+                            downloadManager.downloadModel(model)
                         }
                     },
                     onLoad = { name, path ->

@@ -86,6 +86,12 @@ static OPENROUTER_MODELS: &[ModelDef] = &[
         context_length: 200000,
         max_output_tokens: Some(8192),
     },
+    ModelDef {
+        id: "stepfun/step-3.5-flash:free",
+        name: "Step 3.5 Flash Free (StepFun)",
+        context_length: 128000,
+        max_output_tokens: Some(8192),
+    },
 ];
 
 static ANTHROPIC_MODELS: &[ModelDef] = &[

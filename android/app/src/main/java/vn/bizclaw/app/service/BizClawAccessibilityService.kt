@@ -174,7 +174,7 @@ class BizClawAccessibilityService : AccessibilityService() {
                 // API 30+: use ACTION_IME_ENTER
                 if (android.os.Build.VERSION.SDK_INT >= 30) {
                     val result = editField.performAction(
-                        AccessibilityNodeInfo.ACTION_IME_ENTER
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id
                     )
                     if (result) return true
                 }

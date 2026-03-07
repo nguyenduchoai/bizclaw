@@ -100,7 +100,7 @@ class ChatViewModel : ViewModel() {
     /** Refresh local model list from storage */
     fun refreshLocalModels(context: Context) {
         val manager = ModelDownloadManager(context)
-        val models = manager.getDownloadedModels()
+        val models = manager.downloadedModels.value.map { it.name to it.path }
         localModels.clear()
         localModels.addAll(models)
 

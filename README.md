@@ -236,6 +236,11 @@ ollama pull llama3.2       # 3.8GB — phổ biến nhất
   <img src="docs/images/android-agent-platform.png" alt="BizClaw Android" width="500">
 </p>
 
+<p align="center">
+  <a href="releases/bizclaw-android-debug.apk"><b>📥 Tải xuống APK (Bản Test / Debug)</b></a><br>
+  <i>Chạy trực tiếp mô hình AI trên thiết bị — Không chờ đợi, Không cần server</i>
+</p>
+
 | Mode | Mô tả |
 |------|--------|
 | 📱 LOCAL | llama.cpp on-device, AI điều khiển apps, $0, 100% offline |
