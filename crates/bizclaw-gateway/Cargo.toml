@@ -32,4 +32,4 @@ futures.workspace = true
 bizclaw-db.workspace = true
 bizclaw-security.workspace = true
 bizclaw-tools.workspace = true
-jsonwebtoken = "9"
+jsonwebtoken = "10"
