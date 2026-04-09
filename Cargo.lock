@@ -426,19 +426,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
-name = "bcrypt"
-version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e65938ed058ef47d92cf8b346cc76ef48984572ade631927e9937b5ffc7662c7"
-dependencies = [
- "base64 0.22.1",
- "blowfish",
- "getrandom 0.2.17",
- "subtle",
- "zeroize",
-]
-
-[[package]]
 name = "bindgen"
 version = "0.68.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -478,7 +465,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "bizclaw-agent",
@@ -491,7 +478,6 @@ dependencies = [
  "bizclaw-knowledge",
  "bizclaw-mcp",
  "bizclaw-memory",
- "bizclaw-platform",
  "bizclaw-providers",
  "bizclaw-scheduler",
  "bizclaw-security",
@@ -515,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-agent"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -548,7 +534,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-brain"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "byteorder",
@@ -565,7 +551,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-catchme"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "active-win-pos-rs",
  "anyhow",
@@ -582,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-channels"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "aes",
  "anyhow",
@@ -617,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-core"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -638,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-db"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "async-trait",
  "bizclaw-core",
@@ -654,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-ffi"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "serde",
@@ -665,7 +651,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-gateway"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -717,7 +703,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-knowledge"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "chrono",
@@ -735,7 +721,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-mcp"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "async-trait",
  "bizclaw-core",
@@ -748,7 +734,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-memory"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -767,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-orchestrator"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "chrono",
@@ -780,42 +766,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "bizclaw-platform"
-version = "1.1.6"
-dependencies = [
- "anyhow",
- "async-trait",
- "axum",
- "bcrypt",
- "bizclaw-agent",
- "bizclaw-channels",
- "bizclaw-core",
- "bizclaw-orchestrator",
- "bizclaw-providers",
- "bizclaw-skills",
- "bizclaw-tools",
- "bizclaw-workflows",
- "chrono",
- "jsonwebtoken",
- "lettre",
- "rand 0.8.5",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.18",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "urlencoding",
- "uuid",
-]
-
-[[package]]
 name = "bizclaw-providers"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -835,7 +787,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-runtime"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -848,7 +800,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-scheduler"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "chrono",
@@ -863,7 +815,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-security"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "aes",
  "anyhow",
@@ -889,7 +841,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-skills"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "bizclaw-core",
  "chrono",
@@ -909,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-tools"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -945,7 +897,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-updater"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "reqwest",
  "self-replace",
@@ -959,7 +911,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-webauth"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "async-trait",
  "axum",
@@ -984,7 +936,7 @@ dependencies = [
 
 [[package]]
 name = "bizclaw-workflows"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "async-trait",
  "bizclaw-core",
@@ -1023,16 +975,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8894febbff9f758034a5b8e12d87918f56dfc64a8e1fe757d65e29041538d93"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "blowfish"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e412e2cd0f2b2d93e02543ceae7917b3c70331573df19ee046bcbc35e45e87d7"
-dependencies = [
- "byteorder",
- "cipher",
 ]
 
 [[package]]
@@ -3000,16 +2942,17 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "9.3.1"
+version = "10.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
+checksum = "0529410abe238729a60b108898784df8984c87f6054c9c4fcacc47e4803c1ce1"
 dependencies = [
  "base64 0.22.1",
+ "getrandom 0.2.17",
  "js-sys",
  "pem",
- "ring",
  "serde",
  "serde_json",
+ "signature",
  "simple_asn1",
 ]
 
