@@ -21,7 +21,6 @@ members = [
     "crates/bizclaw-workflows",
     "crates/bizclaw-updater",
     "crates/bizclaw-orchestrator",
-    "crates/bizclaw-platform",
     "crates/bizclaw-skills",
     "crates/bizclaw-webauth",
     "crates/bizclaw-catchme",
@@ -129,7 +128,6 @@ bizclaw-orchestrator = { path = "crates/bizclaw-orchestrator" }
 bizclaw-workflows = { path = "crates/bizclaw-workflows" }
 bizclaw-hands = { path = "crates/bizclaw-hands" }
 bizclaw-ffi = { path = "crates/bizclaw-ffi" }
-bizclaw-platform = { path = "crates/bizclaw-platform" }
 bizclaw-skills = { path = "crates/bizclaw-skills" }
 bizclaw-webauth = { path = "crates/bizclaw-webauth" }
 
@@ -157,7 +155,6 @@ bizclaw-scheduler.workspace = true
 bizclaw-knowledge.workspace = true
 bizclaw-gateway.workspace = true
 bizclaw-db.workspace = true
-bizclaw-platform.workspace = true
 bizclaw-hands.workspace = true
 
 tokio.workspace = true
@@ -179,10 +176,6 @@ open = "5"
 [[bin]]
 name = "bizclaw"
 path = "src/main.rs"
-
-[[bin]]
-name = "bizclaw-platform"
-path = "src/platform_main.rs"
 
 [[bin]]
 name = "bizclaw-desktop"
