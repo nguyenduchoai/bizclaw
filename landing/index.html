@@ -561,10 +561,10 @@ section{transition:background .6s ease}
           </div>
         </div>
         <div class="sc-tab" onclick="showCase(1)">
-          <div class="sc-tab-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">💻</div>
+          <div class="sc-tab-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">💬</div>
           <div>
-            <div class="sc-tab-title" data-vi="Agent Lập trình từ xa" data-en="Remote Coding Agent">Agent Lập trình từ xa</div>
-            <div class="sc-tab-desc" data-vi="Code, deploy, fix bugs từ Telegram" data-en="Code, deploy, fix bugs from Telegram">Code, deploy, fix bugs từ Telegram</div>
+            <div class="sc-tab-title" data-vi="Trợ lý CSKH Zalo" data-en="Zalo Support Agent">Trợ lý CSKH Zalo</div>
+            <div class="sc-tab-desc" data-vi="Tự động trả lời, báo giá qua Zalo/FB" data-en="Auto reply, quote via Zalo/FB">Tự động trả lời, báo giá qua Zalo/FB</div>
           </div>
         </div>
         <div class="sc-tab" onclick="showCase(2)">
@@ -615,17 +615,17 @@ section{transition:background .6s ease}
             </div>
             <div class="sc-tools"><span>Gmail</span><span>Calendar</span><span>Zalo</span><span>Telegram</span></div>
           </div>
-          <!-- Panel 1: Dev -->
+          <!-- Panel 1: Sales -->
           <div class="sc-panel" data-panel="1">
             <div class="sc-flow-label" data-vi="QUY TRÌNH XỬ LÝ" data-en="PROCESS FLOW">QUY TRÌNH XỬ LÝ</div>
-            <p style="font-size:14px;color:var(--text2);margin-bottom:16px" data-vi="Build website từ tin nhắn Telegram, push code, auto-deploy." data-en="Build website from Telegram message, push code, auto-deploy.">Build website từ tin nhắn Telegram, push code, auto-deploy.</p>
+            <p style="font-size:14px;color:var(--text2);margin-bottom:16px" data-vi="Tự động tiếp nhận tin nhắn, phân tích nhu cầu và báo giá chốt đơn." data-en="Auto receive messages, analyze needs and quote for closing.">Tự động tiếp nhận tin nhắn, phân tích nhu cầu và báo giá chốt đơn.</p>
             <div class="sc-steps">
-              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Nhận yêu cầu từ Telegram" data-en="Receive request from Telegram">Nhận yêu cầu từ Telegram</span></div>
-              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Clone repo, tạo branch feature" data-en="Clone repo, create feature branch">Clone repo, tạo branch feature</span></div>
-              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Code 347 dòng, 12 files changed" data-en="Code 347 lines, 12 files changed">Code 347 dòng, 12 files changed</span></div>
-              <div class="sc-step active"><span class="sc-spinner"></span> <span data-vi="Đang chạy tests + deploy..." data-en="Running tests + deploy...">Đang chạy tests + deploy...</span></div>
+              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Khách nhắn hỏi giá sản phẩm" data-en="Customer asks for price">Khách nhắn hỏi giá sản phẩm</span></div>
+              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Đọc file PDF kiến thức nội bộ" data-en="Read internal knowledge PDF">Đọc file PDF kiến thức nội bộ</span></div>
+              <div class="sc-step done"><span class="sc-check">✓</span> <span data-vi="Trả lời khách chuẩn giọng điệu shop" data-en="Reply with brand voice">Trả lời khách chuẩn giọng điệu shop</span></div>
+              <div class="sc-step active"><span class="sc-spinner"></span> <span data-vi="Đang đẩy data vào nhóm Zalo báo cáo..." data-en="Pushing data to report group...">Đang đẩy data vào nhóm Zalo báo cáo...</span></div>
             </div>
-            <div class="sc-tools"><span>GitHub</span><span>Claude Sonnet</span><span>Docker</span><span>Vercel</span></div>
+            <div class="sc-tools"><span>Zalo OA</span><span>Knowledge Base</span><span>CRM</span></div>
           </div>
           <!-- Panel 2: Productivity -->
           <div class="sc-panel" data-panel="2">
@@ -848,7 +848,7 @@ function contactOrder(plan){
 }
 
 // Showcase tab switching
-const scAgentNames=['EMAIL ASSISTANT','CODING AGENT','TASK MANAGER','SMART HOME','FAMILY AGENT','MULTI-AGENT TEAM'];
+const scAgentNames=['EMAIL ASSISTANT','ZALO SALES AGENT','TASK MANAGER','SMART HOME','FAMILY AGENT','MULTI-AGENT TEAM'];
 function showCase(idx){
   document.querySelectorAll('.sc-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.sc-panel').forEach(p=>p.classList.remove('active'));
