@@ -38,7 +38,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: changelog.txt
           draft: false
@@ -88,7 +88,7 @@ jobs:
           fi
 
       - name: Upload release asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           files: release/*
@@ -187,7 +187,7 @@ jobs:
         run: syft . -o spdx-json=sbom.spdx.json
 
       - name: Upload SBOM
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           files: sbom.spdx.json
