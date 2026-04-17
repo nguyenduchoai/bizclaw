@@ -19,9 +19,19 @@ pub fn dashboard_v2_html() -> &'static str {
     include_str!("dashboard/index.html")
 }
 
+/// New Horizontal Menu Dashboard.
+pub fn dashboard_new_html() -> &'static str {
+    include_str!("dashboard/dashboard-new.html")
+}
+
 /// Public Hub page — skill marketplace (no auth required).
 pub fn hub_html() -> &'static str {
     include_str!("dashboard/hub.html")
+}
+
+/// Visual Workflow Builder page.
+pub fn workflow_builder_html() -> &'static str {
+    include_str!("dashboard/workflow-builder.html")
 }
 
 /// Public Landing page — sales & pricing (no auth required).
@@ -43,11 +53,35 @@ pub fn dashboard_static_files() -> HashMap<&'static str, (&'static str, &'static
         ),
     );
 
+    // New Dashboard CSS (horizontal menu, light theme)
+    files.insert(
+        "/static/dashboard/dashboard-new.css",
+        (
+            include_str!("dashboard/dashboard-new.css"),
+            "text/css; charset=utf-8",
+        ),
+    );
+
+    // SME Mode CSS
+    files.insert(
+        "/static/dashboard/sme.css",
+        (include_str!("dashboard/sme.css"), "text/css; charset=utf-8"),
+    );
+
     // Main app (slim orchestrator)
     files.insert(
         "/static/dashboard/app.js",
         (
             include_str!("dashboard/app.js"),
+            "application/javascript; charset=utf-8",
+        ),
+    );
+
+    // New app with horizontal menu
+    files.insert(
+        "/static/dashboard/app-new.js",
+        (
+            include_str!("dashboard/app-new.js"),
             "application/javascript; charset=utf-8",
         ),
     );
@@ -110,6 +144,10 @@ pub fn dashboard_static_files() -> HashMap<&'static str, (&'static str, &'static
         ("products.js", include_str!("dashboard/pages/products.js")),
         ("handoff.js", include_str!("dashboard/pages/handoff.js")),
         ("cloud.js", include_str!("dashboard/pages/cloud.js")),
+        (
+            "sme-dashboard.js",
+            include_str!("dashboard/pages/sme-dashboard.js"),
+        ),
     ];
 
     for (name, content) in pages {
@@ -163,6 +201,22 @@ pub fn dashboard_static_files() -> HashMap<&'static str, (&'static str, &'static
         "/static/dashboard/vendor/standalone.mjs",
         (
             include_str!("dashboard/vendor/standalone.mjs"),
+            "application/javascript; charset=utf-8",
+        ),
+    );
+
+    // Visual Workflow Builder
+    files.insert(
+        "/static/dashboard/workflow-builder.css",
+        (
+            include_str!("dashboard/workflow-builder.css"),
+            "text/css; charset=utf-8",
+        ),
+    );
+    files.insert(
+        "/static/dashboard/workflow-builder.js",
+        (
+            include_str!("dashboard/workflow-builder.js"),
             "application/javascript; charset=utf-8",
         ),
     );

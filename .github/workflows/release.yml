@@ -1,0 +1,204 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.tag_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: tag_version
+        uses: docker/metadata-action@v5
+        with:
+          images: bizclaw/bizclaw
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          version=${GITHUB_REF#refs/tags/v}
+          echo "version=$version" >> $GITHUB_OUTPUT
+          git log --pretty=format:"- %s (%h)" ${{ github.event.before }}..HEAD > changelog.txt
+          if [ ! -s changelog.txt ]; then
+            echo "- Initial release" > changelog.txt
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: changelog.txt
+          draft: false
+          prerelease: ${{ contains(steps.tag_version.outputs.version, 'alpha') || contains(steps.tag_version.outputs.version, 'beta') || contains(steps.tag_version.outputs.version, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-release:
+    name: Build Release Binaries
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            artifact_name: bizclaw-linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            artifact_name: bizclaw-linux-arm64
+          - target: x86_64-apple-darwin
+            artifact_name: bizclaw-macos-x86_64
+          - target: aarch64-apple-darwin
+            artifact_name: bizclaw-macos-arm64
+          - target: x86_64-pc-windows-gnu
+            artifact_name: bizclaw-windows-x86_64.exe
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cross
+        run: cargo install cross
+
+      - name: Build binary
+        run: cargo build --release --bin bizclaw --bin bizclaw-platform
+        env:
+          CARGO_INCREMENTAL: 0
+
+      - name: Package binary
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ "${{ matrix.target }}" = "x86_64-pc-windows-gnu" ]; then
+            cp target/release/bizclaw.exe release/${{ matrix.artifact_name }}
+            cp target/release/bizclaw-platform.exe release/bizclaw-platform-${{ matrix.artifact_name }}
+          else
+            cp target/release/bizclaw release/${{ matrix.artifact_name }}
+            cp target/release/bizclaw-platform release/bizclaw-platform-${{ matrix.artifact_name }}
+          fi
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-docker-release:
+    name: Build Docker Images for Release
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            bizclaw/bizclaw
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Build and push main image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+  publish-crates:
+    name: Publish to Crates.io
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish crates
+        run: |
+          cargo login ${{ secrets.CARGO_TOKEN }}
+          cargo publish --package bizclaw-core
+          cargo publish --package bizclaw-brain
+          cargo publish --package bizclaw-providers
+          cargo publish --package bizclaw-channels
+          cargo publish --package bizclaw-memory
+          cargo publish --package bizclaw-tools
+          cargo publish --package bizclaw-security
+          cargo publish --package bizclaw-runtime
+          cargo publish --package bizclaw-gateway
+          cargo publish --package bizclaw-agent
+          cargo publish --package bizclaw
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
+
+  create-sbom:
+    name: Generate SBOM
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Syft
+        run: cargo install syft
+
+      - name: Generate SBOM
+        run: syft . -o spdx-json=sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          files: sbom.spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-success:
+    name: Notify Success
+    needs: [release, build-release, build-docker-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success notification
+        run: |
+          echo "Release ${{ needs.release.outputs.version }} completed successfully!"

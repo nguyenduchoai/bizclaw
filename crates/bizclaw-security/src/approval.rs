@@ -23,6 +23,172 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
+#[derive(Debug, thiserror::Error)]
+pub enum ApprovalError {
+    #[error("unauthorized caller: '{0}' is not authorized to approve actions")]
+    Unauthorized(String),
+    #[error("action not found: '{0}'")]
+    NotFound(String),
+    #[error("action already decided: cannot modify {0} status")]
+    AlreadyDecided(String),
+}
+
+pub type ApprovalResult<T> = std::result::Result<T, ApprovalError>;
+
+#[async_trait::async_trait]
+pub trait Authorizer: Send + Sync {
+    async fn is_authorized(&self, caller: &str, action: &PendingAction) -> bool;
+}
+
+pub struct SimpleAuthorizer {
+    approved_callers: Vec<String>,
+}
+
+impl SimpleAuthorizer {
+    pub fn new(approved_callers: Vec<String>) -> Self {
+        Self { approved_callers }
+    }
+}
+
+#[async_trait::async_trait]
+impl Authorizer for SimpleAuthorizer {
+    async fn is_authorized(&self, caller: &str, _action: &PendingAction) -> bool {
+        self.approved_callers.iter().any(|c| c == caller)
+    }
+}
+
+#[derive(Clone)]
+pub struct AuditLog {
+    entries: Arc<Mutex<Vec<AuditEntry>>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct AuditEntry {
+    timestamp: chrono::DateTime<chrono::Utc>,
+    action_id: ApprovalId,
+    action_type: String,
+    caller: String,
+    tool_name: String,
+    session_id: String,
+    success: bool,
+    reason: Option<String>,
+}
+
+impl AuditLog {
+    pub fn new() -> Self {
+        Self {
+            entries: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub async fn log(
+        &self,
+        action_id: &str,
+        action_type: &str,
+        caller: &str,
+        tool_name: &str,
+        session_id: &str,
+        success: bool,
+        reason: Option<String>,
+    ) {
+        let entry = AuditEntry {
+            timestamp: chrono::Utc::now(),
+            action_id: action_id.to_string(),
+            action_type: action_type.to_string(),
+            caller: caller.to_string(),
+            tool_name: tool_name.to_string(),
+            session_id: session_id.to_string(),
+            success,
+            reason,
+        };
+        let mut entries = self.entries.lock().await;
+        let is_approval = entry.action_type == "approve";
+        entries.push(entry);
+
+        if is_approval {
+            info!(
+                "AUDIT: APPROVED [{}] {} by {} (session: {})",
+                action_id, tool_name, caller, session_id
+            );
+        } else {
+            warn!(
+                "AUDIT: DENIED [{}] {} by {} (session: {})",
+                action_id, tool_name, caller, session_id
+            );
+        }
+    }
+
+    pub(crate) async fn get_entries(&self) -> Vec<AuditEntry> {
+        self.entries.lock().await.clone()
+    }
+}
+
+impl Default for AuditLog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+trait _Callable: Send + Sync {
+    fn caller_identity(&self) -> &str;
+}
+
+struct _StaticCaller {
+    identity: String,
+}
+
+impl _Callable for _StaticCaller {
+    fn caller_identity(&self) -> &str {
+        &self.identity
+    }
+}
+
+trait _IdentityVerifier: Send + Sync {
+    fn verify(&self, caller: &str) -> bool;
+}
+
+struct _SimpleVerifier {
+    allowed: Vec<String>,
+}
+
+impl _IdentityVerifier for _SimpleVerifier {
+    fn verify(&self, caller: &str) -> bool {
+        self.allowed.contains(&caller.to_string())
+    }
+}
+
+pub trait CallerIdentity: Send + Sync {
+    fn identity(&self) -> &str;
+}
+
+pub struct FixedIdentity {
+    id: String,
+}
+
+impl FixedIdentity {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
+}
+
+impl CallerIdentity for FixedIdentity {
+    fn identity(&self) -> &str {
+        &self.id
+    }
+}
+
+impl CallerIdentity for &str {
+    fn identity(&self) -> &str {
+        self
+    }
+}
+
+impl CallerIdentity for String {
+    fn identity(&self) -> &str {
+        self.as_str()
+    }
+}
+
 /// Unique ID for a pending approval.
 pub type ApprovalId = String;
 
@@ -90,15 +256,31 @@ impl Default for ApprovalConfig {
 pub struct ApprovalGate {
     config: ApprovalConfig,
     pending: Arc<Mutex<HashMap<ApprovalId, PendingAction>>>,
+    authorizer: Arc<dyn Authorizer>,
+    audit_log: Arc<AuditLog>,
 }
 
 impl ApprovalGate {
     /// Create a new approval gate with configuration.
     pub fn new(config: ApprovalConfig) -> Self {
+        Self::with_authorizer(config, SimpleAuthorizer::new(vec![]))
+    }
+
+    pub fn with_authorizer(config: ApprovalConfig, authorizer: impl Authorizer + 'static) -> Self {
         Self {
             config,
             pending: Arc::new(Mutex::new(HashMap::new())),
+            authorizer: Arc::new(authorizer),
+            audit_log: Arc::new(AuditLog::new()),
         }
+    }
+
+    pub fn with_approved_callers(config: ApprovalConfig, callers: Vec<String>) -> Self {
+        Self::with_authorizer(config, SimpleAuthorizer::new(callers))
+    }
+
+    pub fn audit_log(&self) -> &AuditLog {
+        &self.audit_log
     }
 
     /// Check if a tool requires approval.
@@ -144,38 +326,67 @@ impl ApprovalGate {
         id
     }
 
-    /// Approve a pending action.
-    pub async fn approve(&self, id: &str, by: &str) -> Option<PendingAction> {
-        let mut pending = self.pending.lock().await;
-        if let Some(action) = pending.get_mut(id) {
-            if action.status != ApprovalStatus::Pending {
-                return None;
-            }
-            action.status = ApprovalStatus::Approved;
-            action.decided_by = Some(by.to_string());
-            action.decided_at = Some(chrono::Utc::now());
-            info!("✅ Approved: [{}] {} by {}", id, action.tool_name, by);
-            Some(action.clone())
-        } else {
-            None
+    pub async fn verify_caller(&self, caller: &str, action: &PendingAction) -> ApprovalResult<()> {
+        if !self.authorizer.is_authorized(caller, action).await {
+            return Err(ApprovalError::Unauthorized(caller.to_string()));
         }
+        Ok(())
     }
 
-    /// Deny a pending action.
-    pub async fn deny(&self, id: &str, by: &str) -> Option<PendingAction> {
+    async fn decide(&self, id: &str, by: &str, approve: bool) -> ApprovalResult<PendingAction> {
+        let action = {
+            let pending = self.pending.lock().await;
+            pending.get(id).cloned()
+        };
+
+        let action = action.ok_or_else(|| ApprovalError::NotFound(id.to_string()))?;
+
+        self.verify_caller(by, &action).await?;
+
         let mut pending = self.pending.lock().await;
-        if let Some(action) = pending.get_mut(id) {
-            if action.status != ApprovalStatus::Pending {
-                return None;
-            }
-            action.status = ApprovalStatus::Denied;
-            action.decided_by = Some(by.to_string());
-            action.decided_at = Some(chrono::Utc::now());
-            warn!("❌ Denied: [{}] {} by {}", id, action.tool_name, by);
-            Some(action.clone())
-        } else {
-            None
+        let action = pending
+            .get_mut(id)
+            .ok_or_else(|| ApprovalError::NotFound(id.to_string()))?;
+
+        if action.status != ApprovalStatus::Pending {
+            return Err(ApprovalError::AlreadyDecided(action.status.to_string()));
         }
+
+        action.status = if approve {
+            ApprovalStatus::Approved
+        } else {
+            ApprovalStatus::Denied
+        };
+        action.decided_by = Some(by.to_string());
+        action.decided_at = Some(chrono::Utc::now());
+
+        let result = action.clone();
+        drop(pending);
+
+        let action_type = if approve { "approve" } else { "deny" };
+        self.audit_log
+            .log(
+                id,
+                action_type,
+                by,
+                &result.tool_name,
+                &result.session_id,
+                true,
+                None,
+            )
+            .await;
+
+        Ok(result)
+    }
+
+    /// Approve a pending action with authentication.
+    pub async fn approve(&self, id: &str, by: &str) -> ApprovalResult<PendingAction> {
+        self.decide(id, by, true).await
+    }
+
+    /// Deny a pending action with authentication.
+    pub async fn deny(&self, id: &str, by: &str) -> ApprovalResult<PendingAction> {
+        self.decide(id, by, false).await
     }
 
     /// Get status of a pending action.
@@ -251,7 +462,7 @@ mod tests {
             approval_required_tools: vec!["shell".into(), "http_request".into()],
             auto_approve_timeout_secs: 60,
         };
-        let gate = ApprovalGate::new(config);
+        let gate = ApprovalGate::with_approved_callers(config, vec!["admin@test.com".to_string()]);
 
         // Check requires_approval
         assert!(gate.requires_approval("shell"));
@@ -270,9 +481,8 @@ mod tests {
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].tool_name, "shell");
 
-        // Approve
         let approved = gate.approve(&id, "admin@test.com").await;
-        assert!(approved.is_some());
+        assert!(approved.is_ok());
         assert_eq!(approved.unwrap().status, ApprovalStatus::Approved);
 
         // Verify no more pending
@@ -281,29 +491,38 @@ mod tests {
 
     #[tokio::test]
     async fn test_deny_flow() {
-        let gate = ApprovalGate::new(ApprovalConfig {
-            approval_required_tools: vec!["shell".into()],
-            auto_approve_timeout_secs: 60,
-        });
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["security@test.com".into()],
+        );
 
         let id = gate.submit("shell", r#"{"command":"rm -rf"}"#, "s1").await;
         let denied = gate.deny(&id, "security@test.com").await;
-        assert!(denied.is_some());
+        assert!(denied.is_ok());
         assert_eq!(denied.unwrap().status, ApprovalStatus::Denied);
     }
 
     #[tokio::test]
     async fn test_double_approve_rejected() {
-        let gate = ApprovalGate::new(ApprovalConfig {
-            approval_required_tools: vec!["shell".into()],
-            auto_approve_timeout_secs: 60,
-        });
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["admin".into()],
+        );
 
         let id = gate.submit("shell", r#"{"command":"ls"}"#, "s1").await;
-        gate.approve(&id, "admin").await;
-        // Second approve should fail (already decided)
-        let second = gate.approve(&id, "another_admin").await;
-        assert!(second.is_none());
+        gate.approve(&id, "admin").await.unwrap();
+        let second = gate.approve(&id, "admin").await;
+        assert!(second.is_err());
+        assert!(matches!(
+            second.unwrap_err(),
+            ApprovalError::AlreadyDecided(_)
+        ));
     }
 
     #[tokio::test]
@@ -313,5 +532,106 @@ mod tests {
         let id = gate.submit("shell", &long_args, "s1").await;
         let action = gate.status(&id).await.unwrap();
         assert!(action.arguments_summary.len() <= 203); // 200 + "..."
+    }
+
+    #[tokio::test]
+    async fn test_unauthorized_approve_rejected() {
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["authorized@bizclaw.com".into()],
+        );
+
+        let id = gate
+            .submit("shell", r#"{"command":"rm -rf /"}"#, "s1")
+            .await;
+
+        let result = gate.approve(&id, "unauthorized@attacker.com").await;
+        assert!(result.is_err());
+        assert!(
+            matches!(result.unwrap_err(), ApprovalError::Unauthorized(c) if c == "unauthorized@attacker.com")
+        );
+
+        let audit_entries = gate.audit_log().get_entries().await;
+        assert!(audit_entries.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_unauthorized_deny_rejected() {
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["authorized@bizclaw.com".into()],
+        );
+
+        let id = gate
+            .submit("shell", r#"{"command":"rm -rf /"}"#, "s1")
+            .await;
+
+        let result = gate.deny(&id, "hacker@evil.com").await;
+        assert!(result.is_err());
+        assert!(
+            matches!(result.unwrap_err(), ApprovalError::Unauthorized(c) if c == "hacker@evil.com")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_audit_log_records_approved_actions() {
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["admin@bizclaw.com".into()],
+        );
+
+        let id = gate
+            .submit("shell", r#"{"command":"ls"}"#, "session-x")
+            .await;
+        gate.approve(&id, "admin@bizclaw.com").await.unwrap();
+
+        let audit_entries = gate.audit_log().get_entries().await;
+        assert_eq!(audit_entries.len(), 1);
+        assert_eq!(audit_entries[0].action_type, "approve");
+        assert_eq!(audit_entries[0].caller, "admin@bizclaw.com");
+        assert!(audit_entries[0].success);
+    }
+
+    #[tokio::test]
+    async fn test_audit_log_records_denied_actions() {
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig {
+                approval_required_tools: vec!["shell".into()],
+                auto_approve_timeout_secs: 60,
+            },
+            vec!["security@bizclaw.com".into()],
+        );
+
+        let id = gate
+            .submit("shell", r#"{"command":"rm -rf"}"#, "session-y")
+            .await;
+        gate.deny(&id, "security@bizclaw.com").await.unwrap();
+
+        let audit_entries = gate.audit_log().get_entries().await;
+        assert_eq!(audit_entries.len(), 1);
+        assert_eq!(audit_entries[0].action_type, "deny");
+        assert_eq!(audit_entries[0].caller, "security@bizclaw.com");
+        assert!(audit_entries[0].success);
+    }
+
+    #[tokio::test]
+    async fn test_action_not_found_returns_error() {
+        let gate = ApprovalGate::with_approved_callers(
+            ApprovalConfig::default(),
+            vec!["admin@bizclaw.com".into()],
+        );
+
+        let result = gate.approve("non-existent-id", "admin@bizclaw.com").await;
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ApprovalError::NotFound(_)));
     }
 }

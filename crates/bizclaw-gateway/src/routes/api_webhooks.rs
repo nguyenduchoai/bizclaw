@@ -216,7 +216,7 @@ pub async fn spawn_telegram_polling(
                                             message: Some(text.clone()),
                                         };
                                         let _ = crate::routes::api_handoff::execute_handoff(state_clone.clone(), req).await;
-                                        
+
                                         let reply = crate::routes::api_handoff::load_handoff_settings(&state_clone).greeting;
                                         let _ = channel.send_message(chat_id, message_thread_id, &reply).await;
                                         continue;
@@ -321,7 +321,10 @@ pub async fn spawn_discord_gateway(
 
             // ── Handoff Auto-Routing (Intercept) ──
             let lower = text.to_lowercase();
-            if lower.contains("gặp nhân viên") || lower.contains("gap nhan vien") || lower.contains("chuyển khách") {
+            if lower.contains("gặp nhân viên")
+                || lower.contains("gap nhan vien")
+                || lower.contains("chuyển khách")
+            {
                 tracing::info!("📞 Handoff hotword detected in Discord: '{}'", text);
                 let req = crate::routes::api_handoff::HandoffRequestPayload {
                     customer: sender.clone(),
@@ -330,8 +333,9 @@ pub async fn spawn_discord_gateway(
                     message: Some(text.clone()),
                 };
                 let _ = crate::routes::api_handoff::execute_handoff(state_clone.clone(), req).await;
-                
-                let reply = crate::routes::api_handoff::load_handoff_settings(&state_clone).greeting;
+
+                let reply =
+                    crate::routes::api_handoff::load_handoff_settings(&state_clone).greeting;
                 let _ = reply_client.send_message(&channel_id, &reply).await;
                 continue;
             }
@@ -405,12 +409,18 @@ pub async fn dispatch_to_channel_agent(
 
         // ── Handoff Auto-Routing (Intercept) ──
         let lower = content.to_lowercase();
-        if lower.contains("gặp nhân viên") || lower.contains("gap nhan vien") || lower.contains("chuyển khách") {
+        if lower.contains("gặp nhân viên")
+            || lower.contains("gap nhan vien")
+            || lower.contains("chuyển khách")
+        {
             tracing::info!("📞 Handoff hotword detected in {}: '{}'", channel, content);
             let req = crate::routes::api_handoff::HandoffRequestPayload {
                 customer: t_id.to_string(),
                 channel: Some(channel.to_string()),
-                reason: Some(format!("Khách hàng yêu cầu hỗ trợ từ nhân viên qua {}", channel)),
+                reason: Some(format!(
+                    "Khách hàng yêu cầu hỗ trợ từ nhân viên qua {}",
+                    channel
+                )),
                 message: Some(content.to_string()),
             };
             let _ = crate::routes::api_handoff::execute_handoff(state.clone(), req).await;
@@ -440,7 +450,11 @@ pub async fn dispatch_to_channel_agent(
             }
             tracing::info!(
                 "⚡ Fast-route '{}' → '{}' (keyword match, session={})",
-                if content.len() > 50 { &content[..50] } else { content },
+                if content.len() > 50 {
+                    &content[..50]
+                } else {
+                    content
+                },
                 routed_agent,
                 session_key
             );
@@ -457,7 +471,9 @@ pub async fn dispatch_to_channel_agent(
     // Step 3b: Ambiguous message → try MAMA LLM routing (slow path)
     let has_mama = {
         let orch = state.orchestrator.lock().await;
-        orch.list_agents().iter().any(|a| a["name"].as_str() == Some("mama"))
+        orch.list_agents()
+            .iter()
+            .any(|a| a["name"].as_str() == Some("mama"))
     };
 
     if has_mama && target.is_none() && fast_routed.is_none() {
@@ -483,7 +499,8 @@ pub async fn dispatch_to_channel_agent(
                             Err(e) => {
                                 tracing::warn!(
                                     "👑 MAMA routed to '{}' but failed: {}. Fallback to sales-bot.",
-                                    routed_agent, e
+                                    routed_agent,
+                                    e
                                 );
                                 if let Some(agent) = orch.get_agent_mut("sales-bot") {
                                     agent.set_session(&session_key);
@@ -543,49 +560,74 @@ fn fast_route_by_keyword(content: &str) -> Option<&'static str> {
     let lower = content.to_lowercase();
 
     // ── Sales signals ──
-    if lower.contains("giá") || lower.contains("bao nhiêu")
-        || lower.contains("mua") || lower.contains("đặt hàng")
-        || lower.contains("báo giá") || lower.contains("order")
-        || lower.contains("thanh toán") || lower.contains("chuyển khoản")
-        || lower.contains("tư vấn") || lower.contains("sản phẩm")
-        || lower.contains("catalogue") || lower.contains("bảng giá")
+    if lower.contains("giá")
+        || lower.contains("bao nhiêu")
+        || lower.contains("mua")
+        || lower.contains("đặt hàng")
+        || lower.contains("báo giá")
+        || lower.contains("order")
+        || lower.contains("thanh toán")
+        || lower.contains("chuyển khoản")
+        || lower.contains("tư vấn")
+        || lower.contains("sản phẩm")
+        || lower.contains("catalogue")
+        || lower.contains("bảng giá")
     {
         return Some("sales-bot");
     }
 
     // ── Support signals ──
-    if lower.contains("lỗi") || lower.contains("hỏng") || lower.contains("không được")
-        || lower.contains("crash") || lower.contains("bug") || lower.contains("sửa")
-        || lower.contains("hướng dẫn") || lower.contains("cài đặt")
-        || lower.contains("trợ giúp") || lower.contains("help")
-        || lower.contains("ticket") || lower.contains("khiếu nại")
+    if lower.contains("lỗi")
+        || lower.contains("hỏng")
+        || lower.contains("không được")
+        || lower.contains("crash")
+        || lower.contains("bug")
+        || lower.contains("sửa")
+        || lower.contains("hướng dẫn")
+        || lower.contains("cài đặt")
+        || lower.contains("trợ giúp")
+        || lower.contains("help")
+        || lower.contains("ticket")
+        || lower.contains("khiếu nại")
     {
         return Some("support-bot");
     }
 
     // ── Marketing signals ──
-    if lower.contains("viết bài") || lower.contains("content")
-        || lower.contains("quảng cáo") || lower.contains("marketing")
-        || lower.contains("facebook") || lower.contains("tiktok")
-        || lower.contains("social") || lower.contains("chiến dịch")
-        || lower.contains("email marketing") || lower.contains("seo")
+    if lower.contains("viết bài")
+        || lower.contains("content")
+        || lower.contains("quảng cáo")
+        || lower.contains("marketing")
+        || lower.contains("facebook")
+        || lower.contains("tiktok")
+        || lower.contains("social")
+        || lower.contains("chiến dịch")
+        || lower.contains("email marketing")
+        || lower.contains("seo")
     {
         return Some("marketing-bot");
     }
 
     // ── Analyst signals ──
-    if lower.contains("báo cáo") || lower.contains("thống kê")
-        || lower.contains("doanh thu") || lower.contains("kpi")
-        || lower.contains("dashboard") || lower.contains("phân tích")
-        || lower.contains("forecast") || lower.contains("report")
+    if lower.contains("báo cáo")
+        || lower.contains("thống kê")
+        || lower.contains("doanh thu")
+        || lower.contains("kpi")
+        || lower.contains("dashboard")
+        || lower.contains("phân tích")
+        || lower.contains("forecast")
+        || lower.contains("report")
     {
         return Some("analyst-bot");
     }
 
     // ── Coder signals ──
-    if lower.contains("code") || lower.contains("debug")
-        || lower.contains("api") || lower.contains("deploy")
-        || lower.contains("lập trình") || lower.contains("review code")
+    if lower.contains("code")
+        || lower.contains("debug")
+        || lower.contains("api")
+        || lower.contains("deploy")
+        || lower.contains("lập trình")
+        || lower.contains("review code")
     {
         return Some("coder-bot");
     }
@@ -857,8 +899,17 @@ pub async fn whatsapp_webhook(
 
                             let state_clone = state.clone();
                             tokio::spawn(async move {
-                                let response = dispatch_to_channel_agent(state_clone.clone(), "whatsapp", Some(&from), &text).await.unwrap_or_default();
-                                if response.is_empty() { return; }
+                                let response = dispatch_to_channel_agent(
+                                    state_clone.clone(),
+                                    "whatsapp",
+                                    Some(&from),
+                                    &text,
+                                )
+                                .await
+                                .unwrap_or_default();
+                                if response.is_empty() {
+                                    return;
+                                }
 
                                 if let Some(wa_cfg) = wa_config {
                                     let url = format!(
@@ -927,7 +978,9 @@ pub async fn xiaozhi_webhook(
         req.lang
     );
 
-    let response = dispatch_to_channel_agent(state.clone(), "xiaozhi", None, &req.content).await.unwrap_or_default();
+    let response = dispatch_to_channel_agent(state.clone(), "xiaozhi", None, &req.content)
+        .await
+        .unwrap_or_default();
     let processing_ms = start.elapsed().as_millis() as u64;
 
     Json(serde_json::json!({
@@ -1019,7 +1072,9 @@ pub async fn zalo_oa_webhook(
                 msg_id
             );
 
-            let agent_response_opt = dispatch_to_channel_agent(state.clone(), "zalo", Some(sender_id), message_text).await;
+            let agent_response_opt =
+                dispatch_to_channel_agent(state.clone(), "zalo", Some(sender_id), message_text)
+                    .await;
 
             if let Some(agent_response) = agent_response_opt {
                 if let Some(config) = oa_config {
@@ -1050,7 +1105,8 @@ pub async fn zalo_oa_webhook(
                                         sender_id
                                     );
                                 } else {
-                                    let err_msg = reply_body["message"].as_str().unwrap_or("Unknown");
+                                    let err_msg =
+                                        reply_body["message"].as_str().unwrap_or("Unknown");
                                     tracing::error!(
                                         "[zalo-oa] Reply failed: {} (code: {})",
                                         err_msg,
@@ -1140,13 +1196,22 @@ pub async fn messenger_webhook_verify(
     State(state): State<Arc<AppState>>,
 ) -> axum::response::Response {
     let mode = params.get("hub.mode").map(|s| s.as_str()).unwrap_or("");
-    let token = params.get("hub.verify_token").map(|s| s.as_str()).unwrap_or("");
-    let challenge = params.get("hub.challenge").map(|s| s.as_str()).unwrap_or("");
+    let token = params
+        .get("hub.verify_token")
+        .map(|s| s.as_str())
+        .unwrap_or("");
+    let challenge = params
+        .get("hub.challenge")
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     // Find verify_token from channel instances
     let instances = load_channel_instances(&state);
-    let expected = instances.iter()
-        .find(|i| i["channel_type"].as_str() == Some("messenger") && i["enabled"].as_bool() == Some(true))
+    let expected = instances
+        .iter()
+        .find(|i| {
+            i["channel_type"].as_str() == Some("messenger") && i["enabled"].as_bool() == Some(true)
+        })
         .and_then(|i| i["config"]["verify_token"].as_str())
         .unwrap_or("");
 
@@ -1182,8 +1247,14 @@ pub async fn messenger_webhook(
 
     let (page_access_token, app_secret, agent_name) = match messenger_inst {
         Some(inst) => {
-            let token = inst["config"]["page_access_token"].as_str().unwrap_or("").to_string();
-            let secret = inst["config"]["app_secret"].as_str().unwrap_or("").to_string();
+            let token = inst["config"]["page_access_token"]
+                .as_str()
+                .unwrap_or("")
+                .to_string();
+            let secret = inst["config"]["app_secret"]
+                .as_str()
+                .unwrap_or("")
+                .to_string();
             let agent = inst["agent_name"].as_str().unwrap_or("").to_string();
             (token, secret, agent)
         }
@@ -1248,7 +1319,10 @@ pub async fn messenger_webhook(
                         );
 
                         if state.paused_threads.read().await.contains(&sender_id) {
-                            tracing::info!("⏸️ Handoff active: ignoring AI reply for Messenger thread {}", sender_id);
+                            tracing::info!(
+                                "⏸️ Handoff active: ignoring AI reply for Messenger thread {}",
+                                sender_id
+                            );
                             continue;
                         }
 
@@ -1260,7 +1334,14 @@ pub async fn messenger_webhook(
                                 Err(e) => format!("⚠️ Agent error: {e}"),
                             }
                         } else {
-                            dispatch_to_channel_agent(state.clone(), "messenger", Some(&sender_id), text).await.unwrap_or_default()
+                            dispatch_to_channel_agent(
+                                state.clone(),
+                                "messenger",
+                                Some(&sender_id),
+                                text,
+                            )
+                            .await
+                            .unwrap_or_default()
                         };
 
                         // Reply via Graph API
@@ -1281,10 +1362,17 @@ pub async fn messenger_webhook(
                                 Ok(resp) => {
                                     let status = resp.status();
                                     if status.is_success() {
-                                        tracing::info!("[messenger] ✅ Replied to {} successfully", sender_id);
+                                        tracing::info!(
+                                            "[messenger] ✅ Replied to {} successfully",
+                                            sender_id
+                                        );
                                     } else {
                                         let err = resp.text().await.unwrap_or_default();
-                                        tracing::error!("[messenger] Reply failed ({}): {}", status, safe_truncate(&err, 200));
+                                        tracing::error!(
+                                            "[messenger] Reply failed ({}): {}",
+                                            status,
+                                            safe_truncate(&err, 200)
+                                        );
                                     }
                                 }
                                 Err(e) => {
@@ -1322,8 +1410,15 @@ pub async fn handoff_pause(
     State(state): State<Arc<AppState>>,
     axum::extract::Json(req): axum::extract::Json<HandoffReq>,
 ) -> Json<serde_json::Value> {
-    state.paused_threads.write().await.insert(req.thread_id.clone());
-    tracing::info!("⏸️ Handoff manual override activated for thread: {}", req.thread_id);
+    state
+        .paused_threads
+        .write()
+        .await
+        .insert(req.thread_id.clone());
+    tracing::info!(
+        "⏸️ Handoff manual override activated for thread: {}",
+        req.thread_id
+    );
     Json(serde_json::json!({
         "ok": true,
         "thread_id": req.thread_id,
@@ -1352,7 +1447,7 @@ pub async fn spawn_zalo_personal_listener(
 ) {
     use bizclaw_core::traits::Channel;
     use futures::StreamExt;
-    
+
     let mut channel = bizclaw_channels::zalo::ZaloChannel::new(config.clone());
     if let Err(e) = channel.connect().await {
         tracing::error!("[zalo-personal] Connect failed: {e}");
@@ -1366,7 +1461,7 @@ pub async fn spawn_zalo_personal_listener(
             let sender_id = msg.sender_id.clone();
             let sender_name = msg.sender_name.clone();
             let content = msg.content.clone();
-            
+
             // Log to group_messages for summarization
             let db = state.db.clone();
             let group_id_clone = thread_id.clone();
@@ -1384,11 +1479,17 @@ pub async fn spawn_zalo_personal_listener(
 
             // For Zalo Personal, if sender != thread_id, it is likely a group.
             let is_group = sender_id != thread_id && !thread_id.is_empty();
-            let is_mention = content.to_lowercase().contains("@agent") || content.to_lowercase().contains(&agent_name.to_lowercase());
-            
+            let is_mention = content.to_lowercase().contains("@agent")
+                || content.to_lowercase().contains(&agent_name.to_lowercase());
+
             if !is_group || is_mention {
-                tracing::info!("[zalo-personal] {} → agent '{}': {}", sender_id, agent_name, crate::routes::safe_truncate(&content, 100));
-                
+                tracing::info!(
+                    "[zalo-personal] {} → agent '{}': {}",
+                    sender_id,
+                    agent_name,
+                    crate::routes::safe_truncate(&content, 100)
+                );
+
                 // Fire and forget reply to avoid locking the stream
                 let channel_clone = bizclaw_channels::zalo::ZaloChannel::new(config.clone());
                 let s = state.clone();
@@ -1403,12 +1504,14 @@ pub async fn spawn_zalo_personal_listener(
                                 Err(e) => format!("⚠️ Agent error: {e}"),
                             }
                         };
-                        let _ = channel.send(bizclaw_core::types::OutgoingMessage {
-                            thread_id: thread_id.clone(),
-                            thread_type: bizclaw_core::types::ThreadType::Direct,
-                            content: response,
-                            reply_to: None,
-                        }).await;
+                        let _ = channel
+                            .send(bizclaw_core::types::OutgoingMessage {
+                                thread_id: thread_id.clone(),
+                                thread_type: bizclaw_core::types::ThreadType::Direct,
+                                content: response,
+                                reply_to: None,
+                            })
+                            .await;
                     }
                 });
             }
@@ -1496,7 +1599,7 @@ pub async fn zalo_bot_webhook(
             .to_string();
 
         let state_clone = state.clone();
-        let agent_name_clone = agent_name.clone();
+        let _agent_name_clone = agent_name.clone();
         tokio::spawn(async move {
             // Send typing indicator
             let reply_bot = bizclaw_channels::zalo_bot::ZaloBotChannel::new(
@@ -1645,14 +1748,10 @@ pub async fn spawn_zalo_bot_polling(
                     }
                 }
                 Err(e) => {
-                    tracing::error!(
-                        "[zalo-bot] Polling error for '{}': {e}",
-                        agent_name_clone
-                    );
+                    tracing::error!("[zalo-bot] Polling error for '{}': {e}", agent_name_clone);
                     tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
                 }
             }
         }
     });
 }
-

@@ -1,0 +1,217 @@
+# ═══════════════════════════════════════════════════════════════
+# BizClaw Platform — Production Docker Compose
+# Full SaaS stack: PostgreSQL + Platform + Nginx + SSL + Ollama
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Domains:
+#   viagent.vn        → Landing Page (Nginx static)
+#   apps.viagent.vn   → Platform Dashboard (port 3001)
+#   *.viagent.vn      → Tenant gateways (dynamic routing)
+#
+# Prerequisites:
+#   1. DNS A records pointing to VPS IP
+#   2. .env file with POSTGRES_PASSWORD, JWT_SECRET, etc.
+#   3. SSL certs (certbot runs as sidecar on first boot)
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: bizclaw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       bizclaw
+      POSTGRES_USER:     bizclaw
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - bizclaw-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bizclaw"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── BizClaw Platform (Multi-Tenant Admin) ────────────────────
+  bizclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bizclaw-app
+    restart: unless-stopped
+    ports:
+      # Tenant gateway ports — accessible from Nginx via host network
+      - "3001:3001"
+      - "10001-10020:10001-10020"
+    volumes:
+      - bizclaw_data:/home/bizclaw/.bizclaw
+      # Share nginx config for dynamic tenant routing
+      - nginx_dynamic:/etc/nginx/dynamic
+      # Docker socket for nginx reload (used by sync_nginx_routing)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - BIZCLAW_BIND_ALL=1
+      - BIZCLAW_DOMAIN=${BIZCLAW_DOMAIN:-viagent.vn}
+      - DATABASE_URL=postgres://bizclaw:${POSTGRES_PASSWORD}@postgres:5432/bizclaw
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
+      - BIZCLAW_ADMIN_EMAIL=${ADMIN_EMAIL:-admin@bizclaw.vn}
+      - BIZCLAW_ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - NGINX_CONTAINER_NAME=bizclaw-nginx
+      - NGINX_UPSTREAM_HOST=bizclaw-app
+      - NGINX_SSL_CERT_DIR=${NGINX_SSL_CERT_DIR:-apps.viagent.vn}
+      - TZ=Asia/Ho_Chi_Minh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bizclaw-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ── Nginx — Reverse Proxy + SSL + Static Landing ─────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: bizclaw-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Static nginx configs (bizclaw.vn, apps.bizclaw.vn, viagent.vn)
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/conf.d/00-hash.conf:/etc/nginx/conf.d/00-hash.conf:ro
+      # Dynamic tenant routing (written by BizClaw platform)
+      - nginx_dynamic:/etc/nginx/dynamic:ro
+      # Landing pages
+      - ./landing:/var/www/bizclaw-landing:ro
+      - ./landing:/var/www/viagent-landing:ro
+      # SSL certificates
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      bizclaw:
+        condition: service_healthy
+    networks:
+      - bizclaw-internal
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ── Certbot — SSL Auto-renewal ───────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: bizclaw-certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    # Renew every 12 hours (certbot is smart — only renews when needed)
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 43200; done"
+    depends_on:
+      - nginx
+    networks:
+      - bizclaw-internal
+
+  # ── Ollama (optional — local AI, $0/month) ───────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: bizclaw-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - bizclaw-internal
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    # Uncomment for GPU support:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+
+  # ── Cloudflare Tunnel (optional — remote access without port opening)
+  # Uncomment to enable. Requires CLOUDFLARE_TOKEN in .env
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: bizclaw-tunnel
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
+  #   networks:
+  #     - bizclaw-internal
+  #   depends_on:
+  #     bizclaw:
+  #       condition: service_healthy
+
+  # ── BizClaw Single Tenant Demo ────────────────────
+  bizclaw-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bizclaw-demo
+    restart: unless-stopped
+    command: serve --port 3005
+    ports:
+      - "3005:3005"
+    volumes:
+      - demo_data:/home/bizclaw/.bizclaw
+    environment:
+      - RUST_LOG=info
+      - BIZCLAW_BIND_ALL=1
+      - BIZCLAW_ADMIN_EMAIL=admin@bizclaw.vn
+      - BIZCLAW_ADMIN_PASSWORD=BizClaw@Demo2026
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - bizclaw-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ── Networks ──────────────────────────────────────────────────
+networks:
+  bizclaw-internal:
+    driver: bridge
+
+# ── Volumes ───────────────────────────────────────────────────
+volumes:
+  pg_data:
+    driver: local
+  bizclaw_data:
+    driver: local
+  ollama_data:
+    driver: local
+  nginx_dynamic:
+    driver: local
+  demo_data:
+    driver: local

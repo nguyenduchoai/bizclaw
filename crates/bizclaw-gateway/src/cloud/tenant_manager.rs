@@ -121,8 +121,8 @@ pub struct CloudConfig {
     pub proxmox_password: String,
     pub default_node: String,
     pub template_vmid: u32,
-    pub domain_base: String, // e.g., "cloud.bizclaw.vn"
-    pub dns_provider: String, // "cloudflare" | "manual"
+    pub domain_base: String,     // e.g., "cloud.bizclaw.vn"
+    pub dns_provider: String,    // "cloudflare" | "manual"
     pub ollama_endpoint: String, // shared ollama for inference
 }
 
@@ -157,7 +157,7 @@ pub async fn provision_tenant(
     pve: &ProxmoxClient,
     config: &CloudConfig,
     tenant_name: &str,
-    tenant_email: &str,
+    _tenant_email: &str,
     plan: &TenantPlan,
 ) -> Result<ProvisionResult, PveError> {
     let tenant_id = generate_tenant_id(tenant_name);
@@ -291,31 +291,21 @@ fn generate_tenant_id(name: &str) -> String {
 fn generate_pairing_code() -> String {
     use rand::Rng;
     let mut rng = rand::thread_rng();
-    let chars: Vec<char> = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-        .chars()
-        .collect();
+    let chars: Vec<char> = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".chars().collect();
     (0..6)
         .map(|_| chars[rng.gen_range(0..chars.len())])
         .collect()
 }
 
 /// Suspend a tenant (stop VM, keep data).
-pub async fn suspend_tenant(
-    pve: &ProxmoxClient,
-    node: &str,
-    vmid: u32,
-) -> Result<(), PveError> {
+pub async fn suspend_tenant(pve: &ProxmoxClient, node: &str, vmid: u32) -> Result<(), PveError> {
     pve.stop_vm(node, vmid).await?;
     tracing::info!("⏸️ Tenant VM {} suspended", vmid);
     Ok(())
 }
 
 /// Resume a suspended tenant.
-pub async fn resume_tenant(
-    pve: &ProxmoxClient,
-    node: &str,
-    vmid: u32,
-) -> Result<(), PveError> {
+pub async fn resume_tenant(pve: &ProxmoxClient, node: &str, vmid: u32) -> Result<(), PveError> {
     pve.start_vm(node, vmid).await?;
     tracing::info!("▶️ Tenant VM {} resumed", vmid);
     Ok(())
@@ -338,6 +328,10 @@ pub async fn delete_tenant(
     // Delete Proxmox user
     let _ = pve.delete_user(tenant_id).await;
 
-    tracing::info!("🗑️ Tenant '{}' (VM {}) permanently deleted", tenant_id, vmid);
+    tracing::info!(
+        "🗑️ Tenant '{}' (VM {}) permanently deleted",
+        tenant_id,
+        vmid
+    );
     Ok(())
 }

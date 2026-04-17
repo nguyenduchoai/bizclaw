@@ -1,0 +1,28 @@
+[package]
+name = "bizclaw-social"
+version = "0.1.0"
+edition = "2021"
+description = "Social media integrations for BizClaw - Zalo OA, TikTok, Facebook, Instagram"
+authors = ["BizClaw Team"]
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+thiserror = "2"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+base64 = "0.22"
+sha2 = "0.10"
+hmac = "0.12"
+url = "2"
+async-trait = "0.1"
+parking_lot = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.6"

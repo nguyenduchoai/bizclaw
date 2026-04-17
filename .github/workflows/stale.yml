@@ -1,0 +1,26 @@
+name: 'Close Stale PRs'
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed after 30 days if no further activity occurs. Thank you for your contributions.'
+          stale-pr-message: 'This PR has been automatically marked as stale because it has not had recent activity. It will be closed after 30 days if no further activity occurs. Please update the PR or it will be automatically closed.'
+          close-issue-message: 'This issue has been closed because it was marked as stale and no activity occurred in the last 30 days.'
+          close-pr-message: 'This PR has been closed because it was marked as stale and no activity occurred in the last 30 days.'
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          days-before-stale: 30
+          days-before-close: 30
+          operations-per-run: 100

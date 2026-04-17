@@ -558,3 +558,228 @@ html.light .onboarding-btn-primary { box-shadow: 0 4px 20px rgba(91,91,214,.2); 
   .onboarding-chat { height: 80vh; }
   .onboarding-files-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ═══ ACCESSIBILITY ENHANCEMENTS (WCAG 2.1 AA) ═══ */
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 24px;
+  z-index: 10000;
+  transition: top 0.3s;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+/* Focus indicators */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Remove default focus for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Toast container */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 400px;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
+}
+.toast-hide {
+  animation: toastSlideOut 0.3s ease-out forwards;
+}
+.toast-close:hover {
+  opacity: 1 !important;
+}
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+/* ═══ WCAG 2.1 AA COLOR CONTRAST FIXES ═══ */
+
+/* Light theme badge contrast fixes */
+html.light .badge-green {
+  background: rgba(5, 150, 105, 0.15);
+  color: #047857;
+}
+html.light .badge-red {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+html.light .badge-yellow,
+html.light .badge-warning {
+  background: rgba(217, 119, 6, 0.12);
+  color: #92400e;
+}
+
+/* Dark theme already passes contrast */
+
+/* Stats card label contrast */
+.stats-label {
+  color: var(--text2);
+  font-size: 11px;
+}
+
+/* Form labels */
+.form-label {
+  color: var(--text2);
+}
+
+/* Table headers */
+th {
+  color: var(--text2);
+}
+
+/* ═══ ENHANCED RESPONSIVE BREAKPOINTS ═══ */
+
+/* Extra small devices (320px) */
+@media (max-width: 374px) {
+  :root {
+    --base-font-size: 12px;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .card {
+    padding: 14px;
+  }
+  .page-header h1 {
+    font-size: 18px;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    padding: 8px 12px;
+  }
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 16px;
+  }
+}
+
+/* Small devices (375px - 767px) */
+@media (min-width: 375px) and (max-width: 767px) {
+  .form-row input,
+  .form-row select,
+  .form-row textarea {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .btn {
+    min-height: 44px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app {
+    grid-template-columns: 200px 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop (1024px - 1439px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .app {
+    grid-template-columns: 220px 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Large Desktop (1440px+) */
+@media (min-width: 1440px) {
+  .main-content {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .mobile-nav,
+  .chat-input,
+  .toast-container {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

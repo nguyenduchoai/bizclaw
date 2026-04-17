@@ -28,32 +28,83 @@ pub fn local_harrier_embed_definition() -> ToolDefinition {
     }
 }
 
-/// Simulated mock implementation of Harrier embedding (since model weights require candle/onnx to run).
-/// In production, this would bridge to `bizclaw-core/brain` candle inference engine.
-pub async fn execute_local_harrier_embed(text: &str, task_type: &str) -> Result<Vec<f32>> {
-    tracing::info!(
-        "🧠 Harrier MTEB v2 requested for text ({} bytes) with task: {}",
-        text.len(),
-        task_type
-    );
+/// Implementation of Harrier embedding using an external API endpoint (like Ollama or OpenAI compatible).
+pub async fn execute_local_harrier_embed(
+    text: &str,
+    _task_type: &str,
+    api_url: Option<String>,
+    api_key: Option<String>,
+) -> Result<Vec<f32>> {
+    tracing::info!("🧠 Embedding requested for text ({} bytes)", text.len());
 
     if text.is_empty() {
         return Err(BizClawError::Other("Embedding text cannot be empty".into()));
     }
 
-    // Since loading 0.6B model in-memory takes ~1GB RAM, this is typically handled by
-    // an ONNX/Candle worker or a sidecar proxy. Here we simulate the 1D L2 Normalized output.
-    let simulated_dim = 1536; // common vector dimension
-    let mut vec = vec![0.01f32; simulated_dim];
+    let url = api_url.unwrap_or_else(|| "http://localhost:11434/api/embeddings".to_string());
 
-    // Add some noise based on text length to vaguely simulate unique vectors in testing
-    let len_float = (text.len() % 100) as f32 / 100.0;
-    vec[0] = len_float;
-    vec[1] = match task_type {
-        "retrieval_query" => 0.5,
-        "retrieval_document" => -0.5,
-        _ => 0.0,
+    let client = reqwest::Client::new();
+    let is_ollama = url.contains("11434") || url.contains("/api/embeddings");
+
+    let mut req = client.post(&url);
+    if let Some(key) = api_key {
+        if !key.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", key));
+        }
+    }
+
+    // Adapt payload based on Ollama / OpenAI
+    let payload = if is_ollama {
+        serde_json::json!({
+            "model": "nomic-embed-text", // Default fallback
+            "prompt": text,
+        })
+    } else {
+        serde_json::json!({
+            "input": text,
+            "model": "text-embedding-3-small",
+        })
     };
 
-    Ok(vec)
+    let resp =
+        req.json(&payload).send().await.map_err(|e| {
+            BizClawError::Other(format!("Failed to connect to embedding API: {}", e))
+        })?;
+
+    if !resp.status().is_success() {
+        let err_text = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown API Error".into());
+        return Err(BizClawError::Other(format!(
+            "Embedding API error: {}",
+            err_text
+        )));
+    }
+
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| BizClawError::Other(format!("Failed to parse embedding response: {}", e)))?;
+
+    let vec = if is_ollama {
+        json.get("embedding").and_then(|v| v.as_array()).map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_f64().map(|f| f as f32))
+                .collect::<Vec<f32>>()
+        })
+    } else {
+        json.get("data")
+            .and_then(|d| d.as_array())
+            .and_then(|d| d.first())
+            .and_then(|first| first.get("embedding"))
+            .and_then(|e| e.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|x| x.as_f64().map(|f| f as f32))
+                    .collect::<Vec<f32>>()
+            })
+    };
+
+    vec.ok_or_else(|| BizClawError::Other("Invalid embedding response format".into()))
 }

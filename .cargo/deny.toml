@@ -1,0 +1,56 @@
+[workspace]
+unmaintained = "warn"
+yanked = "warn"
+unsound = "warn"
+unknown = "warn"
+
+[advisories]
+db-path = ".cargo/advisory-db"
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+ignore = [
+    "RUSTSEC-2023-0071",
+]
+
+[licenses]
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "ISC",
+    "CC0-1.0",
+    "Unlicense",
+]
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "MPL-2.0",
+    "BSL-1.0",
+]
+copyleft = "deny"
+allow-osi-fsf-free = "neither"
+default = "deny"
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+allow = [
+    { name = "openssl", version = ">=0.10" },
+]
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

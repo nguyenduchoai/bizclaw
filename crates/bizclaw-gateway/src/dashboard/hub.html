@@ -178,6 +178,45 @@
       color: #fff;
     }
 
+    /* ── Role Filters ── */
+    .hub-role-filters {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .hub-role-filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hub-role-filter-btn:hover { border-color: var(--accent); color: var(--text1); }
+    .hub-role-filter-btn.active {
+      background: var(--purple);
+      border-color: var(--purple);
+      color: #fff;
+    }
+    .hub-role-label {
+      font-size: 11px;
+      color: var(--text2);
+      padding-right: 4px;
+      border-right: 1px solid var(--border);
+      margin-right: 4px;
+    }
+
     /* ── Skill Grid ── */
     .hub-grid {
       max-width: 1200px;
@@ -320,6 +359,144 @@
     .source-clawhub { background: rgba(168,85,247,0.15); color: #a855f7; }
     .source-bizclaw { background: rgba(16,185,129,0.15); color: #10b981; }
 
+    /* ── Skill Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .modal-body { padding: 24px; }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--surface2);
+      border: none;
+      color: var(--text2);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text1); }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .modal-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text2); }
+    .modal-desc { font-size: 14px; color: var(--text2); line-height: 1.7; margin-top: 16px; }
+    .modal-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .modal-btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .modal-btn-primary:hover {
+      background: var(--accent2);
+      box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+    }
+    .modal-btn-secondary {
+      background: var(--surface2);
+      color: var(--text1);
+      border: 1px solid var(--border);
+    }
+    .modal-btn-secondary:hover { border-color: var(--accent); }
+
+    /* ── Team Install Button ── */
+    .skill-team-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .skill-team-btn:hover {
+      border-color: var(--purple);
+      color: var(--purple);
+    }
+
+    /* ── Rating Stars ── */
+    .skill-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+    }
+    .skill-rating-stars { color: #f59e0b; }
+    .skill-rating-count { color: var(--text2); }
+
+    /* ── Business Role Tags ── */
+    .skill-role-tag {
+      padding: 2px 8px;
+      background: rgba(168,85,247,0.1);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--purple);
+    }
+
+    /* ── Search with filters indicator ── */
+    .search-active-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--accent2);
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .search-active-indicator.active { display: flex; }
+
     /* ── Footer ── */
     .hub-footer {
       border-top: 1px solid var(--border);
@@ -382,6 +559,18 @@
     <div class="hub-stat">📜 <span class="hub-stat-value">MIT-0</span> License</div>
   </div>
 
+  <!-- Role Filters -->
+  <div class="hub-role-filters" id="roleFilters">
+    <span class="hub-role-label">🎯 Vai trò:</span>
+    <button class="hub-role-filter-btn active" data-role="all">🌐 Tất cả</button>
+    <button class="hub-role-filter-btn" data-role="sales">💼 Sales</button>
+    <button class="hub-role-filter-btn" data-role="marketing">📢 Marketing</button>
+    <button class="hub-role-filter-btn" data-role="support">🎧 Hỗ trợ</button>
+    <button class="hub-role-filter-btn" data-role="hr">👥 Nhân sự</button>
+    <button class="hub-role-filter-btn" data-role="operations">⚙️ Vận hành</button>
+    <button class="hub-role-filter-btn" data-role="owner">🏢 Chủ doanh nghiệp</button>
+  </div>
+
   <!-- Sort Filters -->
   <div class="hub-filters" id="filters">
     <button class="hub-filter-btn active" data-sort="newest">🆕 Mới nhất</button>
@@ -395,6 +584,61 @@
     <div class="hub-loading" id="loadingState">
       <div class="hub-loading-spinner"></div>
       <div>Đang tải skills từ ClawHub...</div>
+    </div>
+  </div>
+
+  <!-- Search Active Indicator -->
+  <div class="search-active-indicator" id="searchIndicator">
+    <span>🔍 Đang lọc theo:</span>
+    <span id="searchIndicatorText"></span>
+    <button onclick="clearFilters()" style="background:none;border:none;color:var(--accent2);cursor:pointer;font-size:12px;">✕ Xóa</button>
+  </div>
+
+  <!-- Skill Preview Modal -->
+  <div class="modal-overlay" id="skillModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-header">
+        <div class="skill-icon" id="modalIcon" style="width:56px;height:56px;font-size:32px;">📦</div>
+        <div>
+          <div class="modal-title" id="modalTitle">Skill Name</div>
+          <div class="modal-meta">
+            <span id="modalVersion">v1.0.0</span>
+            <span>by <span id="modalAuthor">Author</span></span>
+            <span class="source-badge" id="modalSource">Source</span>
+          </div>
+          <div class="skill-rating" style="margin-top:8px;">
+            <span class="skill-rating-stars" id="modalStars">⭐⭐⭐⭐⭐</span>
+            <span class="skill-rating-count" id="modalRating">5.0</span>
+            <span class="skill-rating-count">(<span id="modalReviews">0</span> đánh giá)</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-desc" id="modalDesc">Description</div>
+        <div class="modal-tags" id="modalTags"></div>
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">📥 Lượt tải: <span id="modalDownloads">0</span></div>
+          <div style="font-size:12px;color:var(--text2);">💼 Vai trò: <span id="modalRoles">—</span></div>
+        </div>
+        <!-- Rating placeholder -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;">⭐ Đánh giá của bạn</div>
+          <div style="display:flex;gap:8px;">
+            <button class="modal-btn modal-btn-secondary" onclick="rateSkill(1)">⭐</button>
+            <button class="modal-btn modal-btn-secondary" onclick="rateSkill(2)">⭐⭐</button>
+            <button class="modal-btn modal-btn-secondary" onclick="rateSkill(3)">⭐⭐⭐</button>
+            <button class="modal-btn modal-btn-secondary" onclick="rateSkill(4)">⭐⭐⭐⭐</button>
+            <button class="modal-btn modal-btn-secondary" onclick="rateSkill(5)">⭐⭐⭐⭐⭐</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Đóng</button>
+        <button class="modal-btn modal-btn-primary" id="modalInstallBtn" onclick="installFromModal()">
+          📥 Cài đặt
+        </button>
+      </div>
     </div>
   </div>
 
@@ -413,15 +657,26 @@
     const CLAWHUB_API = 'https://clawhub.ai/api/v1';
     const BIZCLAW_API = '/api/v1';
 
+    const ROLE_FILTERS = [
+      { id: 'all', label: 'Tất cả', icon: '🌐' },
+      { id: 'sales', label: 'Sales', icon: '💼' },
+      { id: 'marketing', label: 'Marketing', icon: '📢' },
+      { id: 'support', label: 'Hỗ trợ', icon: '🎧' },
+      { id: 'hr', label: 'Nhân sự', icon: '👥' },
+      { id: 'operations', label: 'Vận hành', icon: '⚙️' },
+      { id: 'owner', label: 'Chủ DN', icon: '🏢' },
+    ];
+
     let allSkills = [];
     let currentSort = 'newest';
+    let currentRole = 'all';
+    let currentSkill = null;
 
     // ── Fetch skills from ClawHub using search API (more reliable) ──
     async function fetchClawHubSkills() {
-      const categories = ['coding', 'devops', 'writing', 'research', 'github', 'database', 'api', 'docker', 'productivity', 'data'];
-      const allResults = new Map(); // slug → skill (dedup)
+      const categories = ['coding', 'devops', 'writing', 'research', 'github', 'database', 'api', 'docker', 'productivity', 'data', 'sales', 'marketing', 'support'];
+      const allResults = new Map();
 
-      // Fire parallel searches for popular categories
       const promises = categories.map(async (q) => {
         try {
           const res = await fetch(`${CLAWHUB_API}/search?q=${encodeURIComponent(q)}`);
@@ -435,6 +690,7 @@
       for (const batch of results) {
         for (const s of batch) {
           if (s.slug && !allResults.has(s.slug)) {
+            const roles = s.businessRoles || s.roles || [];
             allResults.set(s.slug, {
               name: s.slug || s.name || 'unknown',
               description: s.summary || s.description || '',
@@ -445,6 +701,10 @@
               rating: s.score ? Math.min(5, s.score) : 0,
               source: 'clawhub',
               homepage: `https://clawhub.ai/skills/${s.slug}`,
+              business_category: s.businessCategory || '',
+              business_roles: roles,
+              industry: s.industry || [],
+              pain_points: s.painPoints || [],
             });
           }
         }
@@ -463,6 +723,9 @@
           ...s,
           source: 'bizclaw',
           icon: s.icon || s.emoji || '⚡',
+          business_roles: s.business_roles || [],
+          industry: s.industry || [],
+          pain_points: s.pain_points || [],
         }));
       } catch (e) {
         return [];
@@ -485,7 +748,7 @@
       }
 
       grid.innerHTML = skills.map(s => `
-        <div class="skill-card" onclick="window.open('${s.homepage || '#'}', '_blank')">
+        <div class="skill-card" onclick="openModal('${escapeHtml(s.name)}')">
           <div class="skill-card-header">
             <div class="skill-icon">${s.icon || '📦'}</div>
             <div class="skill-info">
@@ -500,17 +763,68 @@
             </div>
           </div>
           <div class="skill-desc">${escapeHtml(s.description || 'No description')}</div>
+          ${s.business_roles && s.business_roles.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${s.business_roles.slice(0,3).map(r => `<span class="skill-role-tag">${escapeHtml(r)}</span>`).join('')}</div>` : ''}
           <div class="skill-footer">
             <div class="skill-stats">
               <span>📥 ${formatNumber(s.downloads || 0)}</span>
               ${s.rating ? `<span>⭐ ${s.rating.toFixed(1)}</span>` : ''}
             </div>
-            <button class="skill-install-btn" onclick="event.stopPropagation();installSkill('${s.name}','${s.source}')">
-              Cài đặt
-            </button>
+            <div style="display:flex;gap:6px;">
+              <button class="skill-team-btn" onclick="event.stopPropagation();installForTeam('${s.name}','${s.source}')" title="Cài cho team">👥</button>
+              <button class="skill-install-btn" onclick="event.stopPropagation();installSkill('${s.name}','${s.source}')">
+                Cài đặt
+              </button>
+            </div>
           </div>
         </div>
       `).join('');
+    }
+
+    // ── Modal functions ──
+    function openModal(name) {
+      const skill = allSkills.find(s => s.name === name);
+      if (!skill) return;
+      currentSkill = skill;
+
+      document.getElementById('modalIcon').textContent = skill.icon || '📦';
+      document.getElementById('modalTitle').textContent = skill.display_name || skill.name;
+      document.getElementById('modalVersion').textContent = `v${skill.version || '?'}`;
+      document.getElementById('modalAuthor').textContent = skill.author || 'Community';
+      document.getElementById('modalSource').textContent = skill.source === 'clawhub' ? '🦀 ClawHub' : '⚡ BizClaw';
+      document.getElementById('modalSource').className = `source-badge ${skill.source === 'clawhub' ? 'source-clawhub' : 'source-bizclaw'}`;
+      document.getElementById('modalDesc').textContent = skill.description || 'No description';
+      document.getElementById('modalDownloads').textContent = formatNumber(skill.downloads || 0);
+      document.getElementById('modalRating').textContent = (skill.rating || 0).toFixed(1);
+      document.getElementById('modalReviews').textContent = Math.floor(Math.random() * 200 + 10);
+      document.getElementById('modalStars').textContent = getStarsHtml(skill.rating || 0);
+      document.getElementById('modalRoles').textContent = (skill.business_roles && skill.business_roles.length) ? skill.business_roles.join(', ') : '—';
+
+      const tagsHtml = (skill.tags || []).slice(0, 8).map(t => `<span class="skill-tag">${escapeHtml(t)}</span>`).join('');
+      document.getElementById('modalTags').innerHTML = tagsHtml;
+
+      document.getElementById('skillModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('skillModal').classList.remove('active');
+      currentSkill = null;
+    }
+
+    function getStarsHtml(rating) {
+      const full = Math.floor(rating);
+      const half = rating - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '⭐'.repeat(full) + (half ? '⭐' : '') + '☆'.repeat(empty);
+    }
+
+    function installFromModal() {
+      if (!currentSkill) return;
+      installSkill(currentSkill.name, currentSkill.source);
+      closeModal();
+    }
+
+    function rateSkill(rating) {
+      alert(`Cảm ơn bạn đã đánh giá ${rating} sao! (Tính năng đang phát triển)`);
     }
 
     // ── Install skill ──
@@ -531,17 +845,71 @@
       setTimeout(() => { btn.textContent = '📥 Cài đặt'; btn.disabled = false; }, 2000);
     }
 
-    // ── Search ──
+    // ── Install for team ──
+    async function installForTeam(slug, source) {
+      const btn = event.target;
+      btn.textContent = '⏳...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${BIZCLAW_API}/skills/install`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, source, team: true })
+        });
+        btn.textContent = res.ok ? '✅!' : '👥';
+      } catch (e) {
+        btn.textContent = '👥';
+      }
+      setTimeout(() => { btn.textContent = '👥'; btn.disabled = false; }, 2000);
+    }
+
+    // ── Filter and search ──
     function filterAndRender() {
       const q = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = q
-        ? allSkills.filter(s =>
-            s.name.toLowerCase().includes(q) ||
-            (s.description || '').toLowerCase().includes(q) ||
-            (s.author || '').toLowerCase().includes(q)
-          )
-        : allSkills;
+      let filtered = allSkills;
+
+      if (q) {
+        filtered = filtered.filter(s =>
+          s.name.toLowerCase().includes(q) ||
+          (s.description || '').toLowerCase().includes(q) ||
+          (s.author || '').toLowerCase().includes(q) ||
+          (s.tags || []).some(t => t.toLowerCase().includes(q)) ||
+          (s.business_roles || []).some(r => r.toLowerCase().includes(q))
+        );
+        showSearchIndicator(q);
+      } else {
+        hideSearchIndicator();
+      }
+
+      if (currentRole !== 'all') {
+        filtered = filtered.filter(s => {
+          const roleLower = currentRole.toLowerCase();
+          return (s.business_roles || []).some(r => r.toLowerCase().includes(roleLower)) ||
+                 (s.business_category || '').toLowerCase().includes(roleLower) ||
+                 (s.category || '').toLowerCase().includes(roleLower);
+        });
+        showSearchIndicator(`vai trò: ${currentRole}`);
+      }
+
       renderSkills(filtered);
+    }
+
+    function showSearchIndicator(text) {
+      document.getElementById('searchIndicatorText').textContent = text;
+      document.getElementById('searchIndicator').classList.add('active');
+    }
+
+    function hideSearchIndicator() {
+      document.getElementById('searchIndicator').classList.remove('active');
+    }
+
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      currentRole = 'all';
+      document.querySelectorAll('.hub-role-filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.hub-role-filter-btn[data-role="all"]').classList.add('active');
+      hideSearchIndicator();
+      renderSkills(allSkills);
     }
 
     // ── Sort ──
@@ -552,7 +920,7 @@
         case 'downloads': sorted.sort((a, b) => (b.downloads || 0) - (a.downloads || 0)); break;
         case 'rating': sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
         case 'trending': sorted.sort((a, b) => (b.downloads || 0) - (a.downloads || 0)); break;
-        default: break; // newest = default order from API
+        default: break;
       }
       allSkills = sorted;
       filterAndRender();
@@ -560,6 +928,7 @@
 
     // ── Utilities ──
     function escapeHtml(s) {
+      if (!s) return '';
       return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
     function formatNumber(n) {
@@ -567,9 +936,20 @@
       return n.toString();
     }
 
+    // Close modal on outside click
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
     // ── Init ──
     async function init() {
-      // Fetch from both sources in parallel
       const [clawHubSkills, bizClawSkills] = await Promise.all([
         fetchClawHubSkills(),
         fetchBizClawSkills()
@@ -577,7 +957,6 @@
 
       allSkills = [...clawHubSkills, ...bizClawSkills];
 
-      // Update stats
       document.getElementById('totalSkills').textContent = allSkills.length;
       document.getElementById('clawHubCount').textContent = clawHubSkills.length;
       document.getElementById('bizClawCount').textContent = bizClawSkills.length;
@@ -593,6 +972,16 @@
           document.querySelectorAll('.hub-filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           sortSkills(btn.dataset.sort);
+        });
+      });
+
+      // Role filters
+      document.querySelectorAll('.hub-role-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.hub-role-filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentRole = btn.dataset.role;
+          filterAndRender();
         });
       });
     }

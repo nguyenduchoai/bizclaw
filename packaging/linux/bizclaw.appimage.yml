@@ -1,0 +1,6 @@
+appid: vn.bizclaw.desktop
+name: BizClaw
+icon: bizclaw.png
+targets:
+  - arch: x86_64
+    binary: bizclaw

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use bizclaw_core::error::{BizClawError, Result};
 use bizclaw_core::traits::Tool;
 use bizclaw_core::types::{ToolDefinition, ToolResult};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::process::Command;
 
 #[derive(Debug, Deserialize)]
@@ -58,10 +58,16 @@ end tell
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            return Err(BizClawError::Tool(format!("Zalo automation failed: {}", err)));
+            return Err(BizClawError::Tool(format!(
+                "Zalo automation failed: {}",
+                err
+            )));
         }
 
-        Ok(format!("✅ Đã gửi Zalo tới '{}' thành công qua UI Macro.", target))
+        Ok(format!(
+            "✅ Đã gửi Zalo tới '{}' thành công qua UI Macro.",
+            target
+        ))
     }
 
     async fn send_messenger_mac(&self, target: &str, message: &str) -> Result<String> {
@@ -97,10 +103,16 @@ end tell
 
         if !output.status.success() {
             let err = String::from_utf8_lossy(&output.stderr);
-            return Err(BizClawError::Tool(format!("Messenger automation failed: {}", err)));
+            return Err(BizClawError::Tool(format!(
+                "Messenger automation failed: {}",
+                err
+            )));
         }
 
-        Ok(format!("✅ Đã gửi Messenger tới '{}' thành công qua UI Macro.", target))
+        Ok(format!(
+            "✅ Đã gửi Messenger tới '{}' thành công qua UI Macro.",
+            target
+        ))
     }
 }
 
@@ -134,19 +146,24 @@ impl Tool for AutoMessageTool {
         let out = match parsed.platform.as_str() {
             "zalo" => {
                 if parsed.action == "send_message" {
-                    self.send_zalo_mac(&parsed.target, parsed.message.as_deref().unwrap_or("")).await?
+                    self.send_zalo_mac(&parsed.target, parsed.message.as_deref().unwrap_or(""))
+                        .await?
                 } else {
                     "❌ Hành động không hỗ trợ".into()
                 }
-            },
+            }
             "messenger" => {
                 if parsed.action == "send_message" {
-                    self.send_messenger_mac(&parsed.target, parsed.message.as_deref().unwrap_or("")).await?
+                    self.send_messenger_mac(&parsed.target, parsed.message.as_deref().unwrap_or(""))
+                        .await?
                 } else {
                     "❌ Hành động không hỗ trợ".into()
                 }
-            },
-            _ => format!("❌ Nền tảng {} chưa được hỗ trợ Full UI Automation.", parsed.platform),
+            }
+            _ => format!(
+                "❌ Nền tảng {} chưa được hỗ trợ Full UI Automation.",
+                parsed.platform
+            ),
         };
 
         Ok(ToolResult {

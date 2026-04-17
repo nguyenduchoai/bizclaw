@@ -51,7 +51,7 @@ impl PersistentSession {
     async fn execute(&mut self, command: &str, timeout_secs: u64) -> Result<String> {
         // Delimiter to know when the command finishes
         let delim = format!("BIZCLAW_EOF_{}", Uuid::new_v4().simple());
-        
+
         // Ensure stderr is combined into stdout for this session
         // Then run the command, capture exit code, print exit code and delimiter
         let script = format!(
@@ -102,7 +102,8 @@ impl PersistentSession {
             }
         };
 
-        match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), read_future).await {
+        match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), read_future).await
+        {
             Ok(_) => {
                 let trimmed_out = output.trim().to_string();
                 if exit_code == 0 {
@@ -112,7 +113,7 @@ impl PersistentSession {
                 }
             }
             Err(_) => {
-                // Timeout! Send Ctrl+C via SIGINT (we cannot easily send SIGINT to child in rust cross-platform, 
+                // Timeout! Send Ctrl+C via SIGINT (we cannot easily send SIGINT to child in rust cross-platform,
                 // but we can just return the partial output).
                 Ok(format!(
                     "{}\n\n[Command timed out after {}s. It may be running in the background.]",
@@ -185,7 +186,10 @@ impl Tool for PersistentBashTool {
 
         let timeout = args["timeout_secs"].as_u64().unwrap_or(120);
 
-        tracing::info!("💻 Bash: executing `{}`", bizclaw_core::safe_truncate(command, 80));
+        tracing::info!(
+            "💻 Bash: executing `{}`",
+            bizclaw_core::safe_truncate(command, 80)
+        );
 
         let mut session = self.session.lock().await;
         let output = session.execute(command, timeout).await?;

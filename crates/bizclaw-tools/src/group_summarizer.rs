@@ -8,9 +8,8 @@ use bizclaw_core::error::{BizClawError, Result};
 use bizclaw_core::traits::Tool;
 use bizclaw_core::types::{ToolDefinition, ToolResult};
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 
 /// A single buffered message from a Zalo group.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,49 +145,66 @@ impl Tool for GroupSummarizerTool {
         let output = match action {
             "summarize" => {
                 let group_id = args["group_id"].as_str().unwrap_or("");
-                
+
                 let conn = Connection::open(&self.db_path)
                     .map_err(|e| BizClawError::Tool(format!("DB error: {e}")))?;
-                    
-                let mut query = String::from("SELECT sender_name, sender_id, content, timestamp FROM group_messages");
-                let time_limit = chrono::Utc::now() - chrono::Duration::seconds(self.config.buffer_window_secs as i64);
+
+                let mut query = String::from(
+                    "SELECT sender_name, sender_id, content, timestamp FROM group_messages",
+                );
+                let time_limit = chrono::Utc::now()
+                    - chrono::Duration::seconds(self.config.buffer_window_secs as i64);
                 let time_str = time_limit.format("%Y-%m-%d %H:%M:%S").to_string();
-                
+
                 if !group_id.is_empty() {
                     query.push_str(" WHERE group_id = ?1 AND timestamp > ?2");
                 } else {
                     query.push_str(" WHERE timestamp > ?1");
                 }
                 query.push_str(" ORDER BY timestamp ASC LIMIT 500");
-                
-                let mut stmt = conn.prepare(&query).map_err(|e| BizClawError::Tool(e.to_string()))?;
-                
+
+                let mut stmt = conn
+                    .prepare(&query)
+                    .map_err(|e| BizClawError::Tool(e.to_string()))?;
+
                 let mut messages: Vec<BufferedMessage> = Vec::new();
                 if !group_id.is_empty() {
-                    let mut rows = stmt.query_map(rusqlite::params![group_id, time_str], |row| {
-                        Ok(BufferedMessage {
-                            sender_name: row.get::<_, Option<String>>(0)?.unwrap_or_else(|| row.get::<_, String>(1).unwrap_or_default()),
-                            content: row.get(2)?,
-                            timestamp: chrono::Utc::now(), // mock timestamp for now, exact parsing skipped for simplicity
-                            group_id: group_id.to_string(),
-                            group_name: group_id.to_string(),
+                    let rows = stmt
+                        .query_map(rusqlite::params![group_id, time_str], |row| {
+                            Ok(BufferedMessage {
+                                sender_name: row
+                                    .get::<_, Option<String>>(0)?
+                                    .unwrap_or_else(|| row.get::<_, String>(1).unwrap_or_default()),
+                                content: row.get(2)?,
+                                timestamp: chrono::Utc::now(), // mock timestamp for now, exact parsing skipped for simplicity
+                                group_id: group_id.to_string(),
+                                group_name: group_id.to_string(),
+                            })
                         })
-                    }).map_err(|e| BizClawError::Tool(e.to_string()))?;
+                        .map_err(|e| BizClawError::Tool(e.to_string()))?;
                     for r in rows {
-                        if let Ok(m) = r { messages.push(m); }
+                        if let Ok(m) = r {
+                            messages.push(m);
+                        }
                     }
                 } else {
-                    let mut rows = stmt.query_map(rusqlite::params![time_str], |row| {
-                        Ok(BufferedMessage {
-                            sender_name: row.get::<_, Option<String>>(0)?.unwrap_or_else(|| row.get::<_, String>(1).unwrap_or_default()),
-                            content: row.get(2)?,
-                            timestamp: chrono::Utc::now(),
-                            group_id: "all".to_string(),
-                            group_name: "all".to_string(),
+                    let rows = stmt
+                        .query_map(rusqlite::params![time_str], |row| {
+                            Ok(BufferedMessage {
+                                sender_name: row
+                                    .get::<_, Option<String>>(0)?
+                                    .unwrap_or_else(|| row.get::<_, String>(1).unwrap_or_default()),
+                                content: row.get(2)?,
+                                timestamp: chrono::Utc::now(),
+                                group_id: "all".to_string(),
+                                group_name: "all".to_string(),
+                            })
                         })
-                    }).map_err(|e| BizClawError::Tool(e.to_string()))?;
+                        .map_err(|e| BizClawError::Tool(e.to_string()))?;
                     for r in rows {
-                        if let Ok(m) = r { messages.push(m); }
+                        if let Ok(m) = r {
+                            messages.push(m);
+                        }
                     }
                 };
 
@@ -199,7 +215,11 @@ impl Tool for GroupSummarizerTool {
                         format!("Nhóm {group_id} không có tin nhắn nào trong buffer.")
                     }
                 } else {
-                    let group_name = if group_id.is_empty() { "Tất cả nhóm" } else { group_id };
+                    let group_name = if group_id.is_empty() {
+                        "Tất cả nhóm"
+                    } else {
+                        group_id
+                    };
                     let prompt = self.format_messages_for_llm(&messages, group_name);
 
                     // Return the formatted prompt — the AI agent will process it

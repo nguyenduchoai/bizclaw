@@ -13,6 +13,7 @@
 //! - **Model Router**: Auto-selects optimal model tier based on task complexity
 //! - **Stealth Browser**: Anti-detection patches for headless Chrome automation
 
+pub mod a2a;
 pub mod circuit_breaker;
 pub mod context;
 pub mod context_summarizer;
@@ -23,9 +24,13 @@ pub mod loop_detector;
 pub mod middleware;
 pub mod model_router;
 pub mod orchestrator;
+pub mod pipeline;
 pub mod proactive;
 pub mod progress;
 pub mod subagent;
+
+pub use a2a::{A2AClient, A2AServer, AgentCard, SendTaskRequest, SendTaskResponse};
+pub use pipeline::{AgentPipeline, PipelineContext, PipelineMode, PipelineStage, PipelineState};
 // stealth_browser removed — anti-detection scraping is not suitable for a business platform
 
 use bizclaw_core::config::BizClawConfig;
@@ -303,8 +308,10 @@ impl Agent {
 
         // Save current conversation to cache
         if self.session_id != "default" || self.conversation.len() > 1 {
-            self.session_conversations
-                .insert(self.session_id.clone(), std::mem::take(&mut self.conversation));
+            self.session_conversations.insert(
+                self.session_id.clone(),
+                std::mem::take(&mut self.conversation),
+            );
         }
 
         // LRU eviction: keep max 50 sessions
@@ -336,12 +343,14 @@ impl Agent {
         let mut compacted = false;
         let mut max_context = self.config.brain.context_length as usize;
 
-        // CRITICAL FOR SINGLE-TENANT (5-8GB RAM): 
-        // Clamp context dynamically for Gemma 4 or local models. If unlimited (0) or too large (>8192), 
+        // CRITICAL FOR SINGLE-TENANT (5-8GB RAM):
+        // Clamp context dynamically for Gemma 4 or local models. If unlimited (0) or too large (>8192),
         // clamp to 8192 to guarantee stability without OOMing the VPS.
         if max_context == 0 || max_context > 8192 {
             max_context = 8192;
-            tracing::debug!("⚠️ Clamping max context to 8192 to ensure Gemma 4 stability on 5-8GB RAM");
+            tracing::debug!(
+                "⚠️ Clamping max context to 8192 to ensure Gemma 4 stability on 5-8GB RAM"
+            );
         }
 
         // Knowledge RAG
@@ -370,7 +379,7 @@ impl Agent {
 
         self.conversation.push(Message::user(user_message));
 
-        // Auto-compaction (claw-code pattern): when token utilization > 70%, 
+        // Auto-compaction (claw-code pattern): when token utilization > 70%,
         // summarize old messages to prevent overflowing the context window
         // while preserving critical conversational memory.
         let utilization = if max_context > 0 {
@@ -488,9 +497,17 @@ impl Agent {
                     continue;
                 }
                 // Granular tool permission check
-                if !self.security.check_tool(&tc.function.name).await.unwrap_or(false) {
+                if !self
+                    .security
+                    .check_tool(&tc.function.name)
+                    .await
+                    .unwrap_or(false)
+                {
                     results.push(Message::tool(
-                        format!("Permission denied: tool '{}' disabled by policy", tc.function.name),
+                        format!(
+                            "Permission denied: tool '{}' disabled by policy",
+                            tc.function.name
+                        ),
                         &tc.id,
                     ));
                     continue;
@@ -643,7 +660,7 @@ impl Agent {
     }
 
     /// Search the knowledge base for relevant context.
-    /// Uses hybrid search (keyword + vector) when embeddings are available.
+    /// Uses hybrid search (keyword + vector + TF-IDF boost) when embeddings are available.
     async fn search_knowledge(&self, query: &str) -> Option<String> {
         // IMPORTANT: Get embedding BEFORE acquiring kb lock.
         // rusqlite::Connection is not Send, so the MutexGuard cannot be
@@ -654,12 +671,20 @@ impl Agent {
         let kb_lock = kb_arc.lock().await;
         let kb = kb_lock.as_ref()?;
 
-        // Hybrid search: keyword (BM25) + vector (cosine similarity)
+        // Hybrid search with TF-IDF boost for domain-specific term accuracy
         let emb_ref = query_embedding.as_deref();
-        let results = kb.hybrid_search(query, emb_ref, 3);
+        let (results, telemetry) = kb.hybrid_search_boosted(
+            query,
+            emb_ref,
+            3,
+            &bizclaw_knowledge::SearchFilter::default(),
+        );
+
+        // Log telemetry for RAG observability
+        tracing::info!("📚 Knowledge RAG: {}", telemetry.summary());
 
         if results.is_empty() {
-            // Fallback to basic FTS5 search
+            // Fallback to basic FTS5 search (handles: no embeddings, Ollama down)
             let basic = kb.search(query, 3);
             if basic.is_empty() {
                 return None;
@@ -672,6 +697,11 @@ impl Agent {
                 }
                 context.push_str(&entry);
             }
+            tracing::debug!(
+                "Knowledge RAG: {} results (FTS5 fallback), {} chars",
+                basic.len(),
+                context.len()
+            );
             return Some(context);
         }
 
@@ -685,7 +715,7 @@ impl Agent {
         }
 
         tracing::debug!(
-            "Knowledge RAG: {} results (hybrid), {} chars",
+            "Knowledge RAG: {} results (hybrid+boost), {} chars",
             results.len(),
             context.len()
         );

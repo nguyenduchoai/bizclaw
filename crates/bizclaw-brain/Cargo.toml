@@ -6,6 +6,7 @@ license.workspace = true
 description = "Local LLM inference engine - PicoLM rewrite in Rust"
 
 [dependencies]
+async-trait.workspace = true
 bizclaw-core.workspace = true
 memmap2.workspace = true
 rayon.workspace = true

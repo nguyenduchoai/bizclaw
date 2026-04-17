@@ -7,6 +7,7 @@
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments, dead_code)]
 
 pub mod attention;
+pub mod cloud_router;
 pub mod forward;
 pub mod gguf;
 pub mod grammar;

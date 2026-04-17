@@ -37,6 +37,7 @@ fn test_app() -> Router {
             ),
         )),
         knowledge: Arc::new(tokio::sync::Mutex::new(None)),
+        crm: Arc::new(bizclaw_crm::CRMManager::new()),
         telegram_bots: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
         db: Arc::new(
             bizclaw_gateway::db::GatewayDb::open(std::path::Path::new(":memory:")).unwrap(),
@@ -46,6 +47,7 @@ fn test_app() -> Router {
         activity_tx,
         activity_log: Arc::new(Mutex::new(Vec::new())),
         rate_limiter: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
+        paused_threads: Arc::new(tokio::sync::RwLock::new(std::collections::HashSet::new())),
     });
 
     Router::new()

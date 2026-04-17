@@ -38,7 +38,7 @@ struct PostRequest {
     auto_comment: String, // Text to auto-comment after posting
     #[serde(default)]
     link: String,
-    
+
     // Platform-specific credentials
     #[serde(default)]
     access_token: String,
@@ -106,14 +106,20 @@ impl SocialPostTool {
                 ("access_token", req.access_token.as_str()),
                 ("file_size", &fs_str),
             ];
-            let start_resp = match self.client.post(&upload_url).form(&start_params).send().await {
+            let start_resp = match self
+                .client
+                .post(&upload_url)
+                .form(&start_params)
+                .send()
+                .await
+            {
                 Ok(r) => r.json::<serde_json::Value>().await.unwrap_or_default(),
                 Err(e) => return format!("❌ Lỗi FB Video Start: {e}"),
             };
-            
+
             let session_id = start_resp["upload_session_id"].as_str().unwrap_or("");
             let _end_offset = start_resp["end_offset"].as_str().unwrap_or("0");
-            
+
             if session_id.is_empty() {
                 return format!("❌ FB không trả về video session id: {}", start_resp);
             }
@@ -122,8 +128,9 @@ impl SocialPostTool {
             let bytes = tokio::fs::read(&req.media_path).await.unwrap_or_default();
             let file_part = multipart::Part::bytes(bytes)
                 .file_name(req.media_path.clone())
-                .mime_str("video/mp4").unwrap();
-            
+                .mime_str("video/mp4")
+                .unwrap();
+
             let form = multipart::Form::new()
                 .text("upload_phase", "transfer")
                 .text("access_token", req.access_token.clone())
@@ -143,7 +150,13 @@ impl SocialPostTool {
                 ("upload_session_id", session_id),
                 ("description", req.content.as_str()),
             ];
-            match self.client.post(&upload_url).form(&finish_params).send().await {
+            match self
+                .client
+                .post(&upload_url)
+                .form(&finish_params)
+                .send()
+                .await
+            {
                 Ok(resp) => {
                     let body: serde_json::Value = resp.json().await.unwrap_or_default();
                     body["id"].as_str().map(String::from) // Actually video_id, but good enough
@@ -156,16 +169,20 @@ impl SocialPostTool {
             let bytes = tokio::fs::read(&req.media_path).await.unwrap_or_default();
             let file_part = multipart::Part::bytes(bytes)
                 .file_name(req.media_path.clone())
-                .mime_str("image/jpeg").unwrap();
+                .mime_str("image/jpeg")
+                .unwrap();
             let form = multipart::Form::new()
                 .text("message", req.content.clone())
                 .text("access_token", req.access_token.clone())
                 .part("source", file_part);
-            
+
             match self.client.post(&upload_url).multipart(form).send().await {
                 Ok(resp) => {
                     let body: serde_json::Value = resp.json().await.unwrap_or_default();
-                    body["post_id"].as_str().or(body["id"].as_str()).map(String::from)
+                    body["post_id"]
+                        .as_str()
+                        .or(body["id"].as_str())
+                        .map(String::from)
                 }
                 Err(_) => None,
             }
@@ -173,7 +190,7 @@ impl SocialPostTool {
 
         if let Some(id) = post_id {
             let mut output = format!("✅ Đã đăng bài lên Facebook!\n• Post ID: {}", id);
-            
+
             // AUTO-COMMENT FEATURE
             if !req.auto_comment.is_empty() {
                 let comment_url = format!("https://graph.facebook.com/v21.0/{}/comments", id);
@@ -203,11 +220,21 @@ impl SocialPostTool {
         };
         let file_part = multipart::Part::bytes(bytes)
             .file_name(file_path.to_string())
-            .mime_str(if file_path.ends_with(".mp4") { "video/mp4" } else { "image/jpeg" })
+            .mime_str(if file_path.ends_with(".mp4") {
+                "video/mp4"
+            } else {
+                "image/jpeg"
+            })
             .unwrap();
         let form = multipart::Form::new().part("files[]", file_part);
-        
-        match self.client.post("https://pomf.lain.la/upload.php").multipart(form).send().await {
+
+        match self
+            .client
+            .post("https://pomf.lain.la/upload.php")
+            .multipart(form)
+            .send()
+            .await
+        {
             Ok(resp) => {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if json["success"].as_bool() == Some(true) {
@@ -237,7 +264,7 @@ impl SocialPostTool {
 
         let is_video = req.media_path.ends_with(".mp4");
         let create_url = format!("https://graph.facebook.com/v21.0/{}/media", req.ig_user_id);
-        
+
         // 2. Create IG Container
         let mut params = vec![
             ("caption", req.content.as_str()),
@@ -258,7 +285,12 @@ impl SocialPostTool {
         let creation_id = match container_resp["id"].as_str() {
             Some(id) => id,
             None => {
-                return format!("❌ API Error: {}", container_resp["error"]["message"].as_str().unwrap_or("Unknown"));
+                return format!(
+                    "❌ API Error: {}",
+                    container_resp["error"]["message"]
+                        .as_str()
+                        .unwrap_or("Unknown")
+                );
             }
         };
 
@@ -268,13 +300,22 @@ impl SocialPostTool {
         }
 
         // 3. Publish Container
-        let publish_url = format!("https://graph.facebook.com/v21.0/{}/media_publish", req.ig_user_id);
+        let publish_url = format!(
+            "https://graph.facebook.com/v21.0/{}/media_publish",
+            req.ig_user_id
+        );
         let publish_params = vec![
             ("creation_id", creation_id),
             ("access_token", req.access_token.as_str()),
         ];
 
-        let mut output = match self.client.post(&publish_url).form(&publish_params).send().await {
+        let mut output = match self
+            .client
+            .post(&publish_url)
+            .form(&publish_params)
+            .send()
+            .await
+        {
             Ok(resp) => {
                 let status = resp.status();
                 let body: serde_json::Value = resp.json().await.unwrap_or_default();
@@ -282,18 +323,24 @@ impl SocialPostTool {
                     let media_id = body["id"].as_str().unwrap_or("unknown");
                     format!("✅ Đã đăng lên Instagram! Media ID: {}", media_id)
                 } else {
-                    format!("❌ Publish IG Error: {}", body["error"]["message"].as_str().unwrap_or("Unknown"))
+                    format!(
+                        "❌ Publish IG Error: {}",
+                        body["error"]["message"].as_str().unwrap_or("Unknown")
+                    )
                 }
             }
             Err(e) => format!("❌ Publish Instagram Request failed: {e}"),
         };
-        
+
         // 4. Comment on IG (if auto_comment provided)
         if output.contains("✅") && !req.auto_comment.is_empty() {
             // IG API does allow replying to comments, but commenting on your own root media requires specific permissions
             // or the /comments edge on the media ID.
             if let Some(media_id) = output.split("Media ID: ").last() {
-                let comment_url = format!("https://graph.facebook.com/v21.0/{}/comments", media_id.trim());
+                let comment_url = format!(
+                    "https://graph.facebook.com/v21.0/{}/comments",
+                    media_id.trim()
+                );
                 let c_params = vec![
                     ("message", req.auto_comment.as_str()),
                     ("access_token", req.access_token.as_str()),
@@ -323,22 +370,28 @@ impl SocialPostTool {
 
         // We use reqwest_oauth1 macro configuration
         use reqwest_oauth1::OAuthClientProvider;
-        let secrets = reqwest_oauth1::Secrets::new(parts[0], parts[1])
-            .token(parts[2], parts[3]);
-        
+        let secrets = reqwest_oauth1::Secrets::new(parts[0], parts[1]).token(parts[2], parts[3]);
+
         let mut media_id_str = String::new();
-        
+
         // 1. Upload Media (if present) via Twitter v1.1 Media API
         if !req.media_path.is_empty() {
             let bytes = match tokio::fs::read(&req.media_path).await {
                 Ok(b) => b,
                 Err(e) => return format!("❌ Không thể đọc file twitter media: {e}"),
             };
-            let file_part = multipart::Part::bytes(bytes)
-                .file_name(req.media_path.clone());
+            let file_part = multipart::Part::bytes(bytes).file_name(req.media_path.clone());
             let form = multipart::Form::new().part("media", file_part);
 
-            match self.client.clone().oauth1(secrets.clone()).post("https://upload.twitter.com/1.1/media/upload.json").multipart(form).send().await {
+            match self
+                .client
+                .clone()
+                .oauth1(secrets.clone())
+                .post("https://upload.twitter.com/1.1/media/upload.json")
+                .multipart(form)
+                .send()
+                .await
+            {
                 Ok(resp) => {
                     let text = resp.text().await.unwrap_or_default();
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
@@ -357,17 +410,20 @@ impl SocialPostTool {
 
         let tweet_body_str = serde_json::to_string(&tweet_body).unwrap_or_default();
 
-        let tweet_resp = match self.client.clone().oauth1(secrets.clone())
+        let tweet_resp = match self
+            .client
+            .clone()
+            .oauth1(secrets.clone())
             .post("https://api.twitter.com/2/tweets")
             .header("Content-Type", "application/json")
             .body(tweet_body_str)
             .send()
-            .await 
+            .await
         {
             Ok(r) => r,
             Err(e) => return format!("❌ Lỗi gọi Twitter API: {e}"),
         };
-        
+
         let status = tweet_resp.status();
         let body_text = tweet_resp.text().await.unwrap_or_default();
         let body: serde_json::Value = serde_json::from_str(&body_text).unwrap_or_default();
@@ -375,7 +431,7 @@ impl SocialPostTool {
         if status.is_success() {
             let tweet_id = body["data"]["id"].as_str().unwrap_or("unknown");
             let mut output = format!("✅ Đã Tweet thành công!\n• Tweet ID: {}", tweet_id);
-            
+
             // 3. Auto-comment for Twitter (Reply to tweet)
             if !req.auto_comment.is_empty() {
                 let comment_body = serde_json::json!({
@@ -383,10 +439,15 @@ impl SocialPostTool {
                     "reply": { "in_reply_to_tweet_id": tweet_id }
                 });
                 let comment_body_str = serde_json::to_string(&comment_body).unwrap_or_default();
-                if let Ok(c_resp) = self.client.clone().oauth1(secrets).post("https://api.twitter.com/2/tweets")
+                if let Ok(c_resp) = self
+                    .client
+                    .clone()
+                    .oauth1(secrets)
+                    .post("https://api.twitter.com/2/tweets")
                     .header("Content-Type", "application/json")
                     .body(comment_body_str)
-                    .send().await 
+                    .send()
+                    .await
                 {
                     if c_resp.status().is_success() {
                         output.push_str("\n✅ Auto-Comment Twitter thành công!");
@@ -428,28 +489,39 @@ impl SocialPostTool {
         match tokio::fs::read(&req.media_path).await {
             Ok(bytes) => {
                 let metadata_part = multipart::Part::text(snippet.to_string())
-                    .mime_str("application/json").unwrap();
+                    .mime_str("application/json")
+                    .unwrap();
                 let video_part = multipart::Part::bytes(bytes)
                     .file_name(req.media_path.clone())
-                    .mime_str("video/mp4").unwrap();
+                    .mime_str("video/mp4")
+                    .unwrap();
 
                 let form = multipart::Form::new()
                     .part("metadata", metadata_part)
                     .part("file", video_part);
 
-                match self.client.post(url)
+                match self
+                    .client
+                    .post(url)
                     .bearer_auth(&req.access_token)
                     .multipart(form)
-                    .send().await 
+                    .send()
+                    .await
                 {
                     Ok(resp) => {
                         let status = resp.status();
                         let body: serde_json::Value = resp.json().await.unwrap_or_default();
                         if status.is_success() {
                             let video_id = body["id"].as_str().unwrap_or("unknown");
-                            format!("✅ Đã đăng video lên YouTube Shorts!\n• Video URL: https://youtube.com/shorts/{}", video_id)
+                            format!(
+                                "✅ Đã đăng video lên YouTube Shorts!\n• Video URL: https://youtube.com/shorts/{}",
+                                video_id
+                            )
                         } else {
-                            format!("❌ Lỗi YouTube API: {}", body["error"]["message"].as_str().unwrap_or("Unknown"))
+                            format!(
+                                "❌ Lỗi YouTube API: {}",
+                                body["error"]["message"].as_str().unwrap_or("Unknown")
+                            )
                         }
                     }
                     Err(e) => format!("❌ Lỗi kết nối YouTube: {e}"),
@@ -459,7 +531,7 @@ impl SocialPostTool {
         }
     }
 
-    /// Post to Telegram Channel 
+    /// Post to Telegram Channel
     async fn post_telegram(&self, req: &PostRequest) -> String {
         if req.bot_token.is_empty() || req.chat_id.is_empty() {
             return "❌ Thiếu bot_token hoặc chat_id.".into();
@@ -469,8 +541,11 @@ impl SocialPostTool {
         let _is_photo = req.media_path.ends_with(".jpg") || req.media_path.ends_with(".png");
 
         let url = if !req.media_path.is_empty() {
-            if is_video { format!("https://api.telegram.org/bot{}/sendVideo", req.bot_token) }
-            else { format!("https://api.telegram.org/bot{}/sendPhoto", req.bot_token) }
+            if is_video {
+                format!("https://api.telegram.org/bot{}/sendVideo", req.bot_token)
+            } else {
+                format!("https://api.telegram.org/bot{}/sendPhoto", req.bot_token)
+            }
         } else {
             format!("https://api.telegram.org/bot{}/sendMessage", req.bot_token)
         };
@@ -484,8 +559,7 @@ impl SocialPostTool {
             self.client.post(&url).json(&body).send().await
         } else {
             let bytes = tokio::fs::read(&req.media_path).await.unwrap_or_default();
-            let file_part = multipart::Part::bytes(bytes)
-                .file_name(req.media_path.clone());
+            let file_part = multipart::Part::bytes(bytes).file_name(req.media_path.clone());
             let form = multipart::Form::new()
                 .text("chat_id", req.chat_id.clone())
                 .text("caption", req.content.clone())
@@ -534,7 +608,6 @@ impl Tool for SocialPostTool {
                     "content": { "type": "string", "description": "Nội dung bài đăng đã được rewrite chuẩn SEO" },
                     "media_path": { "type": "string", "description": "Đường dẫn file thiết bị (vd: /tmp/bizclaw/123.mp4). Tải bằng công cụ media_extractor trước." },
                     "auto_comment": { "type": "string", "description": "Nội dung sẽ tự động comment vào bài sau khi publish (Dùng để nhét link SEO/Source)" },
-                    
                     "access_token": { "type": "string" },
                     "page_id": { "type": "string" },
                     "ig_user_id": { "type": "string" },

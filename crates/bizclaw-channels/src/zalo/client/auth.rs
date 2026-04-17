@@ -134,7 +134,11 @@ impl ZaloAuth {
     }
 
     /// Login with cookie (fastest method).
+    /// Uses ParamsEncryptor + get_sign_key matching zca-js v2 protocol.
     pub async fn login_with_cookie(&self, cookie: &str) -> Result<LoginData> {
+        use super::crypto::{ParamsEncryptor, decode_aes_base64, encode_aes_base64, get_sign_key};
+        use std::collections::BTreeMap;
+
         tracing::info!("Zalo auth: logging in with cookie...");
 
         // Validate cookie format
@@ -144,8 +148,57 @@ impl ZaloAuth {
             ));
         }
 
-        // Step 1: Login to get user info + secret key + service map (zca-js protocol)
-        // URL: https://wpa.chat.zalo.me/api/login/getLoginInfo (NOT tt-chat-wpa!)
+        let imei = &self.credentials.imei;
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+
+        // Build encrypted params using ParamsEncryptor (zca-js: _encryptParam)
+        let encryptor = ParamsEncryptor::new(30, imei, ts);
+        let encrypt_key = encryptor.get_encrypt_key().cloned();
+
+        // Data payload to encrypt
+        let login_payload = serde_json::json!({
+            "computer_name": "Web",
+            "imei": imei,
+            "language": "vi",
+            "ts": ts,
+        });
+
+        // Build query params for getLoginInfo
+        let mut query_params: Vec<(&str, String)> = Vec::new();
+
+        if let Some(ref enk) = encrypt_key {
+            // Encrypted mode: encode data with AES-CBC
+            let encoded_data = encode_aes_base64(enk, &login_payload.to_string())
+                .ok_or_else(|| BizClawError::AuthFailed("Failed to encrypt login params".into()))?;
+
+            let enc_params = encryptor.get_params();
+            for (k, v) in &enc_params {
+                query_params.push((k, v.clone()));
+            }
+            query_params.push(("params", encoded_data));
+        } else {
+            // Fallback: plaintext mode
+            query_params.push(("computer_name", "Web".into()));
+            query_params.push(("imei", imei.clone()));
+            query_params.push(("language", "vi".into()));
+            query_params.push(("ts", ts.to_string()));
+        }
+
+        query_params.push(("type", "30".into()));
+        query_params.push(("client_version", "671".into()));
+
+        // Generate signkey (zca-js: getSignKey("getlogininfo", params))
+        let mut sign_map = BTreeMap::new();
+        for (k, v) in &query_params {
+            sign_map.insert(*k, v.clone());
+        }
+        let signkey = get_sign_key("getlogininfo", &sign_map);
+        query_params.push(("signkey", signkey));
+
+        // Step 1: getLoginInfo with encrypted params
         let login_response = self
             .client
             .get("https://wpa.chat.zalo.me/api/login/getLoginInfo")
@@ -153,6 +206,7 @@ impl ZaloAuth {
             .header("user-agent", &self.credentials.user_agent)
             .header("origin", "https://chat.zalo.me")
             .header("referer", "https://chat.zalo.me/")
+            .query(&query_params)
             .send()
             .await
             .map_err(|e| BizClawError::AuthFailed(format!("Login request failed: {e}")))?;
@@ -171,10 +225,30 @@ impl ZaloAuth {
             )));
         }
 
-        let login_data = &login_body["data"];
+        // Decrypt response if encrypted (zca-js: decryptResp(enk, data))
+        let login_data = if let Some(ref enk) = encrypt_key {
+            if let Some(encrypted_data) = login_body["data"].as_str() {
+                let decrypted = decode_aes_base64(enk, encrypted_data).ok_or_else(|| {
+                    BizClawError::AuthFailed("Failed to decrypt login response".into())
+                })?;
+                serde_json::from_str::<serde_json::Value>(&decrypted).map_err(|e| {
+                    BizClawError::AuthFailed(format!("Invalid decrypted login data: {e}"))
+                })?
+            } else {
+                login_body["data"].clone()
+            }
+        } else {
+            login_body["data"].clone()
+        };
 
-        // Step 2: Get server info to get settings + extra_ver
-        // URL: https://wpa.chat.zalo.me/api/login/getServerInfo
+        // Step 2: getServerInfo with signkey
+        let mut server_sign_map = BTreeMap::new();
+        server_sign_map.insert("imei", imei.clone());
+        server_sign_map.insert("type", "30".into());
+        server_sign_map.insert("client_version", "671".into());
+        server_sign_map.insert("computer_name", "Web".into());
+        let server_signkey = get_sign_key("getserverinfo", &server_sign_map);
+
         let _server_response = self
             .client
             .get("https://wpa.chat.zalo.me/api/login/getServerInfo")
@@ -182,10 +256,11 @@ impl ZaloAuth {
             .header("user-agent", &self.credentials.user_agent)
             .header("origin", "https://chat.zalo.me")
             .header("referer", "https://chat.zalo.me/")
-            .query(&[("imei", &self.credentials.imei)])
+            .query(&[("imei", imei.as_str())])
             .query(&[("type", "30")])
             .query(&[("client_version", "671")])
             .query(&[("computer_name", "Web")])
+            .query(&[("signkey", server_signkey.as_str())])
             .send()
             .await
             .map_err(|e| BizClawError::AuthFailed(format!("Get server info failed: {e}")))?;
@@ -196,6 +271,11 @@ impl ZaloAuth {
                 .filter_map(|v| v.as_str().map(String::from))
                 .collect()
         });
+
+        tracing::info!(
+            "Zalo auth: login successful, uid={}",
+            login_data["uid"].as_str().unwrap_or("?")
+        );
 
         Ok(LoginData {
             uid: login_data["uid"].as_str().unwrap_or("").into(),

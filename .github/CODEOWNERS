@@ -1,0 +1,36 @@
+# Code Owners for BizClaw Project
+# Auto-request review from team members based on file paths
+
+# Core maintainers for all code
+* @nguyenduchoai
+
+# Platform and infrastructure
+crates/bizclaw-platform/ @nguyenduchoai @bizclaw-team
+crates/bizclaw-gateway/ @nguyenduchoai @bizclaw-team
+Dockerfile* @nguyenduchoai @devops
+
+# AI and ML components
+crates/bizclaw-brain/ @nguyenduchoai @ai-team
+crates/bizclaw-agent/ @nguyenduchoai @ai-team
+crates/bizclaw-memory/ @nguyenduchoai @ai-team
+
+# Security critical modules
+crates/bizclaw-security/ @nguyenduchoai @security-team
+crates/bizclaw-webauth/ @nguyenduchoai @security-team
+
+# E-commerce and business modules
+crates/bizclaw-ecommerce/ @nguyenduchoai @business-team
+crates/bizclaw-content/ @nguyenduchoai @business-team
+crates/bizclaw-office/ @nguyenduchoai @business-team
+
+# DevOps and CI/CD
+.github/workflows/ @nguyenduchoai @devops
+.cargo/ @nguyenduchoai @devops
+
+# Database and data layer
+crates/bizclaw-db/ @nguyenduchoai @data-team
+crates/bizclaw-knowledge/ @nguyenduchoai @data-team
+
+# CI/CD configurations
+*.yml @nguyenduchoai @devops
+*.yaml @nguyenduchoai @devops

@@ -45,6 +45,8 @@ function ChannelsPage({ lang }) {
   ];
 
   // ── Load data ──
+  const [zaloStatus, setZaloStatus] = useState(null);
+
   const load = async () => {
     try {
       const [instRes, agentRes] = await Promise.all([
@@ -62,6 +64,21 @@ function ChannelsPage({ lang }) {
     }
     setLoading(false);
   };
+
+  // Poll for Zalo native session status
+  useEffect(() => {
+    const fetchZaloStatus = async () => {
+      try {
+        const r = await authFetch('/api/v1/channels/zalo/session');
+        const data = await r.json();
+        setZaloStatus(data);
+      } catch(e) {}
+    };
+    fetchZaloStatus();
+    const interval = setInterval(fetchZaloStatus, 15000); // Check every 15s
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 8000);
     load().finally(() => clearTimeout(timeout));
@@ -257,6 +274,30 @@ function ChannelsPage({ lang }) {
         <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
           <button class="btn btn-outline" onClick=${() => setShowAddNew(false)}>Huỷ</button>
           <button class="btn" style="background:var(--grad1);color:#fff;padding:8px 20px" onClick=${addNewChannel}>➕ Tạo kênh</button>
+        </div>
+      </div>
+    `}
+
+    ${/* 🚨 ZALO HEALTH WARNING BANNER 🚨 */null}
+    ${zaloStatus && zaloStatus.online === false && html`
+      <div class="card" style="margin-bottom:14px; background: rgba(239, 68, 68, 0.1); border: 2px solid var(--red); color: var(--text);">
+        <div style="display:flex; align-items:center; gap: 16px;">
+          <div style="font-size: 32px; animation: pulse 2s infinite;">⚠️</div>
+          <div style="flex: 1;">
+            <h3 style="margin: 0 0 4px 0; color: #ff6b6b;">Kết nối Zalo Đã Bị Mất!</h3>
+            <p style="margin: 0; font-size: 13px; color: var(--text2);">
+              Tài khoản Zalo AI của bạn đã bị văng ra (do điện thoại đăng nhập đè hoặc hết hạn cookie). 
+              <strong>Trợ lý AI sẽ ngừng rep tin nhắn cho đến khi bạn quét lại QR.</strong>
+            </p>
+          </div>
+          <button class="btn" style="background: var(--red); color: #fff; padding: 10px 20px; font-weight: bold;"
+            onClick=${() => {
+              const zaloInst = instances.find(i => i.channel_type === 'zalo');
+              if (zaloInst) openConfig(zaloInst);
+            }}
+          >
+            🔲 Quét Mã QR Ngay
+          </button>
         </div>
       </div>
     `}

@@ -32,6 +32,7 @@ pub mod browser;
 pub mod bundle_provisioner;
 pub mod calendar;
 pub mod catchme_search;
+pub mod computer_use;
 pub mod config_manager;
 pub mod custom_tool;
 pub mod db_connection;
@@ -44,23 +45,24 @@ pub mod document_reader;
 pub mod edit_file;
 pub mod file;
 pub mod glob_find;
-pub mod grep_search;
 pub mod gmail;
+pub mod grep_search;
 pub mod group_summarizer;
 pub mod http_request;
 pub mod insight_extraction;
+pub mod media_extractor;
 pub mod memory_search;
 pub mod nl_query;
 pub mod orchestration;
 pub mod persistent_bash;
 pub mod plan_store;
 pub mod plan_tool;
+pub mod preparsed;
 pub mod registry;
 pub mod research;
 pub mod session_context;
 pub mod shell;
 pub mod social_post;
-pub mod media_extractor;
 pub mod stealth_browser;
 pub mod voice_transcribe;
 pub mod web_search;
@@ -101,27 +103,31 @@ impl ToolRegistry {
         let mut reg = Self::new();
         // Core file/shell tools
         reg.register(Box::new(shell::ShellTool::new()));
-        reg.register(Box::new(persistent_bash::PersistentBashTool::new()));
         reg.register(Box::new(file::FileTool::new()));
         reg.register(Box::new(edit_file::EditFileTool::new()));
         reg.register(Box::new(glob_find::GlobTool::new()));
         reg.register(Box::new(grep_search::GrepTool::new()));
-
-        // Memory + Insight Tools
-        reg.register(Box::new(insight_extraction::ExtractInsightTool::new()));
+        // Computer Use - Native desktop control
+        reg.register(Box::new(computer_use::ComputerUseTool::new()));
+        // Pre-parsed commands (zero-token-cost)
+        reg.register(Box::new(preparsed::PreparsedCommandsTool::new()));
         // Search & network tools
         reg.register(Box::new(web_search::WebSearchTool::new()));
         reg.register(Box::new(http_request::HttpRequestTool::new()));
         // Browser automation (PinchTab)
         reg.register(Box::new(browser::BrowserTool::new()));
-        // Stealth Browser (Crawbot Node.js)
+        // Stealth browser (anti-detection)
         reg.register(Box::new(stealth_browser::StealthBrowserTool::new()));
-        // Bundle Provisioner (SME App Templates)
-        reg.register(Box::new(bundle_provisioner::BundleProvisionerTool::new()));
         // Config tools
         reg.register(Box::new(config_manager::ConfigManagerTool::new()));
         // Plan mode
         reg.register(Box::new(plan_tool::PlanTool::new(plan_store)));
+        // Database tools
+        reg.register(Box::new(db_query::DbQueryTool::new()));
+        reg.register(Box::new(db_schema::DbSchemaTool::new()));
+        reg.register(Box::new(document_reader::DocumentReaderTool::new()));
+        // Memory tools
+        reg.register(Box::new(insight_extraction::ExtractInsightTool::new()));
         // Domain tools
         reg.register(Box::new(group_summarizer::GroupSummarizerTool::new(
             group_summarizer::SummarizerConfig::default(),
@@ -129,22 +135,7 @@ impl ToolRegistry {
         reg.register(Box::new(calendar::CalendarTool::new(
             calendar::CalendarConfig::default(),
         )));
-        reg.register(Box::new(db_query::DbQueryTool::new()));
-        reg.register(Box::new(db_schema::DbSchemaTool::new()));
         reg.register(Box::new(api_connector::ApiConnectorTool::new()));
-        reg.register(Box::new(document_reader::DocumentReaderTool::new()));
-        // Auto Message (Zalo/Messenger UI Automation)
-        reg.register(Box::new(auto_message::AutoMessageTool::new()));
-        // Social Posting (Facebook, Telegram Channel, Webhook)
-        reg.register(Box::new(social_post::SocialPostTool::new()));
-        // Media Extractor (TikTok, IG, YT, X)
-        reg.register(Box::new(media_extractor::MediaExtractorTool::new()));
-        // NL Query (Text2SQL RAG pipeline)
-        reg.register(Box::new(nl_query::NlQueryTool::new()));
-        // Voice Transcription + Recap (VivaDicta-inspired)
-        reg.register(Box::new(voice_transcribe::VoiceTranscribeTool::new()));
-        // Research Tool (academic paper search)
-        reg.register(Box::new(research::ResearchTool::new()));
         // CatchMe Digital Footprint Search
         reg.register(Box::new(catchme_search::CatchMeSearchTool::new(
             shellexpand::tilde("~/.gemini/antigravity/catchme.db").to_string(),

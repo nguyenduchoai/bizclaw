@@ -224,6 +224,12 @@ impl ZaloMessaging {
         self.service_map = map;
     }
 
+    /// Set secret key explicitly (e.g., from zpw_sek cookie).
+    /// This overrides the key set by set_login_info if the cookie key differs.
+    pub fn set_secret_key(&mut self, key: &str) {
+        self.secret_key = Some(key.to_string());
+    }
+
     /// Add API version query params to a URL.
     fn add_api_params(&self, base: &str) -> String {
         if base.contains('?') {
@@ -240,8 +246,8 @@ impl ZaloMessaging {
     }
 
     /// Send a text message (works for both User and Group threads).
-    /// zca-js: POST {chat[0]}/api/message (User) or {group[0]}/api/group (Group)
-    /// with nretry=0 query param
+    /// zca-js: POST {chat[0]}/api/message/sms (User) or {group[0]}/api/group/sendmsg (Group)
+    /// Payload is AES-CBC encrypted with secret_key, sent as form-urlencoded `params`.
     pub async fn send_text(
         &self,
         thread_id: &str,
@@ -249,32 +255,71 @@ impl ZaloMessaging {
         content: &str,
         cookie: &str,
     ) -> Result<String> {
-        // zca-js: api.zpwServiceMap.chat[0] + "/api/message" (User)
-        //         api.zpwServiceMap.group[0] + "/api/group" (Group)
-        let base_url = if thread_type == ThreadType::User {
-            format!("{}/api/message", self.service_map.chat_url())
-        } else {
+        let is_group = thread_type == ThreadType::Group;
+
+        // Build base URL: chat[0]/api/message (User) or group[0]/api/group (Group)
+        let base_url = if is_group {
             format!("{}/api/group", self.service_map.group_url())
+        } else {
+            format!("{}/api/message", self.service_map.chat_url())
         };
 
-        let endpoint = self.add_api_params(&format!("{}?nretry=0", base_url));
+        // Endpoint path: /sms (User) or /sendmsg (Group)
+        let path = if is_group { "sendmsg" } else { "sms" };
+        let endpoint = self.add_api_params(&format!("{}/{}?nretry=0", base_url, path));
 
-        let params = serde_json::json!({
-            "toid": thread_id,
-            "msg": content,
-            "clientId": generate_client_id(),
-        });
+        // Build params matching zca-js sendMessage
+        let client_id = generate_client_id();
+        let params = if is_group {
+            serde_json::json!({
+                "message": content,
+                "clientId": client_id,
+                "grid": thread_id,
+                "visibility": 0,
+                "ttl": 0,
+            })
+        } else {
+            serde_json::json!({
+                "message": content,
+                "clientId": client_id,
+                "toid": thread_id,
+                "imei": self.uid.as_deref().unwrap_or(""),
+                "ttl": 0,
+            })
+        };
 
-        let response = self
-            .client
-            .post(&endpoint)
-            .header("cookie", cookie)
-            .header("origin", "https://chat.zalo.me")
-            .header("referer", "https://chat.zalo.me/")
-            .form(&params)
-            .send()
-            .await
-            .map_err(|e| BizClawError::Channel(format!("Send message failed: {e}")))?;
+        let json_str = serde_json::to_string(&params).unwrap();
+
+        // Encrypt payload with secret_key (matching zca-js: utils.encodeAES)
+        let response = if let Some(ref secret_key) = self.secret_key {
+            let encrypted_params =
+                crate::zalo::client::crypto::encode_aes_cbc_base64(&json_str, secret_key)
+                    .ok_or_else(|| {
+                        BizClawError::Channel("Failed to encrypt message params".into())
+                    })?;
+
+            self.client
+                .post(&endpoint)
+                .header("cookie", cookie)
+                .header("origin", "https://chat.zalo.me")
+                .header("referer", "https://chat.zalo.me/")
+                .form(&[("params", encrypted_params)])
+                .send()
+                .await
+                .map_err(|e| BizClawError::Channel(format!("Send message failed: {e}")))?
+        } else {
+            // Fallback: plaintext (will likely be rejected by Zalo v2 API)
+            tracing::warn!("Sending message without encryption — may be rejected by Zalo");
+            self.client
+                .post(&endpoint)
+                .header("cookie", cookie)
+                .header("origin", "https://chat.zalo.me")
+                .header("referer", "https://chat.zalo.me/")
+                .form(&params)
+                .send()
+                .await
+                .map_err(|e| BizClawError::Channel(format!("Send message failed: {e}")))?
+        };
 
         let body: serde_json::Value = response
             .json()

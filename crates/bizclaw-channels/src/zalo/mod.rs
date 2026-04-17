@@ -41,6 +41,8 @@ pub struct ZaloChannel {
     msg_receiver: Arc<Mutex<Option<tokio::sync::mpsc::Receiver<IncomingMessage>>>>,
     /// Circuit breaker — prevents cascading failures when Zalo API is down.
     circuit_breaker: CircuitBreaker,
+    /// Cipher key (zpw_enk) for WebSocket binary frame decryption
+    cipher_key: Option<String>,
 }
 
 impl ZaloChannel {
@@ -68,11 +70,27 @@ impl ZaloChannel {
             Some(config.personal.proxy.clone())
         };
 
+        // Derive session persist path from cookie_path (e.g. ~/.bizclaw/zalo_cookie → ~/.bizclaw/zalo_session.json)
+        let session_path = if !config.personal.cookie_path.is_empty() {
+            let p = std::path::Path::new(&config.personal.cookie_path);
+            let parent = p.parent().unwrap_or(std::path::Path::new("."));
+            let session_file = parent.join("zalo_session.json");
+            session_file.to_string_lossy().to_string()
+        } else {
+            String::new()
+        };
+
+        let session = if session_path.is_empty() {
+            SessionManager::new()
+        } else {
+            SessionManager::with_persist_path(&session_path)
+        };
+
         Self {
             auth: ZaloAuth::new(creds),
             messaging: ZaloMessaging::with_proxy(proxy_opt),
             config,
-            session: SessionManager::new(),
+            session,
             connected: false,
             cookie: None,
             ws_urls: Vec::new(),
@@ -80,6 +98,7 @@ impl ZaloChannel {
             listener: None,
             msg_receiver: Arc::new(Mutex::new(None)),
             circuit_breaker: CircuitBreaker::named("zalo", 5, std::time::Duration::from_secs(30)),
+            cipher_key: None,
         }
     }
 
@@ -99,7 +118,7 @@ impl ZaloChannel {
             tracing::info!("Zalo: service map applied from login response");
         }
 
-        // Set login credentials
+        // Set login credentials on messaging client
         self.messaging
             .set_login_info(&login_data.uid, login_data.zpw_enk.as_deref());
 
@@ -107,6 +126,13 @@ impl ZaloChannel {
         if let Some(ref ws_urls) = login_data.zpw_ws {
             self.ws_urls = ws_urls.clone();
             tracing::info!("Zalo: got {} WebSocket URLs", self.ws_urls.len());
+        }
+
+        // Extract secret_key (zpw_sek) from cookie for API param encryption
+        let secret_key = extract_cookie_value(cookie, "zpw_sek");
+        // Wire secret_key into messaging client for send_text encryption
+        if let Some(ref sk) = secret_key {
+            self.messaging.set_secret_key(sk);
         }
 
         // Store own UID
@@ -117,9 +143,14 @@ impl ZaloChannel {
                 login_data.uid.clone(),
                 login_data.zpw_enk,
                 login_data.zpw_key,
+                secret_key,
+                Some(cookie.to_string()),
+                Some(self.config.personal.imei.clone()),
             )
             .await;
         self.cookie = Some(cookie.to_string());
+        // Store cipher_key for WebSocket listener (needs to be sync-accessible)
+        self.cipher_key = self.session.get_session().await.zpw_enk.clone();
         tracing::info!("Zalo logged in: uid={}", login_data.uid);
         Ok(())
     }
@@ -157,7 +188,8 @@ impl ZaloChannel {
             )
             .with_own_uid(&self.own_uid)
             .with_self_listen(self.config.personal.self_listen)
-            .with_webhook(webhook_url);
+            .with_webhook(webhook_url)
+            .with_cipher_key(self.cipher_key.clone());
 
         let rx = listener.start_listening(cookie);
 
@@ -171,6 +203,50 @@ impl ZaloChannel {
         );
 
         Ok(())
+    }
+
+    /// Start a background health watchdog that monitors session state.
+    /// Detects stale sessions (no heartbeat), logs alerts for re-authentication.
+    fn start_health_watchdog(&self) {
+        let session = self.session.get_arc();
+        let uid = self.own_uid.clone();
+
+        tokio::spawn(async move {
+            let check_interval = std::time::Duration::from_secs(60);
+            let stale_threshold = 300; // 5 minutes without heartbeat = stale
+
+            loop {
+                tokio::time::sleep(check_interval).await;
+
+                let s = session.read().await;
+                if !s.active {
+                    tracing::info!("Zalo watchdog: session inactive for uid={}, stopping", uid);
+                    break;
+                }
+
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs();
+                let age = now.saturating_sub(s.last_heartbeat);
+
+                if age > stale_threshold {
+                    tracing::warn!(
+                        "⚠️ Zalo watchdog: session STALE for uid={} ({}s since last heartbeat). Re-auth may be needed.",
+                        s.uid,
+                        age
+                    );
+                } else {
+                    tracing::trace!(
+                        "Zalo watchdog: session healthy for uid={} ({}s)",
+                        s.uid,
+                        age
+                    );
+                }
+            }
+        });
+
+        tracing::info!("Zalo: health watchdog started for uid={}", self.own_uid);
     }
 }
 
@@ -187,32 +263,75 @@ impl Channel for ZaloChannel {
             "personal" => {
                 tracing::warn!("⚠️  Zalo Personal API is unofficial. Use at your own risk.");
 
-                // Try cookie login: from cookie_path file first, then raw cookie
-                let cookie = self.try_load_cookie()?;
-                if let Some(cookie) = cookie {
-                    self.login_cookie(&cookie).await?;
-                    self.connected = true;
-                    tracing::info!("Zalo Personal: connected via cookie auth");
+                // Step 0: Try restoring persisted session first (skip fresh login if valid)
+                if self.session.load_from_file().await {
+                    let restored = self.session.get_session().await;
+                    if restored.active && restored.cookie.is_some() {
+                        tracing::info!("Zalo: restored persisted session for uid={}", restored.uid);
+                        self.own_uid = restored.uid.clone();
+                        self.cookie = restored.cookie.clone();
+                        self.cipher_key = restored.zpw_enk.clone();
+                        self.messaging
+                            .set_login_info(&restored.uid, restored.zpw_enk.as_deref());
 
-                    // Start WebSocket listener for receiving messages
-                    if !self.ws_urls.is_empty() {
-                        if let Err(e) = self.start_ws_listener() {
-                            tracing::warn!(
-                                "Zalo: WebSocket listener failed to start: {e}. \
-                                 Messages will only be received via webhook/polling."
-                            );
+                        // Re-login to refresh service map + ws URLs
+                        if let Some(ref cookie) = restored.cookie {
+                            match self.auth.login_with_cookie(cookie).await {
+                                Ok(login_data) => {
+                                    if let Some(ref map) = login_data.zpw_service_map_v3 {
+                                        let service_map =
+                                            client::messaging::ZaloServiceMap::from_login_data(map);
+                                        self.messaging.set_service_map(service_map);
+                                    }
+                                    if let Some(ref ws) = login_data.zpw_ws {
+                                        self.ws_urls = ws.clone();
+                                    }
+                                    self.connected = true;
+                                    tracing::info!("Zalo: session refreshed successfully");
+                                }
+                                Err(e) => {
+                                    tracing::warn!(
+                                        "Zalo: persisted session expired, doing fresh login: {e}"
+                                    );
+                                    self.session.invalidate().await;
+                                    // Fall through to fresh login below
+                                }
+                            }
                         }
+                    }
+                }
+
+                // Step 1: Fresh login if not already connected
+                if !self.connected {
+                    let cookie = self.try_load_cookie()?;
+                    if let Some(cookie) = cookie {
+                        self.login_cookie(&cookie).await?;
+                        self.connected = true;
+                        tracing::info!("Zalo Personal: connected via cookie auth");
                     } else {
+                        return Err(BizClawError::AuthFailed(
+                            "No Zalo cookie found. Configure cookie_path in config.toml or use QR login via admin dashboard.".into()
+                        ));
+                    }
+                }
+
+                // Step 2: Start WebSocket listener
+                if !self.ws_urls.is_empty() {
+                    if let Err(e) = self.start_ws_listener() {
                         tracing::warn!(
-                            "Zalo: No WebSocket URLs from login. \
-                             Real-time message receiving unavailable."
+                            "Zalo: WebSocket listener failed to start: {e}. \
+                             Messages will only be received via webhook/polling."
                         );
                     }
                 } else {
-                    return Err(BizClawError::AuthFailed(
-                        "No Zalo cookie found. Configure cookie_path in config.toml or use QR login via admin dashboard.".into()
-                    ));
+                    tracing::warn!(
+                        "Zalo: No WebSocket URLs from login. \
+                         Real-time message receiving unavailable."
+                    );
                 }
+
+                // Step 3: Start health watchdog
+                self.start_health_watchdog();
             }
             "official" => {
                 tracing::info!("Zalo OA: connecting via official API...");
@@ -375,4 +494,16 @@ impl ZaloChannel {
             "service_info": self.messaging.service_info(),
         })
     }
+}
+
+/// Extract a value from a cookie string by key name.
+fn extract_cookie_value(cookie_str: &str, key: &str) -> Option<String> {
+    cookie_str.split(';').find_map(|pair| {
+        let mut kv = pair.trim().splitn(2, '=');
+        if kv.next() == Some(key) {
+            kv.next().map(String::from)
+        } else {
+            None
+        }
+    })
 }

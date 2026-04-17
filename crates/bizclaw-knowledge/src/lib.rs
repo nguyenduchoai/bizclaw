@@ -34,6 +34,7 @@
 
 pub mod chunker;
 pub mod embeddings;
+pub mod graph;
 pub mod mcp_server;
 pub mod multi_embed;
 pub mod nudges;
@@ -42,6 +43,8 @@ pub mod signals;
 pub mod store;
 pub mod vector_store;
 pub mod watcher;
+
+pub use graph::{Entity, EntityType, GraphService, KnowledgeGraph, RelationType, Relationship};
 
 #[cfg(feature = "pdf")]
 pub mod pdf;
@@ -52,7 +55,7 @@ pub mod docx;
 pub use mcp_server::{McpToolCall, McpToolDef, McpToolResponse};
 pub use multi_embed::{CombineStrategy, MultiModelEmbedder};
 pub use nudges::{Nudge, NudgeConfig, NudgeEngine};
-pub use search::{SearchFilter, SearchResult};
+pub use search::{SearchFilter, SearchResult, SearchTelemetry};
 pub use signals::{InteractionSignal, SignalLogger, SignalType};
 pub use store::{DocumentInfo, KnowledgeStore};
 pub use watcher::{FolderWatcher, IngestResult};

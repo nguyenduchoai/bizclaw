@@ -358,8 +358,9 @@ impl GatewayDb {
                 content TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
-        ).map_err(|e| format!("Migration group messages: {e}"))?;
-        
+        )
+        .map_err(|e| format!("Migration group messages: {e}"))?;
+
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS products (
                 id TEXT PRIMARY KEY,
@@ -401,7 +402,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["OPENAI_API_KEY"]"#,
-                r#"["gpt-4.1","gpt-4.1-mini","gpt-4.1-nano","gpt-4o","gpt-4o-mini","o3","o3-mini","o4-mini"]"#,
+                r#"["o3-mini","gpt-4o","gpt-4o-mini","o1","o1-mini"]"#,
             ),
             (
                 "anthropic",
@@ -413,7 +414,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["ANTHROPIC_API_KEY"]"#,
-                r#"["claude-sonnet-4-20250514","claude-opus-4-20250514","claude-3.5-haiku-20241022"]"#,
+                r#"["claude-3-5-sonnet-latest","claude-3-5-haiku-latest","claude-3-opus-latest"]"#,
             ),
             (
                 "gemini",
@@ -425,7 +426,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["GEMINI_API_KEY","GOOGLE_API_KEY"]"#,
-                r#"["gemini-2.5-pro-preview-06-05","gemini-2.5-flash-preview-05-20","gemini-2.0-flash","gemini-2.0-flash-lite"]"#,
+                r#"["gemini-2.0-flash-exp","gemini-1.5-pro","gemini-1.5-flash"]"#,
             ),
             (
                 "deepseek",
@@ -449,7 +450,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["GROQ_API_KEY"]"#,
-                r#"["llama-3.3-70b-versatile","llama-3.1-8b-instant","gemma2-9b-it","gemma-4-e4b-it","mixtral-8x7b-32768"]"#,
+                r#"["deepseek-r1-distill-llama-70b","llama-3.3-70b-versatile","llama-3.1-8b-instant"]"#,
             ),
             (
                 "openrouter",
@@ -461,7 +462,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["OPENROUTER_API_KEY","OPENAI_API_KEY"]"#,
-                r#"["openai/gpt-4.1","anthropic/claude-sonnet-4","google/gemini-2.5-flash-preview","deepseek/deepseek-r1"]"#,
+                r#"["deepseek/deepseek-chat","deepseek/deepseek-r1","openai/gpt-4o","anthropic/claude-3.5-sonnet"]"#,
             ),
             (
                 "together",
@@ -480,12 +481,12 @@ impl GatewayDb {
                 "MiniMax",
                 "🔮",
                 "cloud",
-                "https://api.minimaxi.chat/v1",
+                "https://api.minimax.io/v1",
                 "/chat/completions",
                 "/models",
                 "bearer",
                 r#"["MINIMAX_API_KEY"]"#,
-                r#"["MiniMax-Text-01","MiniMax-M1","abab6.5s-chat","abab6.5-chat","abab5.5-chat"]"#,
+                r#"["MiniMax-Text-01","MiniMax-M2.7","MiniMax-M2.5"]"#,
             ),
             (
                 "xai",
@@ -497,7 +498,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["XAI_API_KEY"]"#,
-                r#"["grok-3","grok-3-mini","grok-3-fast","grok-2"]"#,
+                r#"["grok-3","grok-3-mini","grok-2-1212"]"#,
             ),
             (
                 "mistral",
@@ -509,7 +510,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["MISTRAL_API_KEY"]"#,
-                r#"["mistral-large-latest","mistral-medium-latest","mistral-small-latest","codestral-latest","open-mistral-nemo"]"#,
+                r#"["mistral-large-latest","pixtral-12b-latest","mistral-medium-latest"]"#,
             ),
             (
                 "ollama",
@@ -521,7 +522,7 @@ impl GatewayDb {
                 "/models",
                 "none",
                 r#"[]"#,
-                r#"["llama3.2","qwen3","gemma4:e4b","gemma4:26b-a4b","phi-4","deepseek-r1"]"#,
+                r#"["llama3.3","qwen2.5:32b","gemma4:e4b","deepseek-r1:32b"]"#,
             ),
             (
                 "llamacpp",
@@ -545,7 +546,7 @@ impl GatewayDb {
                 "",
                 "none",
                 r#"[]"#,
-                r#"["tinyllama-1.1b","phi-2","llama-3.2-1b"]"#,
+                r#"["qwen3.5-4b-neo","gemma-4-e2b-it"]"#,
             ),
             (
                 "cliproxy",
@@ -581,7 +582,7 @@ impl GatewayDb {
                 "/models",
                 "bearer",
                 r#"["ARK_API_KEY","VOLC_ACCESSKEY"]"#,
-                r#"["seed-2-0-mini-260215","seed-1-8-251228","deepseek-v3-2-251201","doubao-1-5-pro-256k-250115","doubao-1-5-pro-32k-250115","glm-4-7-251222"]"#,
+                r#"["seed-2-0-mini-260215","seed-1-8-251228","deepseek-v3-2-251201"]"#,
             ),
         ];
 
@@ -1378,7 +1379,7 @@ impl GatewayDb {
     }
 
     // ── Zalo Group Messages ──────────────────────────────────
-    
+
     pub fn insert_group_message(
         &self,
         group_id: &str,
@@ -1400,25 +1401,29 @@ impl GatewayDb {
         limit: usize,
     ) -> Result<Vec<serde_json::Value>, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock: {e}"))?;
-        let mut stmt = conn.prepare(
-            "SELECT sender_id, sender_name, content, timestamp FROM (
+        let mut stmt = conn
+            .prepare(
+                "SELECT sender_id, sender_name, content, timestamp FROM (
                 SELECT sender_id, sender_name, content, timestamp 
                 FROM group_messages 
                 WHERE group_id = ?1 
                 ORDER BY timestamp DESC LIMIT ?2
-            ) ORDER BY timestamp ASC"
-        ).map_err(|e| format!("Prepare: {e}"))?;
-        
-        let msgs = stmt.query_map(params![group_id, limit as i64], |row| {
-            Ok(serde_json::json!({
-                "sender_id": row.get::<_, String>(0)?,
-                "sender_name": row.get::<_, Option<String>>(1)?,
-                "content": row.get::<_, String>(2)?,
-                "timestamp": row.get::<_, String>(3)?,
-            }))
-        }).map_err(|e| format!("Query: {e}"))?
-        .filter_map(|r| r.ok())
-        .collect();
+            ) ORDER BY timestamp ASC",
+            )
+            .map_err(|e| format!("Prepare: {e}"))?;
+
+        let msgs = stmt
+            .query_map(params![group_id, limit as i64], |row| {
+                Ok(serde_json::json!({
+                    "sender_id": row.get::<_, String>(0)?,
+                    "sender_name": row.get::<_, Option<String>>(1)?,
+                    "content": row.get::<_, String>(2)?,
+                    "timestamp": row.get::<_, String>(3)?,
+                }))
+            })
+            .map_err(|e| format!("Query: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
         Ok(msgs)
     }
 
@@ -1430,23 +1435,25 @@ impl GatewayDb {
         let mut stmt = conn.prepare(
             "SELECT id, sku, name, price, stock, category, description, image_url, active, created_at, updated_at FROM products ORDER BY name"
         ).map_err(|e| format!("Prepare: {e}"))?;
-        let products = stmt.query_map([], |row| {
-            Ok(serde_json::json!({
-                "id": row.get::<_, String>(0)?,
-                "sku": row.get::<_, String>(1)?,
-                "name": row.get::<_, String>(2)?,
-                "price": row.get::<_, f64>(3)?,
-                "stock": row.get::<_, i64>(4)?,
-                "category": row.get::<_, String>(5)?,
-                "description": row.get::<_, String>(6)?,
-                "image_url": row.get::<_, String>(7)?,
-                "active": row.get::<_, i32>(8)? != 0,
-                "created_at": row.get::<_, String>(9)?,
-                "updated_at": row.get::<_, String>(10)?,
-            }))
-        }).map_err(|e| format!("Query: {e}"))?
-        .filter_map(|r| r.ok())
-        .collect();
+        let products = stmt
+            .query_map([], |row| {
+                Ok(serde_json::json!({
+                    "id": row.get::<_, String>(0)?,
+                    "sku": row.get::<_, String>(1)?,
+                    "name": row.get::<_, String>(2)?,
+                    "price": row.get::<_, f64>(3)?,
+                    "stock": row.get::<_, i64>(4)?,
+                    "category": row.get::<_, String>(5)?,
+                    "description": row.get::<_, String>(6)?,
+                    "image_url": row.get::<_, String>(7)?,
+                    "active": row.get::<_, i32>(8)? != 0,
+                    "created_at": row.get::<_, String>(9)?,
+                    "updated_at": row.get::<_, String>(10)?,
+                }))
+            })
+            .map_err(|e| format!("Query: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect();
         Ok(products)
     }
 
@@ -1478,7 +1485,8 @@ impl GatewayDb {
     /// Delete a product.
     pub fn delete_product(&self, id: &str) -> Result<bool, String> {
         let conn = self.conn.lock().map_err(|e| format!("Lock: {e}"))?;
-        let rows = conn.execute("DELETE FROM products WHERE id=?1", params![id])
+        let rows = conn
+            .execute("DELETE FROM products WHERE id=?1", params![id])
             .map_err(|e| format!("Delete product: {e}"))?;
         Ok(rows > 0)
     }
@@ -1505,16 +1513,18 @@ impl GatewayDb {
             "SELECT name, sku, price, stock, category, description FROM products WHERE active=1 ORDER BY category, name"
         ).map_err(|e| format!("Prepare: {e}"))?;
         let mut text = String::from("# Bảng Giá Sản Phẩm\n\n");
-        let rows = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, f64>(2)?,
-                row.get::<_, i64>(3)?,
-                row.get::<_, String>(4)?,
-                row.get::<_, String>(5)?,
-            ))
-        }).map_err(|e| format!("Query: {e}"))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, f64>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                ))
+            })
+            .map_err(|e| format!("Query: {e}"))?;
         for row in rows.flatten() {
             let (name, sku, price, stock, cat, desc) = row;
             text.push_str(&format!(
@@ -1525,8 +1535,6 @@ impl GatewayDb {
         Ok(text)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

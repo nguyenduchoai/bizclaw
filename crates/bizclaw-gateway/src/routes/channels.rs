@@ -675,3 +675,99 @@ pub async fn agent_channel_bindings(State(state): State<Arc<AppState>>) -> Json<
         "bindings": bindings,
     }))
 }
+
+// ═══════════════════════════════════════════════════════
+// Zalo Session Status API — used by SME Dashboard
+// ═══════════════════════════════════════════════════════
+
+/// Get Zalo native session status — reads the persisted session JSON.
+/// Used by /channels and /companion dashboard pages.
+pub async fn zalo_session_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let cfg = state.full_config.lock().unwrap_or_else(|p| p.into_inner());
+    let zalo_cfg = cfg.channel.zalo.first().cloned();
+    drop(cfg);
+
+    let Some(zalo) = zalo_cfg else {
+        return Json(serde_json::json!({
+            "ok": true,
+            "connected": false,
+            "reason": "no_zalo_config",
+            "message": "Zalo chưa được cấu hình trong config.toml",
+        }));
+    };
+
+    // Find session file next to cookie_path
+    let session_path = if !zalo.personal.cookie_path.is_empty() {
+        let p = std::path::Path::new(&zalo.personal.cookie_path);
+        let parent = p.parent().unwrap_or(std::path::Path::new("."));
+        parent.join("zalo_session.json")
+    } else {
+        state
+            .config_path
+            .parent()
+            .unwrap_or(std::path::Path::new("."))
+            .join("zalo_session.json")
+    };
+
+    if !session_path.exists() {
+        return Json(serde_json::json!({
+            "ok": true,
+            "connected": false,
+            "reason": "no_session_file",
+            "message": "Chưa có phiên đăng nhập. Cần đăng nhập Zalo bằng cookie.",
+            "config": {
+                "mode": zalo.mode,
+                "enabled": zalo.enabled,
+                "has_cookie_path": !zalo.personal.cookie_path.is_empty(),
+                "has_imei": !zalo.personal.imei.is_empty(),
+            }
+        }));
+    };
+
+    // Read and parse session
+    match std::fs::read_to_string(&session_path) {
+        Ok(content) => match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(session) => {
+                let uid = session["uid"].as_str().unwrap_or("");
+                let active = session["active"].as_bool().unwrap_or(false);
+                let last_heartbeat = session["last_heartbeat"].as_u64().unwrap_or(0);
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs();
+                let age_secs = now.saturating_sub(last_heartbeat);
+                let stale = age_secs > 300; // 5 min threshold
+
+                Json(serde_json::json!({
+                    "ok": true,
+                    "connected": active && !stale,
+                    "uid": uid,
+                    "active": active,
+                    "stale": stale,
+                    "last_heartbeat": last_heartbeat,
+                    "heartbeat_age_secs": age_secs,
+                    "has_cookie": session["cookie"].is_string(),
+                    "has_secret_key": session["secret_key"].is_string(),
+                    "has_cipher_key": session["zpw_enk"].is_string(),
+                    "config": {
+                        "mode": zalo.mode,
+                        "enabled": zalo.enabled,
+                        "auto_reconnect": zalo.personal.auto_reconnect,
+                    }
+                }))
+            }
+            Err(_) => Json(serde_json::json!({
+                "ok": true,
+                "connected": false,
+                "reason": "corrupt_session",
+                "message": "File phiên bị lỗi. Cần đăng nhập lại.",
+            })),
+        },
+        Err(_) => Json(serde_json::json!({
+            "ok": true,
+            "connected": false,
+            "reason": "unreadable_session",
+            "message": "Không đọc được file phiên.",
+        })),
+    }
+}

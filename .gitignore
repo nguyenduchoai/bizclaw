@@ -43,3 +43,22 @@ Bizino-Dev_Kit-main/
 *.apk
 /dashboard/
 .env.local
+
+# Local Git tokens and credentials
+.git/.git_token
+.git/.gh_token
+
+# Security sensitive
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Audit reports
+cargo-audit-report.*
+trivy-results.*
+
+# Coverage reports with potential secrets
+coverage/
+*.lcov

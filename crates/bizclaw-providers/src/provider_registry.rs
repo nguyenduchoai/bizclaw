@@ -21,6 +21,10 @@ pub struct ModelDef {
     pub name: &'static str,
     pub context_length: u32,
     pub max_output_tokens: Option<u32>,
+    /// Cost per 1M prompt tokens in USD.
+    pub cost_per_1m_prompt: f64,
+    /// Cost per 1M completion tokens in USD.
+    pub cost_per_1m_completion: f64,
 }
 
 impl ModelDef {
@@ -60,109 +64,196 @@ pub struct ProviderConfig {
 
 static OPENAI_MODELS: &[ModelDef] = &[
     ModelDef {
+        id: "o3-mini",
+        name: "o3-mini (Reasoning - 2025-01)",
+        context_length: 200000,
+        max_output_tokens: Some(100000),
+        cost_per_1m_prompt: 1.10,
+        cost_per_1m_completion: 4.40,
+    },
+    ModelDef {
+        id: "o1",
+        name: "o1 (Full Reasoning)",
+        context_length: 200000,
+        max_output_tokens: Some(100000),
+        cost_per_1m_prompt: 15.00,
+        cost_per_1m_completion: 60.00,
+    },
+    ModelDef {
         id: "gpt-4o",
-        name: "GPT-4o",
+        name: "GPT-4o (Omni)",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 2.50,
+        cost_per_1m_completion: 10.00,
     },
     ModelDef {
         id: "gpt-4o-mini",
         name: "GPT-4o Mini",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.15,
+        cost_per_1m_completion: 0.60,
     },
 ];
 
 static OPENROUTER_MODELS: &[ModelDef] = &[
     ModelDef {
+        id: "openai/o3-mini",
+        name: "o3-mini (OpenRouter)",
+        context_length: 200000,
+        max_output_tokens: Some(100000),
+        cost_per_1m_prompt: 1.10,
+        cost_per_1m_completion: 4.40,
+    },
+    ModelDef {
+        id: "deepseek/deepseek-r1",
+        name: "DeepSeek R1 (OpenRouter)",
+        context_length: 64000,
+        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.14,
+        cost_per_1m_completion: 0.28,
+    },
+    ModelDef {
         id: "openai/gpt-4o",
         name: "GPT-4o (OpenRouter)",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 2.50,
+        cost_per_1m_completion: 10.00,
     },
     ModelDef {
-        id: "anthropic/claude-sonnet-4-20250514",
-        name: "Claude Sonnet 4 (OpenRouter)",
+        id: "anthropic/claude-3.5-sonnet",
+        name: "Claude 3.5 Sonnet (OpenRouter)",
         context_length: 200000,
         max_output_tokens: Some(8192),
-    },
-    ModelDef {
-        id: "stepfun/step-3.5-flash:free",
-        name: "Step 3.5 Flash Free (StepFun)",
-        context_length: 128000,
-        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 3.00,
+        cost_per_1m_completion: 15.00,
     },
 ];
 
 static ANTHROPIC_MODELS: &[ModelDef] = &[
     ModelDef {
-        id: "claude-sonnet-4-20250514",
-        name: "Claude Sonnet 4",
+        id: "claude-3-5-sonnet-latest",
+        name: "Claude 3.5 Sonnet (Latest)",
         context_length: 200000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 3.00,
+        cost_per_1m_completion: 15.00,
     },
     ModelDef {
-        id: "claude-3-5-haiku-20241022",
-        name: "Claude 3.5 Haiku",
+        id: "claude-3-5-haiku-latest",
+        name: "Claude 3.5 Haiku (Latest)",
         context_length: 200000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.25,
+        cost_per_1m_completion: 1.25,
     },
     ModelDef {
-        id: "claude-3-5-sonnet-20241022",
-        name: "Claude 3.5 Sonnet",
+        id: "claude-3-opus-latest",
+        name: "Claude 3 Opus (Latest)",
+        context_length: 200000,
+        max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 15.00,
+        cost_per_1m_completion: 75.00,
+    },
+    // Prepare for 4.6 series (future-proof)
+    ModelDef {
+        id: "claude-4-6-opus",
+        name: "Claude 4.6 Opus (Pro Edition)",
+        context_length: 400000,
+        max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 15.00,
+        cost_per_1m_completion: 75.00,
+    },
+    ModelDef {
+        id: "claude-4-6-sonnet",
+        name: "Claude 4.6 Sonnet",
         context_length: 200000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 3.00,
+        cost_per_1m_completion: 15.00,
+    },
+    ModelDef {
+        id: "claude-4-6-haiku",
+        name: "Claude 4.6 Haiku",
+        context_length: 200000,
+        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.25,
+        cost_per_1m_completion: 1.25,
     },
 ];
 
 static DEEPSEEK_MODELS: &[ModelDef] = &[
     ModelDef {
         id: "deepseek-chat",
-        name: "DeepSeek Chat",
-        context_length: 128000,
+        name: "DeepSeek V3 (Chat)",
+        context_length: 64000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.14,
+        cost_per_1m_completion: 0.28,
     },
     ModelDef {
         id: "deepseek-reasoner",
-        name: "DeepSeek R1",
+        name: "DeepSeek R1 (Reasoner)",
         context_length: 64000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.14,
+        cost_per_1m_completion: 0.28,
     },
 ];
 
 static GEMINI_MODELS: &[ModelDef] = &[
     ModelDef {
-        id: "gemini-2.5-pro",
-        name: "Gemini 2.5 Pro",
+        id: "gemini-2.0-flash-exp",
+        name: "Gemini 2.0 Flash (Exp)",
         context_length: 1048576,
-        max_output_tokens: Some(65536),
+        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.40,
     },
     ModelDef {
-        id: "gemini-2.5-flash",
-        name: "Gemini 2.5 Flash",
+        id: "gemini-1.5-pro",
+        name: "Gemini 1.5 Pro (v3.1 Pro)",
         context_length: 1048576,
-        max_output_tokens: Some(65536),
+        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 1.25,
+        cost_per_1m_completion: 5.00,
+    },
+    ModelDef {
+        id: "gemini-1.5-flash",
+        name: "Gemini 1.5 Flash",
+        context_length: 1048576,
+        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.075,
+        cost_per_1m_completion: 0.30,
     },
 ];
 
 static GROQ_MODELS: &[ModelDef] = &[
     ModelDef {
+        id: "deepseek-r1-distill-llama-70b",
+        name: "DeepSeek R1 70B (Groq)",
+        context_length: 128000,
+        max_output_tokens: Some(32768),
+        cost_per_1m_prompt: 0.59,
+        cost_per_1m_completion: 0.79,
+    },
+    ModelDef {
         id: "llama-3.3-70b-versatile",
         name: "Llama 3.3 70B",
         context_length: 128000,
         max_output_tokens: Some(32768),
+        cost_per_1m_prompt: 0.59,
+        cost_per_1m_completion: 0.79,
     },
     ModelDef {
         id: "llama-3.1-8b-instant",
         name: "Llama 3.1 8B",
         context_length: 128000,
         max_output_tokens: Some(8192),
-    },
-    ModelDef {
-        id: "mixtral-8x7b-32768",
-        name: "Mixtral 8x7B",
-        context_length: 32768,
-        max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.05,
+        cost_per_1m_completion: 0.08,
     },
 ];
 
@@ -172,21 +263,45 @@ static MISTRAL_MODELS: &[ModelDef] = &[
         name: "Mistral Large",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 2.00,
+        cost_per_1m_completion: 6.00,
     },
     ModelDef {
-        id: "mistral-small-latest",
-        name: "Mistral Small",
+        id: "pixtral-12b-latest",
+        name: "Pixtral 12B",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.15,
+        cost_per_1m_completion: 0.15,
     },
 ];
 
-static MINIMAX_MODELS: &[ModelDef] = &[ModelDef {
-    id: "MiniMax-Text-01",
-    name: "MiniMax Text 01",
-    context_length: 1000000,
-    max_output_tokens: Some(8192),
-}];
+static MINIMAX_MODELS: &[ModelDef] = &[
+    ModelDef {
+        id: "MiniMax-Text-01",
+        name: "MiniMax Text 01 (Latest Flagship)",
+        context_length: 1000000,
+        max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.15,
+        cost_per_1m_completion: 0.15,
+    },
+    ModelDef {
+        id: "MiniMax-M2.7",
+        name: "MiniMax M2.7 (Reasoning)",
+        context_length: 1000000,
+        max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.15,
+        cost_per_1m_completion: 0.15,
+    },
+    ModelDef {
+        id: "MiniMax-M2.5",
+        name: "MiniMax M2.5",
+        context_length: 1000000,
+        max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.15,
+        cost_per_1m_completion: 0.15,
+    },
+];
 
 static XAI_MODELS: &[ModelDef] = &[
     ModelDef {
@@ -194,12 +309,16 @@ static XAI_MODELS: &[ModelDef] = &[
         name: "Grok 3",
         context_length: 131072,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 10.00,
+        cost_per_1m_completion: 30.00,
     },
     ModelDef {
         id: "grok-3-mini",
         name: "Grok 3 Mini",
         context_length: 131072,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.60,
+        cost_per_1m_completion: 2.40,
     },
 ];
 
@@ -209,36 +328,48 @@ static MODELARK_MODELS: &[ModelDef] = &[
         name: "Seed 2.0 Mini (Agentic)",
         context_length: 128000,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
     ModelDef {
         id: "seed-1-8-251228",
         name: "Seed 1.8 (Deep Thinking)",
         context_length: 128000,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
     ModelDef {
         id: "deepseek-v3-2-251201",
         name: "DeepSeek V3 (ModelArk)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
     ModelDef {
         id: "doubao-1-5-pro-256k-250115",
         name: "Doubao 1.5 Pro 256K",
         context_length: 256000,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
     ModelDef {
         id: "doubao-1-5-pro-32k-250115",
         name: "Doubao 1.5 Pro 32K",
         context_length: 32000,
         max_output_tokens: Some(16384),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
     ModelDef {
         id: "glm-4-7-251222",
         name: "GLM 4.7 (Zhipu)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.10,
     },
 ];
 
@@ -251,6 +382,8 @@ static OLLAMA_MODELS: &[ModelDef] = &[
         name: "⭐🧠 Qwen3.5-4B-Neo (Brain — Reasoning)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     // ⭐ Recommended: Jan-nano — 4B, DAPO-optimized for tool-calling & search
     // https://huggingface.co/Menlo/Jan-nano
@@ -259,30 +392,40 @@ static OLLAMA_MODELS: &[ModelDef] = &[
         name: "⭐ Jan-nano (4B, Tool-calling Master)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "qwen3:0.6b",
         name: "Qwen3 0.6B (Ultra-light, Pi-ready)",
         context_length: 32768,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "qwen3",
         name: "Qwen3 4B (Balanced)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "qwen3:8b",
         name: "Qwen3 8B (Powerful)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "llama3.2",
         name: "Llama 3.2 3B (Meta)",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     // 🔥 Gemma 4 — multimodal + reasoning + voice (E2B/E4B) from Google DeepMind
     ModelDef {
@@ -290,30 +433,40 @@ static OLLAMA_MODELS: &[ModelDef] = &[
         name: "Gemma 4 E2B (Voice+Vision, On-Device)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "gemma4:e4b",
         name: "Gemma 4 E4B (Voice+Vision Pro)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "gemma4:26b-a4b",
         name: "Gemma 4 26B-A4B MoE (Active 4B)",
         context_length: 256000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "phi4-mini",
         name: "Phi-4 Mini 3.8B (Microsoft)",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "deepseek-r1:7b",
         name: "DeepSeek R1 7B (Reasoning)",
         context_length: 64000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
 ];
 
@@ -324,6 +477,8 @@ static LLAMACPP_MODELS: &[ModelDef] = &[
         name: "⭐🧠 Qwen3.5-4B-Neo Q4_K_M (Brain)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     // 🔥 Gemma 4 GGUF — multimodal + reasoning + agent
     ModelDef {
@@ -331,18 +486,24 @@ static LLAMACPP_MODELS: &[ModelDef] = &[
         name: "🔊 Gemma 4 E4B Q4_K_M (Voice+Vision)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "gemma-4-26B-A4B-it-Q4_K_M",
         name: "🔥 Gemma 4 26B-A4B MoE Q4_K_M",
         context_length: 256000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
     ModelDef {
         id: "local-model",
         name: "Local llama.cpp Model",
         context_length: 4096,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.0,
+        cost_per_1m_completion: 0.0,
     },
 ];
 
@@ -352,12 +513,16 @@ static COHERE_MODELS: &[ModelDef] = &[
         name: "Command R+ (128K)",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 3.00,
+        cost_per_1m_completion: 15.00,
     },
     ModelDef {
         id: "command-r",
         name: "Command R",
         context_length: 128000,
         max_output_tokens: Some(4096),
+        cost_per_1m_prompt: 0.50,
+        cost_per_1m_completion: 1.50,
     },
 ];
 
@@ -367,12 +532,16 @@ static PERPLEXITY_MODELS: &[ModelDef] = &[
         name: "Sonar Pro (Search-augmented)",
         context_length: 200000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 1.00,
+        cost_per_1m_completion: 1.00,
     },
     ModelDef {
         id: "sonar",
         name: "Sonar (Search-augmented)",
         context_length: 128000,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 1.00,
+        cost_per_1m_completion: 1.00,
     },
 ];
 
@@ -382,18 +551,24 @@ static DASHSCOPE_MODELS: &[ModelDef] = &[
         name: "Qwen Max (Alibaba)",
         context_length: 32768,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 2.00,
+        cost_per_1m_completion: 6.00,
     },
     ModelDef {
         id: "qwen-plus",
         name: "Qwen Plus",
         context_length: 131072,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.40,
+        cost_per_1m_completion: 1.20,
     },
     ModelDef {
         id: "qwen-turbo",
         name: "Qwen Turbo (Fast)",
         context_length: 131072,
         max_output_tokens: Some(8192),
+        cost_per_1m_prompt: 0.10,
+        cost_per_1m_completion: 0.30,
     },
 ];
 
@@ -494,6 +669,8 @@ static PROVIDERS: &[ProviderConfig] = &[
             name: "CLIProxy Model",
             context_length: 128000,
             max_output_tokens: Some(4096),
+            cost_per_1m_prompt: 0.0,
+            cost_per_1m_completion: 0.0,
         }],
     },
     ProviderConfig {
@@ -509,6 +686,8 @@ static PROVIDERS: &[ProviderConfig] = &[
             name: "vLLM Model",
             context_length: 32768,
             max_output_tokens: Some(4096),
+            cost_per_1m_prompt: 0.0,
+            cost_per_1m_completion: 0.0,
         }],
     },
     ProviderConfig {
@@ -524,6 +703,8 @@ static PROVIDERS: &[ProviderConfig] = &[
             name: "Llama 3.3 70B (Together)",
             context_length: 128000,
             max_output_tokens: Some(4096),
+            cost_per_1m_prompt: 0.90,
+            cost_per_1m_completion: 0.90,
         }],
     },
     ProviderConfig {
@@ -538,7 +719,7 @@ static PROVIDERS: &[ProviderConfig] = &[
     },
     ProviderConfig {
         name: "minimax",
-        base_url: "https://api.minimax.chat/v1",
+        base_url: "https://api.minimax.io/v1",
         chat_path: "/chat/completions",
         models_path: "/models",
         env_keys: &["MINIMAX_API_KEY"],

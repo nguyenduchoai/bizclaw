@@ -1,6 +1,7 @@
 //! SKILL.md parser — extracts metadata and content from skill files.
 
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 
 /// Skill metadata from YAML frontmatter.
 /// Compatible with both BizClaw and OpenClaw/ClawHub SKILL.md format.
@@ -25,6 +26,18 @@ pub struct SkillMetadata {
     /// Category (e.g., "coding", "writing", "devops").
     #[serde(default)]
     pub category: String,
+    /// Business category (e.g., "sales", "marketing", "support").
+    #[serde(default)]
+    pub business_category: String,
+    /// Business roles that would use this skill.
+    #[serde(default)]
+    pub business_roles: Vec<String>,
+    /// Industry tags (e.g., "retail", "ecommerce", "finance").
+    #[serde(default)]
+    pub industry: Vec<String>,
+    /// Pain points this skill addresses.
+    #[serde(default)]
+    pub pain_points: Vec<String>,
     /// Required tools for this skill (BizClaw native).
     #[serde(default)]
     pub requires_tools: Vec<String>,
@@ -125,90 +138,70 @@ impl SkillManifest {
         Ok((metadata, body))
     }
 
-    /// Simple YAML frontmatter parser.
     fn parse_yaml_frontmatter(yaml: &str) -> Result<SkillMetadata, String> {
-        let mut name = String::new();
-        let mut display_name = String::new();
-        let mut description = String::new();
-        let mut version = default_version();
-        let mut author = String::new();
-        let mut tags = Vec::new();
-        let mut category = String::new();
-        let mut requires_tools = Vec::new();
-        let mut compatible_providers = Vec::new();
-        let mut icon = default_icon();
+        let value: Value = serde_yaml::from_str(yaml)
+            .map_err(|e| format!("Failed to parse YAML frontmatter: {}", e))?;
 
-        let mut current_list: Option<&str> = None;
+        let map = match &value {
+            Value::Mapping(m) => m,
+            _ => return Err("YAML frontmatter must be a mapping".into()),
+        };
 
-        for line in yaml.lines() {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-
-            // List item
-            if let Some(stripped) = trimmed.strip_prefix("- ") {
-                let value = stripped.trim().trim_matches('"').trim_matches('\'');
-                match current_list {
-                    Some("tags") => tags.push(value.to_string()),
-                    Some("requires_tools") => requires_tools.push(value.to_string()),
-                    Some("compatible_providers") => compatible_providers.push(value.to_string()),
-                    _ => {}
-                }
-                continue;
-            }
-
-            current_list = None;
-
-            if let Some((key, val)) = trimmed.split_once(':') {
-                let key = key.trim();
-                let val = val.trim().trim_matches('"').trim_matches('\'');
-
-                match key {
-                    "name" => name = val.to_string(),
-                    "display_name" => display_name = val.to_string(),
-                    "description" => description = val.to_string(),
-                    "version" => version = val.to_string(),
-                    "author" => author = val.to_string(),
-                    "category" => category = val.to_string(),
-                    "icon" => icon = val.to_string(),
-                    "tags" => {
-                        if val.is_empty() {
-                            current_list = Some("tags");
-                        } else {
-                            // Inline: tags: [a, b, c]
-                            let inner = val.trim_matches(|c| c == '[' || c == ']');
-                            tags = inner
-                                .split(',')
-                                .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
-                                .filter(|s| !s.is_empty())
-                                .collect();
-                        }
+        fn get_str(map: &serde_yaml::Mapping, key: &str) -> String {
+            map.get(&Value::String(key.to_string()))
+                .and_then(|v| match v {
+                    Value::String(s) => Some(s.clone()),
+                    Value::Number(n) => Some(n.to_string()),
+                    Value::Bool(b) => Some(b.to_string()),
+                    _ => None,
+                })
+                .unwrap_or_else(|| {
+                    if key == "version" {
+                        "1.0.0".to_string()
+                    } else {
+                        String::new()
                     }
-                    "requires_tools" => {
-                        if val.is_empty() {
-                            current_list = Some("requires_tools");
-                        }
-                    }
-                    "compatible_providers" => {
-                        if val.is_empty() {
-                            current_list = Some("compatible_providers");
-                        }
-                    }
-                    _ => {}
-                }
-            }
+                })
         }
 
+        fn get_vec_str(map: &serde_yaml::Mapping, key: &str) -> Vec<String> {
+            map.get(&Value::String(key.to_string()))
+                .and_then(|v| match v {
+                    Value::Sequence(seq) => Some(
+                        seq.iter()
+                            .filter_map(|item| match item {
+                                Value::String(s) => Some(s.clone()),
+                                Value::Number(n) => Some(n.to_string()),
+                                Value::Bool(b) => Some(b.to_string()),
+                                _ => None,
+                            })
+                            .collect(),
+                    ),
+                    Value::String(s) => Some(
+                        s.trim_matches(|c| c == '[' || c == ']')
+                            .split(',')
+                            .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect(),
+                    ),
+                    _ => None,
+                })
+                .unwrap_or_default()
+        }
+
+        let name = get_str(map, "name");
         if name.is_empty() {
             return Err("SKILL.md frontmatter must have a 'name' field".into());
         }
+
+        let description = get_str(map, "description");
         if description.is_empty() {
             return Err("SKILL.md frontmatter must have a 'description' field".into());
         }
+
+        let mut display_name = get_str(map, "display_name");
         if display_name.is_empty() {
             display_name = name.replace('-', " ");
-            // Capitalize first letter of each word
             display_name = display_name
                 .split_whitespace()
                 .map(|w| {
@@ -226,18 +219,22 @@ impl SkillManifest {
             name,
             display_name,
             description,
-            version,
-            author,
-            tags,
-            category,
-            requires_tools,
-            compatible_providers,
-            icon,
-            requires_env: Vec::new(),
-            requires_bins: Vec::new(),
-            primary_env: String::new(),
-            homepage: String::new(),
-            os: Vec::new(),
+            version: get_str(map, "version"),
+            author: get_str(map, "author"),
+            tags: get_vec_str(map, "tags"),
+            category: get_str(map, "category"),
+            business_category: get_str(map, "business_category"),
+            business_roles: get_vec_str(map, "business_roles"),
+            industry: get_vec_str(map, "industry"),
+            pain_points: get_vec_str(map, "pain_points"),
+            requires_tools: get_vec_str(map, "requires_tools"),
+            compatible_providers: get_vec_str(map, "compatible_providers"),
+            icon: get_str(map, "icon"),
+            requires_env: get_vec_str(map, "requires_env"),
+            requires_bins: get_vec_str(map, "requires_bins"),
+            primary_env: get_str(map, "primary_env"),
+            homepage: get_str(map, "homepage"),
+            os: get_vec_str(map, "os"),
             source: "local".to_string(),
         })
     }

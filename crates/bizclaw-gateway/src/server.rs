@@ -4,7 +4,7 @@ use axum::extract::DefaultBodyLimit;
 use axum::{
     Json, Router,
     extract::State,
-    routing::{delete, get, post, put},
+    routing::{get, post, put},
 };
 use bizclaw_core::config::{BizClawConfig, GatewayConfig};
 use bizclaw_db::DataStore;
@@ -36,6 +36,8 @@ pub struct AppState {
     pub scheduler: Arc<tokio::sync::Mutex<bizclaw_scheduler::SchedulerEngine>>,
     /// Knowledge base — personal RAG with FTS5 search.
     pub knowledge: Arc<tokio::sync::Mutex<Option<bizclaw_knowledge::KnowledgeStore>>>,
+    /// CRM Manager — unified inbox + customer management.
+    pub crm: Arc<bizclaw_crm::CRMManager>,
     /// Active Telegram bot polling tasks — maps agent_name → abort handle.
     pub telegram_bots: Arc<tokio::sync::Mutex<HashMap<String, TelegramBotState>>>,
     /// Per-tenant SQLite database for persistent CRUD (providers, agents, channels, settings).
@@ -98,6 +100,30 @@ async fn landing_page() -> axum::response::Response {
         .header("Content-Type", "text/html; charset=utf-8")
         .header("Cache-Control", "public, max-age=300")
         .body(axum::body::Body::from(super::dashboard::landing_html()))
+        .expect("static response")
+}
+
+/// Serve the NEW Horizontal Menu Dashboard at /new.
+async fn dashboard_new_page() -> axum::response::Response {
+    axum::response::Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .header("Cache-Control", "no-store, no-cache, must-revalidate")
+        .header("Pragma", "no-cache")
+        .body(axum::body::Body::from(
+            super::dashboard::dashboard_new_html(),
+        ))
+        .expect("static response")
+}
+
+/// Serve the Visual Workflow Builder at /workflow-builder.
+async fn workflow_builder_page() -> axum::response::Response {
+    axum::response::Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .header("Cache-Control", "no-store, no-cache, must-revalidate")
+        .header("Pragma", "no-cache")
+        .body(axum::body::Body::from(
+            super::dashboard::workflow_builder_html(),
+        ))
         .expect("static response")
 }
 
@@ -628,10 +654,22 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         // Tools write
         .route("/api/v1/tools", post(super::routes::tools_create))
         .route("/api/v1/handoff/pause", post(super::routes::handoff_pause))
-        .route("/api/v1/handoff/resume", post(super::routes::handoff_resume))
-        .route("/api/v1/handoff/request", post(super::routes::request_handoff))
-        .route("/api/v1/handoff/settings", get(super::routes::get_handoff_settings))
-        .route("/api/v1/handoff/settings", post(super::routes::save_handoff_settings))
+        .route(
+            "/api/v1/handoff/resume",
+            post(super::routes::handoff_resume),
+        )
+        .route(
+            "/api/v1/handoff/request",
+            post(super::routes::request_handoff),
+        )
+        .route(
+            "/api/v1/handoff/settings",
+            get(super::routes::get_handoff_settings),
+        )
+        .route(
+            "/api/v1/handoff/settings",
+            post(super::routes::save_handoff_settings),
+        )
         .route(
             "/api/v1/tools/{name}/toggle",
             post(super::routes::tools_toggle),
@@ -733,10 +771,7 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             axum::routing::delete(super::routes::clear_activity),
         )
         // Product Catalog write
-        .route(
-            "/api/v1/products",
-            post(super::routes::products_upsert),
-        )
+        .route("/api/v1/products", post(super::routes::products_upsert))
         .route(
             "/api/v1/products/{id}",
             axum::routing::delete(super::routes::products_delete),
@@ -867,7 +902,10 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             get(super::routes::gallery_get_md),
         )
         // Handoff read
-        .route("/api/v1/handoff/queue", get(super::routes::list_handoff_queue))
+        .route(
+            "/api/v1/handoff/queue",
+            get(super::routes::list_handoff_queue),
+        )
         // Agent-Channel bindings read
         .route(
             "/api/v1/agents/channels",
@@ -877,6 +915,11 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route(
             "/api/v1/agents/{name}/telegram",
             get(super::routes::telegram_status),
+        )
+        // Zalo session status read
+        .route(
+            "/api/v1/channels/zalo/session",
+            get(super::routes::zalo_session_status),
         )
         // Brain workspace read
         .route("/api/v1/brain/files", get(super::routes::brain_list_files))
@@ -977,7 +1020,51 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
             "/api/v1/social/pipeline",
             get(super::routes::api_social::get_pipeline_config),
         )
-
+        // CRM routes (OmniChannel Customer Management)
+        .route(
+            "/api/v1/crm/contacts",
+            get(super::routes::crm::list_contacts),
+        )
+        .route(
+            "/api/v1/crm/contacts",
+            post(super::routes::crm::create_contact),
+        )
+        .route(
+            "/api/v1/crm/contacts/{id}",
+            get(super::routes::crm::get_contact),
+        )
+        .route(
+            "/api/v1/crm/contacts/{id}",
+            put(super::routes::crm::update_contact),
+        )
+        .route(
+            "/api/v1/crm/contacts/{id}/pipeline",
+            put(super::routes::crm::update_pipeline),
+        )
+        .route(
+            "/api/v1/crm/contacts/{id}/interactions",
+            get(super::routes::crm::get_interactions),
+        )
+        .route(
+            "/api/v1/crm/interactions",
+            post(super::routes::crm::create_interaction),
+        )
+        .route(
+            "/api/v1/crm/conversations",
+            get(super::routes::crm::list_conversations),
+        )
+        .route(
+            "/api/v1/crm/conversations/{id}",
+            get(super::routes::crm::get_conversation),
+        )
+        .route(
+            "/api/v1/crm/conversations/{id}/read",
+            post(super::routes::crm::mark_read),
+        )
+        .route(
+            "/api/v1/crm/dashboard",
+            get(super::routes::crm::get_dashboard),
+        )
         // WebSocket (chat)
         .route("/ws", get(super::ws::ws_handler));
 
@@ -996,6 +1083,8 @@ pub fn build_router_from_arc(shared: Arc<AppState>) -> Router {
         .route("/hub", get(hub_page))
         .route("/landing", get(landing_page))
         .route("/legacy", get(legacy_dashboard_page))
+        .route("/new", get(dashboard_new_page))
+        .route("/workflow-builder", get(workflow_builder_page))
         .route("/static/dashboard/{*path}", get(dashboard_static))
         .route("/health", get(super::routes::health_check))
         // Prometheus metrics — public for scraper access (text/plain)
@@ -1333,8 +1422,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
     // ── P1.2 FIX: Inject shared Knowledge Base into ALL agents ──
     // Without this, agents responding via Telegram/Zalo had no RAG context
     // and would hallucinate product prices and information.
-    let knowledge_arc_for_agents =
-        Arc::new(tokio::sync::Mutex::new(knowledge));
+    let knowledge_arc_for_agents = Arc::new(tokio::sync::Mutex::new(knowledge));
     {
         for agent_name in orchestrator
             .list_agents()
@@ -1475,6 +1563,7 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         orchestrator: orchestrator_arc.clone(),
         scheduler,
         knowledge: knowledge_arc_for_agents.clone(),
+        crm: Arc::new(bizclaw_crm::CRMManager::new()),
         telegram_bots: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
         db: gateway_db,
         orch_store,
@@ -1494,6 +1583,55 @@ pub async fn start(config: &GatewayConfig) -> anyhow::Result<()> {
         // Small delay to let server bind first
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
         super::routes::auto_connect_channels(state_for_channels).await;
+    });
+
+    // 🚀 FLEET MANAGEMENT & TELEMETRY WORKER
+    let ota_state = state_arc.clone();
+    tokio::spawn(async move {
+        let client = reqwest::Client::new();
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+
+        loop {
+            // Get local identifier
+            let node_id = std::env::var("VPS_IP").unwrap_or_else(|_| "unknown-node".to_string());
+            let version = env!("CARGO_PKG_VERSION");
+
+            let payload = serde_json::json!({
+                "node_id": node_id,
+                "version": version,
+                "uptime_secs": ota_state.start_time.elapsed().as_secs(),
+                "status": "online"
+            });
+
+            // Telemetry ping to Central Hub (Mắt thần trung tâm)
+            match client
+                .post("https://hub.viagent.vn/api/v1/fleet/telemetry")
+                .timeout(std::time::Duration::from_secs(5))
+                .json(&payload)
+                .send()
+                .await
+            {
+                Ok(resp) => {
+                    // Check if Platform requested an OTA update
+                    if let Ok(data) = resp.json::<serde_json::Value>().await {
+                        if data["update_triggered"].as_bool().unwrap_or(false) {
+                            tracing::warn!(
+                                "🔄 OTA Update triggered by Central Hub! Executing update..."
+                            );
+                            let _ = std::process::Command::new("bash")
+                                .arg("-c")
+                                .arg("cd /opt/bizclaw && git pull origin main && docker-compose -f docker-compose.prod.yml up -d --build")
+                                .spawn();
+                        }
+                    }
+                }
+                Err(_e) => {
+                    // Fail silently, telemetry is non-critical
+                }
+            }
+            // Ping every 60 seconds
+            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+        }
     });
 
     let addr = format!("{}:{}", config.host, config.port);

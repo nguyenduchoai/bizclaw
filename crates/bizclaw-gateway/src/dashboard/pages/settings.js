@@ -129,6 +129,7 @@ function SettingsPage({ config, lang }) {
     {id:'identity',icon:'🪪',label:'Danh tính'},
     {id:'brain',icon:'🧠',label:'Brain Engine'},
     {id:'prompt',icon:'📝',label:'System Prompt'},
+    {id:'interface',icon:'🖥️',label:'Giao diện'},
     {id:'compliance',icon:'🛡️',label:'Compliance'},
   ];
 
@@ -321,6 +322,41 @@ function SettingsPage({ config, lang }) {
       <div class="card"><div class="card-label">📝 System Prompt</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Hướng dẫn chung cho AI Agent — prompt này sẽ được gửi trước mỗi cuộc hội thoại.</div>
         <textarea style="width:100%;min-height:250px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;resize:vertical;line-height:1.6" value=${form.sysprompt} onInput=${e=>setForm(f=>({...f,sysprompt:e.target.value}))} placeholder="You are a helpful AI assistant..." />
+      </div>
+    `}
+    ${tab==='interface' && html`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <div class="card-label">🖥️ Giao diện người dùng</div>
+          <p style="font-size:12px;color:var(--text2);margin:0 0 16px">Chọn chế độ giao diện phù hợp với trình độ kỹ thuật của bạn.</p>
+          <div style="display:grid;gap:12px">
+            <div class="sme-mode-toggle">
+              <div class="label">
+                <span class="icon">👑</span>
+                <div>
+                  <div>Chế độ SME</div>
+                  <div class="desc">Giao diện đơn giản cho người dùng không chuyên kỹ thuật</div>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked=${localStorage.getItem('bizclaw_sme_mode') === 'true'} onChange=${e => {
+                  const enabled = e.target.checked;
+                  localStorage.setItem('bizclaw_sme_mode', enabled ? 'true' : 'false');
+                  window.showToast(enabled ? '✅ Đã bật chế độ SME' : '✅ Đã bật chế độ Developer', 'success');
+                  setTimeout(() => window.location.reload(), 500);
+                }} />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">📚 Hướng dẫn chế độ</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">
+            <p style="margin-bottom:12px"><strong>👑 Chế độ SME:</strong> Hiển thị giao diện đơn giản với các tính năng cơ bản như Dashboard, Agents, Workflows và Reports. Phù hợp cho người dùng không cần các tùy chọn kỹ thuật chuyên sâu.</p>
+            <p><strong>🔧 Chế độ Developer:</strong> Hiển thị đầy đủ các tính năng kỹ thuật bao gồm MCP Servers, Robot Hands, Config Files, FTS5 Search và nhiều hơn nữa.</p>
+          </div>
+        </div>
       </div>
     `}
     ${tab==='compliance' && html`

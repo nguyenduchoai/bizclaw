@@ -29,6 +29,18 @@ pub struct SkillListing {
     /// Category (AI, Business, Channel, etc.)
     #[serde(default)]
     pub category: String,
+    /// Business category (e.g., "sales", "marketing")
+    #[serde(default)]
+    pub business_category: String,
+    /// Business roles that would use this skill
+    #[serde(default)]
+    pub business_roles: Vec<String>,
+    /// Industry tags
+    #[serde(default)]
+    pub industry: Vec<String>,
+    /// Pain points addressed
+    #[serde(default)]
+    pub pain_points: Vec<String>,
     /// Tags for search/filter
     #[serde(default)]
     pub tags: Vec<String>,
@@ -224,6 +236,14 @@ impl SkillMarketplace {
     // Installation (ClawHub API: /api/v1/download)
     // ═══════════════════════════════════════════════════════════
 
+    fn is_valid_slug(slug: &str) -> bool {
+        !slug.is_empty()
+            && slug.len() <= 128
+            && slug
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    }
+
     /// Install a skill from a registry.
     /// Maps to ClawHub: `GET /api/v1/download?slug=SLUG&version=VERSION`
     pub async fn install(
@@ -231,6 +251,13 @@ impl SkillMarketplace {
         slug: &str,
         install_dir: &std::path::Path,
     ) -> Result<SkillListing, String> {
+        if !Self::is_valid_slug(slug) {
+            return Err(format!(
+                "Invalid slug '{}': must be alphanumeric, hyphen, or underscore (max 128 chars)",
+                slug
+            ));
+        }
+
         let client = reqwest::Client::new();
         tracing::info!("📦 Installing skill '{}'...", slug);
 
@@ -284,7 +311,8 @@ impl SkillMarketplace {
 
             // 4. Write origin metadata (ClawHub convention)
             let origin_dir = skill_dir.join(".clawhub");
-            std::fs::create_dir_all(&origin_dir).ok();
+            std::fs::create_dir_all(&origin_dir)
+                .map_err(|e| format!("Failed to create origin dir: {}", e))?;
             let origin = serde_json::json!({
                 "slug": slug,
                 "version": listing.version,
@@ -292,10 +320,12 @@ impl SkillMarketplace {
                 "registry": source.api_url,
                 "installed_at": chrono::Utc::now().to_rfc3339(),
             });
-            let _ = std::fs::write(
+            std::fs::write(
                 origin_dir.join("origin.json"),
-                serde_json::to_string_pretty(&origin).unwrap_or_default(),
-            );
+                serde_json::to_string_pretty(&origin)
+                    .map_err(|e| format!("Failed to serialize origin: {}", e))?,
+            )
+            .map_err(|e| format!("Failed to write origin.json: {}", e))?;
 
             // 5. Update cache
             if !self.cache.iter().any(|s| s.name == slug) {
@@ -316,6 +346,12 @@ impl SkillMarketplace {
 
     /// Uninstall a skill.
     pub fn uninstall(&mut self, slug: &str, install_dir: &std::path::Path) -> Result<(), String> {
+        if !Self::is_valid_slug(slug) {
+            return Err(format!(
+                "Invalid slug '{}': must be alphanumeric, hyphen, or underscore",
+                slug
+            ));
+        }
         let skill_dir = install_dir.join(slug);
         if skill_dir.exists() {
             std::fs::remove_dir_all(&skill_dir).map_err(|e| format!("Failed to remove: {}", e))?;
@@ -425,6 +461,128 @@ impl SkillMarketplace {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
     }
+
+    /// Filter by business role.
+    pub fn by_business_role(&self, role: &str) -> Vec<&SkillListing> {
+        let role_lower = role.to_lowercase();
+        self.cache
+            .iter()
+            .filter(|s| {
+                s.business_roles
+                    .iter()
+                    .any(|r| r.to_lowercase().contains(&role_lower))
+                    || s.business_category.to_lowercase().contains(&role_lower)
+            })
+            .collect()
+    }
+
+    /// Filter by industry.
+    pub fn by_industry(&self, industry: &str) -> Vec<&SkillListing> {
+        let industry_lower = industry.to_lowercase();
+        self.cache
+            .iter()
+            .filter(|s| {
+                s.industry
+                    .iter()
+                    .any(|i| i.to_lowercase().contains(&industry_lower))
+            })
+            .collect()
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // LLM-based semantic search (Harrier embeddings)
+    // ═══════════════════════════════════════════════════════════
+
+    /// Find skills matching a task description using semantic search.
+    /// Uses Harrier embeddings for vector similarity search.
+    pub async fn find_skills_for_task(
+        &self,
+        task_description: &str,
+        embed_api_url: Option<String>,
+        embed_api_key: Option<String>,
+    ) -> Vec<(SkillListing, f32)> {
+        use crate::harrier;
+
+        if self.cache.is_empty() {
+            return Vec::new();
+        }
+
+        let task_embedding = match harrier::execute_local_harrier_embed(
+            task_description,
+            "retrieval_query",
+            embed_api_url.clone(),
+            embed_api_key.clone(),
+        )
+        .await
+        {
+            Ok(emb) => emb,
+            Err(e) => {
+                tracing::warn!("Failed to get embeddings for task search: {}", e);
+                return Vec::new();
+            }
+        };
+
+        let mut scored: Vec<(SkillListing, f32)> = self
+            .cache
+            .iter()
+            .map(|s| {
+                let skill_text = format!(
+                    "{} {} {} {:?} {:?}",
+                    s.name, s.display_name, s.description, s.tags, s.business_category
+                );
+                let sim = cosine_similarity(&task_embedding, &skill_text);
+                (s.clone(), sim)
+            })
+            .collect();
+
+        scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        scored.truncate(10);
+        scored
+    }
+}
+
+fn cosine_similarity(a: &[f32], text_b: &str) -> f32 {
+    let b = simple_embedding(text_b, a.len());
+    if b.is_none() {
+        return 0.0;
+    }
+    let b = b.unwrap();
+
+    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
+    let mag_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let mag_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+
+    if mag_a == 0.0 || mag_b == 0.0 {
+        return 0.0;
+    }
+
+    dot / (mag_a * mag_b)
+}
+
+#[deprecated(
+    since = "1.1.7",
+    note = "simple_embedding() uses hash-based vectors which produce meaningless cosine similarity. \
+            find_skills_for_task() is currently a no-op for semantic search. \
+            TODO: Replace with real embeddings from Ollama/OpenAI API, or remove this function."
+)]
+fn simple_embedding(text: &str, dim: usize) -> Option<Vec<f32>> {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    text.hash(&mut hasher);
+    let h = hasher.finish();
+
+    let mut vec = Vec::with_capacity(dim);
+    for i in 0..dim {
+        let val = (((h.wrapping_mul(i as u64).wrapping_add(i as u64)) % 1000) as f32) / 1000.0;
+        vec.push(val);
+    }
+    let len = vec.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if len > 0.0 {
+        vec.iter_mut().for_each(|x| *x /= len);
+    }
+    Some(vec)
 }
 
 impl Default for SkillMarketplace {
@@ -445,6 +603,10 @@ mod tests {
             version: "1.0.0".to_string(),
             author: "BizClaw".to_string(),
             category: category.to_string(),
+            business_category: String::new(),
+            business_roles: Vec::new(),
+            industry: Vec::new(),
+            pain_points: Vec::new(),
             tags: vec![category.to_string()],
             icon: "📦".to_string(),
             downloads,

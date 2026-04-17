@@ -156,21 +156,40 @@ function AgentsPage({ config, lang }) {
                 <button class="btn btn-outline btn-sm" onClick=${()=>setCustomAgentModel(false)} title="Chọn từ danh sách">📋</button>
               </div>
             ` : html`
-              <select style="${inp};cursor:pointer" value=${form.model} onChange=${e=>{
-                if(e.target.value==='__custom__'){setCustomAgentModel(true);setForm(f=>({...f,model:''}));return;}
-                setForm(f=>({...f,model:e.target.value}));
-              }}>
-                <option value="">— Chọn Model —</option>
-                ${(()=>{
-                  const prov=providersList.find(p=>p.name===form.provider);
-                  let models=prov?.models||[];
-                  if(form.provider==='brain' && localModels.length>0) {
-                    models = localModels.map(m=>m.name);
-                  }
-                  return models.map(m=>html`<option key=${m} value=${m}>${m}</option>`);
-                })()}
-                <option value="__custom__">✏️ Nhập thủ công...</option>
-              </select>
+              <div style="display:flex;gap:4px;align-items:center;margin-top:4px">
+                <select style="${inp};flex:1;margin-top:0;cursor:pointer" value=${form.model} onChange=${e=>{
+                  if(e.target.value==='__custom__'){setCustomAgentModel(true);setForm(f=>({...f,model:''}));return;}
+                  setForm(f=>({...f,model:e.target.value}));
+                }}>
+                  <option value="">— Chọn Model —</option>
+                  ${(()=>{
+                    const prov=providersList.find(p=>p.name===form.provider);
+                    let models=prov?.models||[];
+                    if(form.provider==='brain' && localModels.length>0) {
+                      models = localModels.map(m=>m.name);
+                    }
+                    return models.map(m=>html`<option key=${m} value=${m}>${m}</option>`);
+                  })()}
+                  <option value="__custom__">✏️ Nhập thủ công...</option>
+                </select>
+                <button class="btn btn-outline btn-sm" style="padding:4px 8px" onClick=${async ()=>{
+                  if(!form.provider) return;
+                  showToast('⏳ Đang cập nhật models...', 'info');
+                  try {
+                    const r = await authFetch('/api/v1/providers/' + encodeURIComponent(form.provider) + '/fetch-models', { method: 'POST' });
+                    const d = await r.json();
+                    if(d.ok) {
+                      showToast('✅ Đã cập nhật models', 'success');
+                      // Refresh providers list
+                      const pr = await authFetch('/api/v1/providers');
+                      const pd = await pr.json();
+                      setProvidersList(pd.providers || []);
+                    } else {
+                      showToast('❌ ' + (d.error || 'Lỗi'), 'error');
+                    }
+                  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+                }} title="Cập nhật danh sách model từ nhà cung cấp">🔄</button>
+              </div>
             `}
           </label>
           <label style="grid-column:span 2">Mô tả<input style="${inp}" value=${form.description} onInput=${e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Mô tả ngắn..." /></label>

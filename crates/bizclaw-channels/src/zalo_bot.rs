@@ -155,7 +155,11 @@ impl ZaloBotChannel {
                 .unwrap_or_default(),
             connected: false,
             bot_info: None,
-            circuit_breaker: CircuitBreaker::named("zalo_bot", 5, std::time::Duration::from_secs(30)),
+            circuit_breaker: CircuitBreaker::named(
+                "zalo_bot",
+                5,
+                std::time::Duration::from_secs(30),
+            ),
         }
     }
 
@@ -283,7 +287,12 @@ impl ZaloBotChannel {
     }
 
     /// Send a photo message.
-    pub async fn send_photo(&self, chat_id: &str, photo_url: &str, caption: Option<&str>) -> Result<()> {
+    pub async fn send_photo(
+        &self,
+        chat_id: &str,
+        photo_url: &str,
+        caption: Option<&str>,
+    ) -> Result<()> {
         let url = self.api_url("sendPhoto");
         let mut body = serde_json::json!({
             "chat_id": chat_id,
@@ -415,7 +424,10 @@ impl Channel for ZaloBotChannel {
             ));
         }
 
-        match self.send_message(&message.thread_id, &message.content).await {
+        match self
+            .send_message(&message.thread_id, &message.content)
+            .await
+        {
             Ok(()) => {
                 self.circuit_breaker.record_success();
                 tracing::debug!("[zalo-bot] Message sent to {}", message.thread_id);

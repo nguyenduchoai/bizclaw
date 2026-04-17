@@ -1,0 +1,88 @@
+# Labeler Configuration for BizClaw
+
+# Module-specific labels
+bizclaw-core:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-core/**'
+
+bizclaw-brain:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-brain/**'
+
+bizclaw-ecommerce:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-ecommerce/**'
+
+bizclaw-content:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-content/**'
+
+bizclaw-office:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-office/**'
+
+bizclaw-platform:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-platform/**'
+      - any-glob-to-any-file: 'crates/bizclaw-gateway/**'
+
+# Type labels
+bug:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.rs'
+    all-globs-to-all-files:
+      - any-glob-to-any-file: '**/test*/**'
+      - any-glob-to-any-file: '**/*_test.rs'
+
+feature:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.rs'
+    all-globs-to-all-files:
+      - any-glob-to-any-file: '!crates/*/tests/**'
+      - any-glob-to-any-file: '!**/*_test.rs'
+
+enhancement:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.rs'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file: 'crates/bizclaw-security/**'
+      - any-glob-to-any-file: 'crates/bizclaw-webauth/**'
+
+# Infrastructure labels
+docker:
+  - changed-files:
+      - any-glob-to-any-file: 'Dockerfile*'
+      - any-glob-to-any-file: '.dockerignore'
+
+ci-cd:
+  - changed-files:
+      - any-glob-to-any-file: '.github/workflows/**'
+      - any-glob-to-any-file: '.github/actions/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: 'Cargo.toml'
+      - any-glob-to-any-file: 'Cargo.lock'
+      - any-glob-to-any-file: '.github/dependabot.yml'
+
+# Documentation labels
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.md'
+      - any-glob-to-any-file: '**/docs/**'
+
+# Testing labels
+tests:
+  - changed-files:
+      - any-glob-to-any-file: '**/tests/**'
+      - any-glob-to-any-file: '**/*_test.rs'
+      - any-glob-to-any-file: '**/test*.rs'
+
+# Refactoring labels
+refactoring:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.rs'
+    all-globs-to-all-files:
+      - any-glob-to-any-file: '!crates/*/src/**'

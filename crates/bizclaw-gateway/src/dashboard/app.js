@@ -12,7 +12,7 @@
 const { h, html, render, createContext,
         useState, useEffect, useContext, useCallback, useRef, useMemo } = window;
 
-import { t, authFetch, authHeaders, Toast, StatsCard, PAGES, getToken, setToken, refreshJwtToken } from '/static/dashboard/shared.js';
+import { t, authFetch, authHeaders, Toast, StatsCard, PAGES, SME_PAGES, getToken, setToken, refreshJwtToken } from '/static/dashboard/shared.js';
 import { OnboardingWizard } from '/static/dashboard/pages/onboarding.js';
 
 // ═══ APP CONTEXT ═══
@@ -62,6 +62,7 @@ async function loadPage(pageId) {
     handoff:       { file: 'handoff.js?v=2',        export: 'HandoffPage' },
     paymentlinks:  { file: 'payment_links.js',  export: 'PaymentLinksPage' },
     cloud:         { file: 'cloud.js',          export: 'CloudPage' },
+    sme:           { file: 'sme-dashboard.js',  export: 'SmeDashboardPage' },
   };
 
   const mapping = PAGE_MAP[pageId];
@@ -109,7 +110,7 @@ function PageRouter({ page, config, lang }) {
 }
 
 // ═══ SIDEBAR ═══
-function Sidebar({ currentPage, lang, wsStatus, agentName, theme, isOpen, onClose }) {
+function Sidebar({ currentPage, lang, wsStatus, agentName, theme, isOpen, onClose, smeMode, onToggleSme }) {
   return html`
     <div class="sidebar-backdrop ${isOpen ? 'show' : ''}" onClick=${onClose}></div>
     <aside class="sidebar ${isOpen ? 'open' : ''}">
@@ -141,10 +142,56 @@ function Sidebar({ currentPage, lang, wsStatus, agentName, theme, isOpen, onClos
       <button class="theme-toggle" data-theme-toggle="true">
         ${theme === 'light' ? '🌙' : '☀️'} ${theme === 'light' ? 'Dark Mode' : 'Light Mode'}
       </button>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--text2)">SME Mode</span>
+          <label class="switch" style="width:36px;height:20px">
+            <input type="checkbox" checked=${smeMode} onChange=${e => onToggleSme(e.target.checked)} />
+            <span class="slider" style="background:${smeMode ? 'var(--accent)' : 'var(--border)'}"></span>
+          </label>
+        </div>
+      </div>
       <div id="ws-status-indicator">${wsStatus === 'connected' ? '🟢' : '🔴'} ${t(wsStatus === 'connected' ? 'status.connected' : 'status.disconnected', lang)}</div>
       <div style="margin-top:4px">${agentName}</div>
     </div>
   </aside>`;
+}
+
+// ═══ SME TOP BAR ═══
+function SmeTopBar({ currentPage, lang, agentName, onNavigate, smeMode, onToggleSme }) {
+  return html`
+    <div class="sme-topbar">
+      <div class="sme-logo">
+        <span class="icon">👑</span>
+        <span class="text">BizClaw SME</span>
+      </div>
+      <nav class="sme-nav">
+        ${SME_PAGES.map(p => html`
+          <button
+            key=${p.id}
+            data-page=${p.id}
+            class="sme-nav-item ${currentPage === p.id ? 'active' : ''}"
+            onClick=${() => onNavigate(p.id)}
+          >
+            <span class="emoji">${p.icon}</span>
+            <span>${t(p.label, lang)}</span>
+          </button>
+        `)}
+      </nav>
+      <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+        <div style="display:flex;align-items:center;gap:6px">
+          <button data-lang="vi"
+            style="padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid var(--border);background:${lang === 'vi' ? 'var(--accent)' : 'transparent'};color:${lang === 'vi' ? '#fff' : 'var(--text2)'};cursor:pointer">VI</button>
+          <button data-lang="en"
+            style="padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid var(--border);background:${lang === 'en' ? 'var(--accent)' : 'transparent'};color:${lang === 'en' ? '#fff' : 'var(--text2)'};cursor:pointer">EN</button>
+        </div>
+        <label class="switch" style="display:flex;align-items:center">
+          <input type="checkbox" checked=${smeMode} onChange=${e => onToggleSme(e.target.checked)} />
+          <span class="slider" style="background:${smeMode ? 'var(--accent)' : 'var(--border)'}"></span>
+        </label>
+      </div>
+    </div>
+  `;
 }
 
 // ═══ AUTH GATE ═══
@@ -175,6 +222,7 @@ export function App() {
   const [theme, setTheme] = useState(localStorage.getItem('bizclaw_theme') || 'dark');
   const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('bizclaw_onboarded'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [smeMode, setSmeMode] = useState(localStorage.getItem('bizclaw_sme_mode') === 'true');
 
   // Apply theme
   useEffect(() => {
@@ -319,6 +367,13 @@ export function App() {
     localStorage.setItem('bizclaw_theme', next);
   };
   window._closeMobileMenu = () => setMobileMenuOpen(false);
+  window._toggleSmeMode = (enabled) => {
+    setSmeMode(enabled);
+    localStorage.setItem('bizclaw_sme_mode', enabled ? 'true' : 'false');
+    if (enabled) {
+      navigate('sme');
+    }
+  };
 
   // Global click handler
   useEffect(() => {
@@ -384,6 +439,35 @@ export function App() {
     />`;
   }
 
+  // ── SME Mode Layout ──
+  if (smeMode) {
+    return html`
+      <${AppContext.Provider} value=${{ config, lang, t: (k) => t(k, lang), showToast, navigate, wsStatus }}>
+        <div class="app sme-mode">
+          <${SmeTopBar}
+            currentPage=${currentPage}
+            lang=${lang}
+            agentName=${config?.agent_name || 'BizClaw Agent'}
+            onNavigate=${navigate}
+            smeMode=${smeMode}
+            onToggleSme=${(enabled) => {
+              setSmeMode(enabled);
+              localStorage.setItem('bizclaw_sme_mode', enabled ? 'true' : 'false');
+              if (!enabled) {
+                navigate('dashboard');
+              }
+            }}
+          />
+          <main class="main" style="height:calc(100vh - var(--menu-height));overflow-y:auto">
+            <${PageRouter} key=${currentPage} page=${currentPage} config=${config} lang=${lang} />
+          </main>
+        </div>
+        <${Toast} ...${toast || {}} />
+      <//>
+    `;
+  }
+
+  // ── Normal Layout (Developer Mode) ──
   return html`
     <${AppContext.Provider} value=${{ config, lang, t: (k) => t(k, lang), showToast, navigate, wsStatus }}>
       <div class="app">
@@ -395,6 +479,14 @@ export function App() {
           theme=${theme}
           isOpen=${mobileMenuOpen}
           onClose=${() => setMobileMenuOpen(false)}
+          smeMode=${smeMode}
+          onToggleSme=${(enabled) => {
+            setSmeMode(enabled);
+            localStorage.setItem('bizclaw_sme_mode', enabled ? 'true' : 'false');
+            if (enabled) {
+              navigate('sme');
+            }
+          }}
         />
         <main class="main">
           <div class="mobile-header">

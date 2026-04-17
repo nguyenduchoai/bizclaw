@@ -2,16 +2,17 @@
 
 pub mod admin;
 pub mod agents;
+pub mod api_campaigns;
+pub mod api_handoff;
 pub mod api_rag;
 pub mod api_scheduler;
 pub mod api_social;
 pub mod api_systems;
 pub mod api_webhooks;
-pub mod api_campaigns;
-pub mod api_handoff;
 pub mod brain;
 pub mod channels;
 pub mod config;
+pub mod crm;
 pub mod gallery;
 pub mod helpers;
 pub mod knowledge;
@@ -19,7 +20,6 @@ pub mod orchestrator;
 pub mod providers;
 pub mod telegram;
 pub mod workflows;
-
 
 use axum::{Json, extract::State};
 use std::sync::Arc;
@@ -155,13 +155,14 @@ pub use config::{get_config, get_full_config, update_config};
 pub use channels::{
     agent_bind_channels, agent_channel_bindings, delete_channel_instance, list_channel_instances,
     load_channel_instances, save_channel_instance, save_channel_instances, update_channel,
+    zalo_session_status,
 };
 
+pub use api_campaigns::*;
+pub use api_handoff::*;
 pub use api_rag::*;
 pub use api_scheduler::*;
 pub use api_systems::*;
-pub use api_campaigns::*;
-pub use api_handoff::*;
 pub use api_webhooks::*;
 // ---- Multi-Agent Orchestrator API ----
 // Extracted to routes/agents.rs — re-export for backward compatibility
@@ -365,6 +366,7 @@ mod tests {
                 ),
             )),
             knowledge: Arc::new(tokio::sync::Mutex::new(None)),
+            crm: Arc::new(bizclaw_crm::CRMManager::new()),
             telegram_bots: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
             db: Arc::new(crate::db::GatewayDb::open(std::path::Path::new(":memory:")).unwrap()),
             orch_store: { (Arc::new(bizclaw_db::SqliteStore::in_memory().unwrap())) as _ },
@@ -372,6 +374,7 @@ mod tests {
             activity_tx,
             activity_log: Arc::new(Mutex::new(Vec::new())),
             rate_limiter: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
+            paused_threads: Arc::new(tokio::sync::RwLock::new(std::collections::HashSet::new())),
         }))
     }
 

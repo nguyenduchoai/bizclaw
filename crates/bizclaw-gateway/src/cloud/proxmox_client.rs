@@ -135,11 +135,7 @@ impl ProxmoxClient {
     }
 
     /// Internal: build an authenticated request.
-    fn auth_request(
-        &self,
-        method: reqwest::Method,
-        path: &str,
-    ) -> reqwest::RequestBuilder {
+    fn auth_request(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
         let url = format!("{}/api2/json{}", self.base_url, path);
         self.http
             .request(method, &url)
@@ -175,10 +171,7 @@ impl ProxmoxClient {
             .await?;
 
         let body: serde_json::Value = resp.json().await?;
-        let upid = body["data"]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_string();
+        let upid = body["data"].as_str().unwrap_or("unknown").to_string();
 
         tracing::info!(
             "🚀 VM clone started: template={} → newid={} name={} (UPID: {})",
@@ -284,10 +277,7 @@ impl ProxmoxClient {
         let resp = self
             .auth_request(
                 reqwest::Method::GET,
-                &format!(
-                    "/nodes/{}/qemu/{}/agent/network-get-interfaces",
-                    node, vmid
-                ),
+                &format!("/nodes/{}/qemu/{}/agent/network-get-interfaces", node, vmid),
             )
             .send()
             .await?;
@@ -434,25 +424,17 @@ impl ProxmoxClient {
             let resp = self
                 .auth_request(
                     reqwest::Method::GET,
-                    &format!(
-                        "/nodes/{}/tasks/{}/status",
-                        node,
-                        urlencoding::encode(upid)
-                    ),
+                    &format!("/nodes/{}/tasks/{}/status", node, urlencoding::encode(upid)),
                 )
                 .send()
                 .await?;
 
             let body: serde_json::Value = resp.json().await?;
-            let status = body["data"]["status"]
-                .as_str()
-                .unwrap_or("running");
+            let status = body["data"]["status"].as_str().unwrap_or("running");
 
             match status {
                 "stopped" => {
-                    let exit = body["data"]["exitstatus"]
-                        .as_str()
-                        .unwrap_or("OK");
+                    let exit = body["data"]["exitstatus"].as_str().unwrap_or("OK");
                     return Ok(exit == "OK");
                 }
                 _ => {
@@ -470,12 +452,14 @@ impl ProxmoxClient {
             .await?;
 
         let body: PveResponse<serde_json::Value> = resp.json().await?;
-        
+
         // Proxmox returns nextid as a string in the data field
-        let id_str = body.data.as_str()
+        let id_str = body
+            .data
+            .as_str()
             .or_else(|| body.data.as_u64().map(|_| ""))
             .unwrap_or("100");
-        
+
         if let Ok(id) = id_str.parse::<u32>() {
             Ok(id)
         } else if let Some(id) = body.data.as_u64() {

@@ -39,6 +39,48 @@ function ChatPage({ config, lang }) {
   const [agentsList, setAgentsList] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState(''); // '' = default agent
 
+  // Auto-create session when switching to a different agent
+  const handleAgentSwitch = useCallback((newAgent) => {
+    setSelectedAgent(newAgent);
+    if (newAgent && newAgent !== '__broadcast__') {
+      // Check if session for this agent already exists
+      const agentSessionId = `agent_${newAgent}`;
+      const existingSession = sessions.find(s => s.id === agentSessionId);
+      if (!existingSession) {
+        // Create new session for this agent
+        const agentInfo = agentsList.find(a => a.name === newAgent);
+        const newSession = {
+          id: agentSessionId,
+          name: newAgent,
+          icon: agentInfo?.role === 'coder' ? '💻' : agentInfo?.role === 'writer' ? '✍️' : agentInfo?.role === 'analyst' ? '📊' : '🤖',
+          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+          count: 0,
+          mode: '1v1',
+          agentName: newAgent
+        };
+        setSessions(prev => [...prev, newSession]);
+        setActiveSession(agentSessionId);
+        setMessages([]); // Clear chat for new agent session
+      } else {
+        // Switch to existing session
+        setActiveSession(agentSessionId);
+        // Load messages for this session (stored separately)
+        try {
+          const savedMsgs = localStorage.getItem(`bizclaw_chat_${agentSessionId}`);
+          if (savedMsgs) setMessages(JSON.parse(savedMsgs));
+          else setMessages([]);
+        } catch(e) { setMessages([]); }
+      }
+    }
+  }, [sessions, agentsList]);
+
+  // Save messages per session
+  useEffect(() => {
+    if (activeSession && activeSession !== 'main') {
+      localStorage.setItem(`bizclaw_chat_${activeSession}`, JSON.stringify(messages));
+    }
+  }, [messages, activeSession]);
+
   // Fetch available agents
   useEffect(() => {
     (async () => {
@@ -260,7 +302,12 @@ function ChatPage({ config, lang }) {
         <div class="chat-list">
           <div class="chat-list-sep">Sessions</div>
           ${sessions.map(s => html`
-            <div key=${s.id} class="chat-list-item ${activeSession === s.id ? 'active' : ''}" onClick=${() => { setActiveSession(s.id); if(s.mode==='group') setSelectedAgent('__broadcast__'); else setSelectedAgent(''); }}>
+            <div key=${s.id} class="chat-list-item ${activeSession === s.id ? 'active' : ''}" onClick=${() => { 
+              setActiveSession(s.id); 
+              if(s.mode==='group') { setSelectedAgent('__broadcast__'); setMessages([]); }
+              else if (s.agentName) { setSelectedAgent(s.agentName); try { const m = localStorage.getItem(`bizclaw_chat_${s.id}`); setMessages(m ? JSON.parse(m) : []); } catch(e) { setMessages([]); } }
+              else { setSelectedAgent(''); try { const m = localStorage.getItem(`bizclaw_chat_${s.id}`); setMessages(m ? JSON.parse(m) : []); } catch(e) { setMessages([]); } }
+            }}>
               <div class="chat-list-icon">${s.icon}</div>
               <div class="chat-list-info">
                 <div class="chat-list-name">${s.name} ${s.mode==='group' ? html`<span class="badge badge-blue" style="font-size:9px;padding:1px 5px;margin-left:4px">GROUP</span>`:''}</div>
@@ -291,7 +338,7 @@ function ChatPage({ config, lang }) {
               <div class="chat-target-sub">${wsInfo.provider || config?.default_provider || '—'} · ${wsInfo.model || '—'}${wsInfo.agent_engine ? ' · 🧠 Agent' : ''}</div>
             </div>
             ${agentsList.length > 0 ? html`
-              <select value=${selectedAgent} onChange=${e=>setSelectedAgent(e.target.value)}
+              <select value=${selectedAgent} onChange=${e=>handleAgentSwitch(e.target.value)}
                 style="padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);cursor:pointer;min-width:140px">
                 <option value="">🤖 Default Agent</option>
                 ${agentsList.map(a => html`<option key=${a.name} value=${a.name}>${a.role === 'coder' ? '💻' : a.role === 'writer' ? '✍️' : a.role === 'analyst' ? '📊' : '🤖'} ${a.name}</option>`)}
@@ -301,6 +348,14 @@ function ChatPage({ config, lang }) {
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             <span class="badge ${thinking ? 'badge-yellow pulse' : 'badge-green'}">${thinking ? '⏳ thinking' : '● ready'}</span>
+            ${activeSession !== 'main' ? html`<button class="btn btn-outline btn-sm" onClick=${() => { 
+              const newId = `chat_${Date.now()}`;
+              const newSession = { id: newId, name: 'Chat ' + sessions.length, icon: '💬', time: 'now', count: 0, mode: '1v1' };
+              setSessions(prev => [...prev, newSession]);
+              setActiveSession(newId);
+              setMessages([]);
+              setSelectedAgent('');
+            }} title="New Chat">➕</button>` : ''}
             <button class="btn btn-outline btn-sm" onClick=${() => setMessages([])} title="Clear">🗑️</button>
           </div>
         </div>

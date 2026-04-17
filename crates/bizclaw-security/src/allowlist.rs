@@ -27,7 +27,9 @@ impl Allowlist {
     /// Blocks shell metacharacters that could bypass allowlist via command chaining.
     pub fn is_command_allowed(&self, command: &str) -> bool {
         // Block shell metacharacters that enable command chaining/injection
-        const DANGEROUS_CHARS: &[char] = &[';', '|', '&', '`', '$', '(', ')', '{', '}', '>', '<'];
+        const DANGEROUS_CHARS: &[char] = &[
+            ';', '|', '&', '`', '$', '(', ')', '{', '}', '>', '<', '\n', '\r', '\0',
+        ];
         if command.chars().any(|c| DANGEROUS_CHARS.contains(&c)) {
             tracing::warn!(
                 "[security] Blocked command with shell metacharacters: {:?}",
@@ -108,6 +110,8 @@ mod tests {
             workspace_only: false,
             approval_required_tools: vec![],
             auto_approve_timeout_secs: 300,
+            allowed_tools: vec![],
+            forbidden_tools: vec![],
         }
     }
 
@@ -162,6 +166,21 @@ mod tests {
         let al = Allowlist::new(&test_config(&["echo"], &[]));
         assert!(!al.is_command_allowed("echo test > /etc/passwd"));
         assert!(!al.is_command_allowed("echo test < input"));
+    }
+
+    #[test]
+    fn test_shell_injection_newline() {
+        let al = Allowlist::new(&test_config(&["ls", "echo"], &[]));
+        assert!(!al.is_command_allowed("ls\nrm -rf /"));
+        assert!(!al.is_command_allowed("echo test\ncat /etc/passwd"));
+        assert!(!al.is_command_allowed("ls\rrm -rf /"));
+        assert!(!al.is_command_allowed("ls\r\nrm -rf /"));
+    }
+
+    #[test]
+    fn test_shell_injection_null_byte() {
+        let al = Allowlist::new(&test_config(&["ls"], &[]));
+        assert!(!al.is_command_allowed("ls\0rm -rf /"));
     }
 
     #[test]

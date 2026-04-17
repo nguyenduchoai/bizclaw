@@ -308,10 +308,22 @@ pub async fn products_upsert(
     let image_url = body["image_url"].as_str().unwrap_or("").to_string();
     let active = body["active"].as_bool().unwrap_or(true);
 
-    match state.db.upsert_product(&id, &sku, &name, price, stock, &category, &description, &image_url, active) {
+    match state.db.upsert_product(
+        &id,
+        &sku,
+        &name,
+        price,
+        stock,
+        &category,
+        &description,
+        &image_url,
+        active,
+    ) {
         Ok(()) => {
             tracing::info!("[products] Upserted '{}' ({})", name, id);
-            Json(serde_json::json!({"ok": true, "id": id, "message": format!("Product '{}' saved", name)}))
+            Json(
+                serde_json::json!({"ok": true, "id": id, "message": format!("Product '{}' saved", name)}),
+            )
         }
         Err(e) => super::internal_error("products", e),
     }
@@ -330,9 +342,7 @@ pub async fn products_delete(
 }
 
 /// POST /api/v1/products/sync-rag — export catalog to Knowledge Base for AI.
-pub async fn products_sync_rag(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn products_sync_rag(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let rag_text = match state.db.products_as_rag_text() {
         Ok(text) => text,
         Err(e) => return super::internal_error("products-sync", e),
@@ -350,7 +360,11 @@ pub async fn products_sync_rag(
         let _ = kb.remove_document_by_name(doc_id);
         match kb.add_document(doc_id, "Bảng Giá Sản Phẩm (Auto-Sync)", &rag_text) {
             Ok(chunks) => {
-                tracing::info!("[products] ✅ Synced {} products → {} RAG chunks", rag_text.lines().count() - 2, chunks);
+                tracing::info!(
+                    "[products] ✅ Synced {} products → {} RAG chunks",
+                    rag_text.lines().count() - 2,
+                    chunks
+                );
                 Json(serde_json::json!({
                     "ok": true,
                     "message": format!("Synced to Knowledge Base ({} chunks)", chunks),

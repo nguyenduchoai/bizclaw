@@ -10,6 +10,7 @@ description = "Skills marketplace — SKILL.md parser, registry, discovery, and 
 bizclaw-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml = "0.9"
 tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true

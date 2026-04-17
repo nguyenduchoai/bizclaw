@@ -250,6 +250,37 @@ impl CdpClient {
         Ok(())
     }
 
+    /// Type text simulating human typing (Jitter and Delays) to prevent bot detection.
+    /// It sends individual Input.dispatchKeyEvent for each character.
+    pub async fn type_text_human_like(&self, text: &str) -> Result<(), String> {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        for c in text.chars() {
+            // Send char as key down & key up
+            self.send_command(
+                "Input.dispatchKeyEvent",
+                json!({
+                    "type": "char",
+                    "text": c.to_string(),
+                }),
+            )
+            .await?;
+
+            // Simulating human delay between 50ms and 150ms per keystroke.
+            let delay_ms = rng.gen_range(50..150);
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+
+            // Occasionally take a longer pause (thinking time, random 2% chance)
+            if rng.gen_bool(0.02) {
+                let thinking_time = rng.gen_range(400..1200);
+                tracing::debug!("{} Humanizer: pausing for {} ms", LOG_TAG, thinking_time);
+                tokio::time::sleep(std::time::Duration::from_millis(thinking_time)).await;
+            }
+        }
+        Ok(())
+    }
+
     /// Get the current page URL.
     pub async fn get_url(&self) -> Result<String, String> {
         let result = self.evaluate_js("window.location.href").await?;

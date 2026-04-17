@@ -166,6 +166,52 @@ pub fn format_knowledge_context(results: &[SearchResult]) -> String {
     ctx
 }
 
+/// Search telemetry for RAG observability (Goclaw-inspired).
+///
+/// Track hit/miss rates, search latency, and boost effectiveness
+/// to monitor knowledge base health in production.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchTelemetry {
+    /// Number of query terms extracted.
+    pub query_terms: usize,
+    /// Results from keyword search (pre-boost).
+    pub keyword_results: usize,
+    /// Final results after boosting and truncation.
+    pub final_results: usize,
+    /// Whether TF-IDF boost was applied.
+    pub boost_applied: bool,
+    /// Total search latency in milliseconds.
+    pub search_ms: u64,
+    /// Whether the search produced any results (hit=true, miss=false).
+    pub hit: bool,
+}
+
+impl SearchTelemetry {
+    /// Create an empty telemetry record (for when search is skipped).
+    pub fn empty() -> Self {
+        Self {
+            query_terms: 0,
+            keyword_results: 0,
+            final_results: 0,
+            boost_applied: false,
+            search_ms: 0,
+            hit: false,
+        }
+    }
+
+    /// Human-readable summary for logging.
+    pub fn summary(&self) -> String {
+        format!(
+            "{} | {} terms | {}/{} results | {}ms",
+            if self.hit { "HIT" } else { "MISS" },
+            self.query_terms,
+            self.final_results,
+            self.keyword_results,
+            self.search_ms,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

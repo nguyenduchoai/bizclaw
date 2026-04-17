@@ -1,0 +1,746 @@
+/* Visual Workflow Builder Styles */
+
+* {
+  box-sizing: border-box;
+}
+
+.workflow-builder {
+  display: grid;
+  grid-template-columns: 220px 1fr 300px;
+  height: calc(100vh - 60px);
+  background: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* Toolbar */
+.workflow-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.workflow-name-input {
+  width: 300px;
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.workflow-name-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.btn-secondary {
+  background: #64748b;
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.btn-outline:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Palette */
+.workflow-palette {
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.workflow-palette h4 {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.palette-category {
+  margin-bottom: 16px;
+}
+
+.palette-category-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.step-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateX(2px);
+}
+
+.step-item:active {
+  cursor: grabbing;
+}
+
+.step-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.step-icon {
+  font-size: 18px;
+}
+
+.step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+/* Canvas */
+.workflow-canvas {
+  background: #f1f5f9;
+  overflow: auto;
+  position: relative;
+}
+
+.canvas-content {
+  min-width: 100%;
+  min-height: 100%;
+  position: relative;
+  padding: 40px;
+}
+
+.connections-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.connections-svg path {
+  fill: none;
+  stroke: #64748b;
+  stroke-width: 2;
+}
+
+.connections-svg path.conditional-yes {
+  stroke: #10b981;
+}
+
+.connections-svg path.conditional-no {
+  stroke: #ef4444;
+  stroke-dasharray: 5,5;
+}
+
+.connections-svg circle {
+  fill: #64748b;
+}
+
+.connection-label {
+  font-size: 10px;
+  fill: #475569;
+  font-weight: 500;
+}
+
+.steps-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 400px;
+}
+
+.workflow-start,
+.workflow-end {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
+  margin: 16px 0;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  min-width: 200px;
+  align-self: flex-start;
+}
+
+.workflow-start {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.workflow-end {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  margin-top: 40px;
+}
+
+.start-icon,
+.end-icon {
+  font-size: 20px;
+}
+
+.start-label,
+.end-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Step Block */
+.step-block {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 8px 0;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: move;
+  transition: all 0.2s;
+  min-width: 240px;
+  max-width: 320px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.step-block:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.step-block.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+
+.step-block.drag-over {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.step-block[data-type="trigger"] {
+  border-left: 4px solid #f59e0b;
+}
+
+.step-block[data-type="action"] {
+  border-left: 4px solid #3b82f6;
+}
+
+.step-block[data-type="condition"] {
+  border-left: 4px solid #10b981;
+}
+
+.step-block[data-type="loop"] {
+  border-left: 4px solid #8b5cf6;
+}
+
+.step-block[data-type="delay"] {
+  border-left: 4px solid #64748b;
+}
+
+.step-block[data-type="agent"] {
+  border-left: 4px solid #ec4899;
+}
+
+.step-block[data-type="notify"] {
+  border-left: 4px solid #06b6d4;
+}
+
+.step-block[data-type="transform"] {
+  border-left: 4px solid #f59e0b;
+}
+
+.step-block[data-type="query"] {
+  border-left: 4px solid #6366f1;
+}
+
+.step-block[data-type="rag"] {
+  border-left: 4px solid #14b8a6;
+}
+
+.step-block-icon {
+  font-size: 24px;
+}
+
+.step-block-content {
+  flex: 1;
+}
+
+.step-block-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.step-block-type {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.step-block-connector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.connector-point {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 2px solid #94a3b8;
+  cursor: crosshair;
+  transition: all 0.2s;
+}
+
+.connector-point:hover {
+  background: #3b82f6;
+  border-color: #2563eb;
+  transform: scale(1.2);
+}
+
+.connector-point.input {
+  margin-right: -6px;
+}
+
+.connector-point.output {
+  margin-left: -6px;
+}
+
+/* Connection Line Drawing */
+.connection-line {
+  stroke: #3b82f6;
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 5,5;
+  animation: dash 0.5s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Properties Panel */
+.workflow-properties {
+  background: white;
+  border-left: 1px solid #e2e8f0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.workflow-properties h4 {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.properties-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.properties-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-control {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+select.form-control {
+  cursor: pointer;
+}
+
+.step-type-display,
+.step-id-display {
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #475569;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.form-actions {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.config-field {
+  margin-bottom: 12px;
+}
+
+.config-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.config-field input,
+.config-field select,
+.config-field textarea {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.config-field input:focus,
+.config-field select:focus,
+.config-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.conditional-branches {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.branch-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.branch-btn.yes {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.branch-btn.yes:hover,
+.branch-btn.yes.active {
+  background: #10b981;
+  color: white;
+}
+
+.branch-btn.no {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.branch-btn.no:hover,
+.branch-btn.no.active {
+  background: #ef4444;
+  color: white;
+}
+
+/* Workflow Info */
+.workflow-info {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.workflow-info h5 {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.info-label {
+  color: #64748b;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #1e293b;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+}
+
+.json-preview {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+  background: #10b981;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+.toast.info {
+  background: #3b82f6;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

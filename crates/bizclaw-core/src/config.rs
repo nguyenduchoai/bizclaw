@@ -23,6 +23,11 @@ pub struct LlmConfig {
     /// Custom endpoint URL. Empty = use default endpoint for the provider.
     #[serde(default)]
     pub endpoint: String,
+    /// Fallback provider for automatic failover.
+    /// When the primary provider fails, requests are routed to this fallback.
+    /// Example: "groq" or "deepseek". Empty = no failover.
+    #[serde(default)]
+    pub fallback_provider: String,
     /// Generation temperature.
     #[serde(default = "default_temperature")]
     pub temperature: f32,
@@ -97,6 +102,7 @@ impl Default for LlmConfig {
             model: default_model(),
             api_key: String::new(),
             endpoint: String::new(),
+            fallback_provider: String::new(),
             temperature: default_temperature(),
         }
     }
@@ -415,11 +421,139 @@ impl Default for HotConfig {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BrainMode {
+    CloudFirst,
+    LocalFirst,
+    CloudOnly,
+    LocalOnly,
+}
+
+impl Default for BrainMode {
+    fn default() -> Self {
+        Self::LocalFirst
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RoutingStrategy {
+    RoundRobin,
+    LeastLatency,
+    CostAware,
+    PriorityBased,
+}
+
+impl Default for RoutingStrategy {
+    fn default() -> Self {
+        Self::PriorityBased
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimitConfig {
+    #[serde(default = "default_rpm")]
+    pub requests_per_minute: u32,
+    #[serde(default = "default_tpm")]
+    pub tokens_per_minute: u32,
+    #[serde(default = "default_max_concurrent")]
+    pub max_concurrent: u32,
+}
+
+fn default_rpm() -> u32 {
+    60
+}
+fn default_tpm() -> u32 {
+    100000
+}
+fn default_max_concurrent() -> u32 {
+    10
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            requests_per_minute: default_rpm(),
+            tokens_per_minute: default_tpm(),
+            max_concurrent: default_max_concurrent(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainProviderConfig {
+    pub name: String,
+    #[serde(default)]
+    pub api_key_env: Option<String>,
+    #[serde(default)]
+    pub base_url: Option<String>,
+    #[serde(default)]
+    pub models: Vec<String>,
+    #[serde(default)]
+    pub rate_limit: Option<RateLimitConfig>,
+    #[serde(default = "default_provider_priority")]
+    pub priority: u32,
+}
+
+fn default_provider_priority() -> u32 {
+    100
+}
+
+impl Default for BrainProviderConfig {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            api_key_env: None,
+            base_url: None,
+            models: vec![],
+            rate_limit: None,
+            priority: default_provider_priority(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrainRoutingConfig {
+    #[serde(default = "default_routing_strategy")]
+    pub strategy: RoutingStrategy,
+    #[serde(default)]
+    pub fallback_chain: Vec<String>,
+    #[serde(default = "default_local_fallback")]
+    pub local_fallback: bool,
+    #[serde(default)]
+    pub enable_cost_tracking: bool,
+}
+
+fn default_routing_strategy() -> RoutingStrategy {
+    RoutingStrategy::default()
+}
+fn default_local_fallback() -> bool {
+    true
+}
+
+impl Default for BrainRoutingConfig {
+    fn default() -> Self {
+        Self {
+            strategy: default_routing_strategy(),
+            fallback_chain: vec![],
+            local_fallback: default_local_fallback(),
+            enable_cost_tracking: false,
+        }
+    }
+}
+
 /// Brain (local LLM) configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrainConfig {
     #[serde(default = "bool_true")]
     pub enabled: bool,
+    #[serde(default = "default_brain_mode")]
+    pub mode: BrainMode,
+    #[serde(default)]
+    pub providers: Vec<BrainProviderConfig>,
+    #[serde(default)]
+    pub routing: BrainRoutingConfig,
     #[serde(default = "default_model_path")]
     pub model_path: String,
     #[serde(default = "default_threads")]
@@ -445,6 +579,9 @@ pub struct BrainConfig {
 fn bool_true() -> bool {
     true
 }
+fn default_brain_mode() -> BrainMode {
+    BrainMode::LocalFirst
+}
 fn default_model_path() -> String {
     "~/.bizclaw/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf".into()
 }
@@ -468,6 +605,9 @@ impl Default for BrainConfig {
     fn default() -> Self {
         Self {
             enabled: true,
+            mode: default_brain_mode(),
+            providers: vec![],
+            routing: BrainRoutingConfig::default(),
             model_path: default_model_path(),
             threads: default_threads(),
             max_tokens: default_max_tokens(),

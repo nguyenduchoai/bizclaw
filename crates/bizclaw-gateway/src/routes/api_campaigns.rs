@@ -1,8 +1,7 @@
 use axum::{
-    extract::{Path, State},
     Json,
+    extract::{Path, State},
 };
-use bizclaw_core::error::{BizClawError, Result};
 
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
@@ -36,14 +35,12 @@ pub struct CreateCampaignRequest {
     pub schedule_at: Option<String>,
 }
 
-pub async fn list_campaigns(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn list_campaigns(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    
+
     // Ensure table exists
     conn.execute(
         "CREATE TABLE IF NOT EXISTS campaigns (
@@ -60,28 +57,31 @@ pub async fn list_campaigns(
             schedule_at TEXT
         )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut stmt = conn.prepare("SELECT id, name, channels, segment, message, status, sent, delivered, read_count, created_at, schedule_at FROM campaigns ORDER BY created_at DESC").unwrap();
-    
+
     let mut campaigns = Vec::new();
-    let iter = stmt.query_map([], |row| {
-        let channels_str: String = row.get(2)?;
-        let channels: Vec<String> = serde_json::from_str(&channels_str).unwrap_or_default();
-        Ok(Campaign {
-            id: row.get(0)?,
-            name: row.get(1)?,
-            channels,
-            segment: row.get(3)?,
-            message: row.get(4)?,
-            status: row.get(5)?,
-            sent: row.get(6)?,
-            delivered: row.get(7)?,
-            read: row.get(8)?,
-            created_at: row.get(9)?,
-            schedule_at: row.get(10)?,
+    let iter = stmt
+        .query_map([], |row| {
+            let channels_str: String = row.get(2)?;
+            let channels: Vec<String> = serde_json::from_str(&channels_str).unwrap_or_default();
+            Ok(Campaign {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                channels,
+                segment: row.get(3)?,
+                message: row.get(4)?,
+                status: row.get(5)?,
+                sent: row.get(6)?,
+                delivered: row.get(7)?,
+                read: row.get(8)?,
+                created_at: row.get(9)?,
+                schedule_at: row.get(10)?,
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     for c in iter {
         if let Ok(cam) = c {
@@ -98,7 +98,7 @@ pub async fn create_campaign(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
     let id = Uuid::new_v4().to_string();
     let created_at = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -127,9 +127,10 @@ pub async fn delete_campaign(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    conn.execute("DELETE FROM campaigns WHERE id = ?1", params![id]).unwrap();
+    conn.execute("DELETE FROM campaigns WHERE id = ?1", params![id])
+        .unwrap();
 
     Json(serde_json::json!({ "status": "deleted" }))
 }
@@ -140,14 +141,18 @@ pub async fn run_campaign(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    
+
     // Update status to running
-    conn.execute("UPDATE campaigns SET status = 'running' WHERE id = ?1", params![id]).unwrap();
+    conn.execute(
+        "UPDATE campaigns SET status = 'running' WHERE id = ?1",
+        params![id],
+    )
+    .unwrap();
 
     // and handles the AppleScript
-    
+
     Json(serde_json::json!({ "status": "running" }))
 }
 
@@ -158,7 +163,7 @@ pub async fn update_campaign(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
     let channels_json = serde_json::to_string(&req.channels).unwrap_or_default();
 

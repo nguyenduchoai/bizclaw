@@ -36,7 +36,10 @@ impl MediaExtractorTool {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(BizClawError::Tool(format!("Failed to parse media: {}", stderr)));
+            return Err(BizClawError::Tool(format!(
+                "Failed to parse media: {}",
+                stderr
+            )));
         }
 
         let json_str = String::from_utf8_lossy(&output.stdout);
@@ -109,23 +112,19 @@ impl Tool for MediaExtractorTool {
             .map_err(|e| BizClawError::Tool(format!("Invalid arguments: {e}")))?;
 
         match self.extract(&req.url).await {
-            Ok(meta) => {
-                Ok(ToolResult {
-                    tool_call_id: String::new(),
-                    output: format!(
-                        "✅ Media downloaded successfully!\nFile: {}\nTitle: {}\nDescription: {}",
-                        meta.filepath, meta.title, meta.description
-                    ),
-                    success: true,
-                })
-            }
-            Err(e) => {
-                Ok(ToolResult {
-                    tool_call_id: String::new(),
-                    output: e.to_string(),
-                    success: false,
-                })
-            }
+            Ok(meta) => Ok(ToolResult {
+                tool_call_id: String::new(),
+                output: format!(
+                    "✅ Media downloaded successfully!\nFile: {}\nTitle: {}\nDescription: {}",
+                    meta.filepath, meta.title, meta.description
+                ),
+                success: true,
+            }),
+            Err(e) => Ok(ToolResult {
+                tool_call_id: String::new(),
+                output: e.to_string(),
+                success: false,
+            }),
         }
     }
 }

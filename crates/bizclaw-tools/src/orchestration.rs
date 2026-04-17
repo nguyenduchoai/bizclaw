@@ -210,11 +210,12 @@ impl Tool for HandoffTool {
                 "reason": args.reason.clone().unwrap_or_else(|| "Cần nhân viên tư vấn".into()),
                 "channel": "bot"
             });
-            let _ = client.post("http://localhost:3000/api/v1/handoff/request")
+            let _ = client
+                .post("http://localhost:3000/api/v1/handoff/request")
                 .json(&payload)
                 .send()
                 .await;
-                
+
             return Ok(ToolResult {
                 tool_call_id: String::new(),
                 output: format!(

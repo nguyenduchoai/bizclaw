@@ -6,7 +6,7 @@ use rusqlite::{Connection, params};
 use std::path::{Path, PathBuf};
 
 use crate::chunker;
-use crate::search::{SearchFilter, SearchResult};
+use crate::search::{SearchFilter, SearchResult, SearchTelemetry};
 
 /// Detect MIME type from file extension.
 fn detect_mimetype(filename: &str) -> String {
@@ -535,6 +535,103 @@ impl KnowledgeStore {
             .unwrap_or_default()
     }
 
+    // ── Hybrid Recall Enhancement (Goclaw-inspired) ─────────────────
+
+    /// Enhanced hybrid search with TF-IDF exact-match boost.
+    ///
+    /// Problem: Vector embeddings can miss domain-specific terms
+    /// (Vietnamese product names, technical jargon, acronyms like "BizClaw", "PaaS").
+    ///
+    /// Solution: After standard hybrid search, boost results that contain
+    /// exact query terms with a TF-IDF-like score multiplier.
+    /// This is lightweight (O(n*m) where n=results, m=query_terms).
+    pub fn hybrid_search_boosted(
+        &self,
+        query: &str,
+        query_embedding: Option<&[f32]>,
+        limit: usize,
+        filter: &SearchFilter,
+    ) -> (Vec<SearchResult>, SearchTelemetry) {
+        let start = std::time::Instant::now();
+
+        // Step 1: Standard hybrid search (BM25 + vector)
+        let mut results = self.hybrid_search_filtered(query, query_embedding, limit * 2, filter);
+
+        let pre_boost_count = results.len();
+
+        // Step 2: TF-IDF exact-match boost
+        let query_terms: Vec<String> = query
+            .split_whitespace()
+            .filter(|t| t.len() >= 2) // Skip single-char terms
+            .map(|t| t.to_lowercase())
+            .collect();
+
+        if !query_terms.is_empty() {
+            let total_docs = results.len().max(1) as f64;
+
+            // Pre-compute document frequency for each term
+            let dfs: Vec<f64> = query_terms
+                .iter()
+                .map(|term| {
+                    results
+                        .iter()
+                        .filter(|r| r.content.to_lowercase().contains(term.as_str()))
+                        .count() as f64
+                })
+                .collect();
+
+            for result in &mut results {
+                let content_lower = result.content.to_lowercase();
+                let mut boost = 0.0f64;
+
+                for (i, term) in query_terms.iter().enumerate() {
+                    // TF: term frequency in this chunk
+                    let tf = content_lower.matches(term.as_str()).count() as f64;
+                    if tf > 0.0 {
+                        // IDF: log(total_docs / (1 + df)) where df = docs containing this term
+                        let idf = (total_docs / (1.0 + dfs[i])).ln().max(0.1);
+                        boost += tf * idf * 0.1; // Scale factor to blend with existing score
+                    }
+                }
+
+                // Apply boost — additive for high-match results
+                if boost > 0.0 {
+                    result.score += boost;
+                }
+            }
+
+            // Re-sort after boosting
+            results.sort_by(|a, b| {
+                b.score
+                    .partial_cmp(&a.score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+
+        results.truncate(limit);
+
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        let telemetry = SearchTelemetry {
+            query_terms: query_terms.len(),
+            keyword_results: pre_boost_count,
+            final_results: results.len(),
+            boost_applied: !query_terms.is_empty(),
+            search_ms: elapsed_ms,
+            hit: !results.is_empty(),
+        };
+
+        tracing::debug!(
+            "🔍 Hybrid search: {} terms, {}/{} results, {}ms, {}",
+            telemetry.query_terms,
+            telemetry.final_results,
+            telemetry.keyword_results,
+            telemetry.search_ms,
+            if telemetry.hit { "HIT" } else { "MISS" }
+        );
+
+        (results, telemetry)
+    }
+
     /// Get the underlying connection (for advanced users).
     pub fn conn(&self) -> &Connection {
         &self.conn
@@ -644,5 +741,81 @@ mod tests {
 
         store.remove_document(docs[0].id).unwrap();
         assert_eq!(store.list_documents().len(), 0);
+    }
+
+    #[test]
+    fn test_boosted_search_hit() {
+        let store = create_test_store();
+        store
+            .add_document(
+                "product.md",
+                "BizClaw là nền tảng AI agent cho doanh nghiệp SME. BizClaw PaaS giúp tự động hóa.",
+                "test",
+            )
+            .unwrap();
+        store
+            .add_document("generic.md", "Phần mềm quản lý cho doanh nghiệp", "test")
+            .unwrap();
+
+        let (results, telemetry) =
+            store.hybrid_search_boosted("BizClaw PaaS", None, 5, &SearchFilter::default());
+
+        assert!(telemetry.hit, "Search should be a HIT");
+        assert!(telemetry.boost_applied, "TF-IDF boost should be applied");
+        assert!(
+            telemetry.query_terms >= 2,
+            "Should have at least 2 query terms"
+        );
+        assert!(!results.is_empty());
+
+        // BizClaw-specific doc should rank higher (has exact term matches)
+        if results.len() >= 2 {
+            assert!(
+                results[0].content.contains("BizClaw"),
+                "First result should contain the exact domain term 'BizClaw'"
+            );
+        }
+    }
+
+    #[test]
+    fn test_boosted_search_miss() {
+        let store = create_test_store();
+        store
+            .add_document("test.md", "Simple content about weather", "test")
+            .unwrap();
+
+        let (results, telemetry) = store.hybrid_search_boosted(
+            "blockchain cryptocurrency NFT",
+            None,
+            5,
+            &SearchFilter::default(),
+        );
+
+        assert!(!telemetry.hit, "Search should be a MISS");
+        assert_eq!(telemetry.final_results, 0);
+    }
+
+    #[test]
+    fn test_search_telemetry_summary() {
+        use crate::search::SearchTelemetry;
+
+        let tele = SearchTelemetry {
+            query_terms: 3,
+            keyword_results: 10,
+            final_results: 5,
+            boost_applied: true,
+            search_ms: 42,
+            hit: true,
+        };
+
+        let summary = tele.summary();
+        assert!(summary.contains("HIT"));
+        assert!(summary.contains("3 terms"));
+        assert!(summary.contains("5/10"));
+        assert!(summary.contains("42ms"));
+
+        let miss = SearchTelemetry::empty();
+        assert!(!miss.hit);
+        assert!(miss.summary().contains("MISS"));
     }
 }

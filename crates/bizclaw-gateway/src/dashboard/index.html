@@ -4,9 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BizClaw — Agent Dashboard</title>
+<meta name="description" content="OmniChannel AI Agent Platform - Quản lý khách hàng đa kênh với AI">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BizClaw">
+<link rel="manifest" href="/static/dashboard/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/static/dashboard/styles.css">
+<link rel="stylesheet" href="/static/dashboard/sme.css">
 <!--
   ALL-IN-ONE STANDALONE: htm/preact/standalone.module.js
   Preact 10.25.4 + Hooks + HTM 3.1.1 in ONE file, ZERO external imports.
@@ -38,6 +47,15 @@ const appRoot = document.getElementById('app');
 
 // Initial render
 render(html`<${App} />`, appRoot);
+
+// Register PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[SW] Registered:', reg.scope))
+      .catch(err => console.error('[SW] Registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>

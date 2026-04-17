@@ -1,8 +1,8 @@
 //! Read and parse incoming emails via IMAP, focused on AI summarization.
 
+use bizclaw_core::error::BizClawError;
 use bizclaw_core::traits::Tool;
 use bizclaw_core::types::{ToolDefinition, ToolResult};
-use bizclaw_core::error::BizClawError;
 use native_tls::TlsConnector;
 use serde::{Deserialize, Serialize};
 
@@ -47,21 +47,27 @@ impl Tool for GmailTool {
     }
 
     async fn execute(&self, arguments: &str) -> Result<ToolResult, BizClawError> {
-        let req: GmailToolRequest = serde_json::from_str(arguments)
-            .unwrap_or_else(|_| GmailToolRequest { folder: None, max_emails: None });
+        let req: GmailToolRequest =
+            serde_json::from_str(arguments).unwrap_or_else(|_| GmailToolRequest {
+                folder: None,
+                max_emails: None,
+            });
 
         let folder = req.folder.unwrap_or_else(|| "INBOX".to_string());
         let limit = req.max_emails.unwrap_or(5);
-        
+
         // Load credentials from system config
         let cfg_path = std::env::var("BIZCLAW_CONFIG").unwrap_or_else(|_| "config.toml".into());
-        let full_cfg = bizclaw_core::config::BizClawConfig::load_from(std::path::Path::new(&cfg_path))
-            .unwrap_or_default();
-        
+        let full_cfg =
+            bizclaw_core::config::BizClawConfig::load_from(std::path::Path::new(&cfg_path))
+                .unwrap_or_default();
+
         if full_cfg.channel.email.is_empty() || !full_cfg.channel.email[0].enabled {
-            return Err(BizClawError::Tool("Email channel is not configured or disabled in config.toml".into()));
+            return Err(BizClawError::Tool(
+                "Email channel is not configured or disabled in config.toml".into(),
+            ));
         }
-        
+
         let email_cfg = &full_cfg.channel.email[0];
         let host = email_cfg.imap_host.clone();
         let username = email_cfg.email.clone();
@@ -69,7 +75,9 @@ impl Tool for GmailTool {
         let port = email_cfg.imap_port;
 
         if host.is_empty() || username.is_empty() {
-            return Err(BizClawError::Tool("IMAP host or email is not configured".into()));
+            return Err(BizClawError::Tool(
+                "IMAP host or email is not configured".into(),
+            ));
         }
 
         let result = tokio::task::spawn_blocking(move || {
@@ -85,24 +93,33 @@ impl Tool for GmailTool {
             imap_session
                 .select(&folder)
                 .map_err(|e| format!("Folder error: {}", e))?;
-                
+
             // Fetch UNSEEN messages first to avoid reading the whole inbox
-            let uids = imap_session.uid_search("UNSEEN").map_err(|e| format!("Search error: {}", e))?;
-            
+            let uids = imap_session
+                .uid_search("UNSEEN")
+                .map_err(|e| format!("Search error: {}", e))?;
+
             let mut uids: Vec<_> = uids.into_iter().collect();
             uids.sort_by(|a: &u32, b: &u32| b.cmp(a)); // Newest first
             uids.truncate(limit);
-            
+
             if uids.is_empty() {
                 let _ = imap_session.logout();
                 return Ok::<String, String>("No unread emails found.".into());
             }
-            
-            let uid_set = uids.iter().map(|u: &u32| u.to_string()).collect::<Vec<_>>().join(",");
+
+            let uid_set = uids
+                .iter()
+                .map(|u: &u32| u.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
 
             // Fetch headers and body for matched UIDs
             let fetches = imap_session
-                .uid_fetch(&uid_set, "(UID RFC822.SIZE BODY[HEADER.FIELDS (SUBJECT FROM DATE)] BODY[TEXT])")
+                .uid_fetch(
+                    &uid_set,
+                    "(UID RFC822.SIZE BODY[HEADER.FIELDS (SUBJECT FROM DATE)] BODY[TEXT])",
+                )
                 .map_err(|e| format!("Fetch error: {}", e))?;
 
             let mut reports = Vec::new();
@@ -117,7 +134,7 @@ impl Tool for GmailTool {
                 } else {
                     "No Body".to_string()
                 };
-                
+
                 let body_preview = if body.len() > 1000 {
                     format!("{}...", &body[..1000])
                 } else {

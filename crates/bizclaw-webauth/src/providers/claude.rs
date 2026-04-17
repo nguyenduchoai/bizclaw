@@ -51,7 +51,10 @@ impl ClaudeWebProvider {
                 try {{
                     const resp = await fetch('{API_BASE}/organizations', {{
                         credentials: 'include',
-                        headers: {{ 'Content-Type': 'application/json' }}
+                        headers: {{ 
+                            'Content-Type': 'application/json',
+                            'anthropic-client-platform': 'web_claude_ai'
+                        }}
                     }});
                     const data = await resp.json();
                     if (Array.isArray(data) && data.length > 0) {{
@@ -93,7 +96,10 @@ impl ClaudeWebProvider {
                     const createResp = await fetch('{API_BASE}/organizations/{org_id}/chat_conversations', {{
                         method: 'POST',
                         credentials: 'include',
-                        headers: {{ 'Content-Type': 'application/json' }},
+                        headers: {{ 
+                            'Content-Type': 'application/json',
+                            'anthropic-client-platform': 'web_claude_ai'
+                        }},
                         body: JSON.stringify({{ name: '', model: 'claude-sonnet-4-20250514' }})
                     }});
                     const conv = await createResp.json();
@@ -104,7 +110,11 @@ impl ClaudeWebProvider {
                     const chatResp = await fetch(`{API_BASE}/organizations/{org_id}/chat_conversations/${{convId}}/completion`, {{
                         method: 'POST',
                         credentials: 'include',
-                        headers: {{ 'Content-Type': 'application/json', 'Accept': 'text/event-stream' }},
+                        headers: {{ 
+                            'Content-Type': 'application/json', 
+                            'Accept': 'text/event-stream',
+                            'anthropic-client-platform': 'web_claude_ai'
+                        }},
                         body: JSON.stringify({{
                             prompt: "{escaped_prompt}",
                             timezone: 'Asia/Ho_Chi_Minh',

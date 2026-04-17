@@ -1,0 +1,99 @@
+{
+  "name": "BizClaw Dashboard",
+  "short_name": "BizClaw",
+  "description": "OmniChannel AI Agent Platform - Quản lý khách hàng đa kênh với AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090d",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "vi",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Trò chuyện mới",
+      "short_name": "Chat",
+      "url": "/?page=chat",
+      "description": "Mở cuộc trò chuyện mới"
+    },
+    {
+      "name": "Bảng điều khiển",
+      "short_name": "Dashboard",
+      "url": "/?page=dashboard",
+      "description": "Xem bảng điều khiển"
+    },
+    {
+      "name": "Tạo Agent",
+      "short_name": "New Agent",
+      "url": "/?page=agents&action=new",
+      "description": "Tạo agent AI mới"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Bảng điều khiển BizClaw"
+    },
+    {
+      "src": "/screenshots/chat.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Giao diện trò chuyện"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

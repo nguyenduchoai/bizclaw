@@ -219,31 +219,47 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
 
                         // ── Handoff Auto-Routing (Intercept) ──
                         let lower = content.to_lowercase();
-                        if lower.contains("gặp nhân viên") || lower.contains("gap nhan vien") || lower.contains("chuyển khách") {
-                            tracing::info!("📞 Handoff hotword detected in Web Chat: '{}'", content);
+                        if lower.contains("gặp nhân viên")
+                            || lower.contains("gap nhan vien")
+                            || lower.contains("chuyển khách")
+                        {
+                            tracing::info!(
+                                "📞 Handoff hotword detected in Web Chat: '{}'",
+                                content
+                            );
                             let req = crate::routes::api_handoff::HandoffRequestPayload {
                                 customer: "Web Guest".to_string(),
                                 channel: Some("Web Chat".to_string()),
                                 reason: Some("Khách hàng yêu cầu hỗ trợ từ nhân viên".to_string()),
                                 message: Some(content.clone()),
                             };
-                            let _ = crate::routes::api_handoff::execute_handoff(state.clone(), req).await;
-                            
-                            let reply = crate::routes::api_handoff::load_handoff_settings(&state).greeting;
-                            let _ = send_json(&mut socket, &serde_json::json!({
-                                "type": "chat_response",
-                                "request_id": &request_id,
-                                "content": reply,
-                                "provider": "system",
-                                "model": "handoff",
-                                "mode": "agent",
-                            })).await;
-                            let _ = send_json(&mut socket, &serde_json::json!({
-                                "type": "chat_done",
-                                "request_id": &request_id,
-                                "full_content": reply,
-                                "mode": "agent",
-                            })).await;
+                            let _ = crate::routes::api_handoff::execute_handoff(state.clone(), req)
+                                .await;
+
+                            let reply =
+                                crate::routes::api_handoff::load_handoff_settings(&state).greeting;
+                            let _ = send_json(
+                                &mut socket,
+                                &serde_json::json!({
+                                    "type": "chat_response",
+                                    "request_id": &request_id,
+                                    "content": reply,
+                                    "provider": "system",
+                                    "model": "handoff",
+                                    "mode": "agent",
+                                }),
+                            )
+                            .await;
+                            let _ = send_json(
+                                &mut socket,
+                                &serde_json::json!({
+                                    "type": "chat_done",
+                                    "request_id": &request_id,
+                                    "full_content": reply,
+                                    "mode": "agent",
+                                }),
+                            )
+                            .await;
                             continue;
                         }
 

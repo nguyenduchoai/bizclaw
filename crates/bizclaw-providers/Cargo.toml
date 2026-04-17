@@ -8,6 +8,7 @@ description = "LLM provider implementations for BizClaw"
 [dependencies]
 bizclaw-core.workspace = true
 bizclaw-brain.workspace = true
+bizclaw-security.workspace = true
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true

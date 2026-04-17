@@ -36,3 +36,19 @@ reqwest-oauth1 = "0.3.0"
 imap = "2.4.1"
 native-tls.workspace = true
 mailparse = "0.16.1"
+whoami.workspace = true
+rustc_version = "0.4"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+enigo = "0.3"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+enigo = "0.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+enigo = "0.3"
+
+[dependencies.image]
+version = "0.25"
+default-features = false
+features = ["jpeg", "png"]

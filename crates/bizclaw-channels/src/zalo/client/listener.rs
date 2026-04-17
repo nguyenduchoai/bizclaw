@@ -3,6 +3,7 @@
 //! Sends parsed events via mpsc channel for integration with ZaloChannel.
 
 use super::models::ZaloMessage;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use bizclaw_core::error::{BizClawError, Result};
 use bizclaw_core::types::IncomingMessage;
 use futures::StreamExt;
@@ -61,6 +62,8 @@ pub struct ZaloListener {
     own_uid: String,
     /// Optional webhook URL to forward raw events
     webhook_url: Option<String>,
+    /// Cipher key (zpw_enk base64) for decrypting AES-GCM binary payloads
+    cipher_key: Option<String>,
 }
 
 impl ZaloListener {
@@ -74,6 +77,7 @@ impl ZaloListener {
             self_listen: false,
             own_uid: String::new(),
             webhook_url: None,
+            cipher_key: None,
         }
     }
 
@@ -103,6 +107,12 @@ impl ZaloListener {
         self
     }
 
+    /// Set cipher key for decrypting AES-GCM binary WebSocket frames.
+    pub fn with_cipher_key(mut self, key: Option<String>) -> Self {
+        self.cipher_key = key;
+        self
+    }
+
     /// Start listening and sending IncomingMessage to the provided sender.
     /// This spawns a background task that auto-reconnects.
     /// Returns the receiver end for consuming messages.
@@ -117,6 +127,7 @@ impl ZaloListener {
         let self_listen = self.self_listen;
         let own_uid = self.own_uid.clone();
         let webhook_url = self.webhook_url.clone();
+        let cipher_key = self.cipher_key.clone();
 
         tokio::spawn(async move {
             let mut attempt = 0u32;
@@ -132,6 +143,7 @@ impl ZaloListener {
                     self_listen,
                     &own_uid,
                     webhook_url.as_deref(),
+                    cipher_key.as_deref(),
                 )
                 .await
                 {
@@ -187,6 +199,7 @@ impl ZaloListener {
         self_listen: bool,
         own_uid: &str,
         webhook_url: Option<&str>,
+        cipher_key: Option<&str>,
     ) -> Result<()> {
         let (ws_stream, _response) = tokio_tungstenite::connect_async(ws_url)
             .await
@@ -198,113 +211,43 @@ impl ZaloListener {
         let (_write, mut read) = ws_stream.split();
 
         while let Some(msg) = read.next().await {
-            match msg {
-                Ok(WsMessage::Text(text)) => {
-                    // 1. Forward to webhook if configured (fire and forget)
-                    if let Some(url) = webhook_url {
-                        let client = reqwest::Client::new();
-                        let url_clone = url.to_string();
-                        let payload = text.clone();
-                        tokio::spawn(async move {
-                            let _ = client
-                                .post(&url_clone)
-                                .header("Content-Type", "application/json")
-                                .body(payload)
-                                .send()
-                                .await;
-                        });
-                    }
+            let json_text_opt = match msg {
+                Ok(WsMessage::Text(text)) => Some(text),
+                Ok(WsMessage::Binary(data)) => {
+                    // Zalo binary frame: [version:1] [cmd:2 LE] [sub_cmd:1] [payload...]
+                    if data.len() >= 4 {
+                        let _version = data[0];
+                        let cmd = u16::from_le_bytes([data[1], data[2]]);
+                        let sub_cmd = data[3];
 
-                    // 2. Parse and handle internal routing
-                    match Self::parse_ws_event(&text) {
-                        Ok(event) => {
-                            match event {
-                                ZaloEvent::Message(zalo_msg) => {
-                                    // Skip self-sent messages unless self_listen is on
-                                    if !self_listen && zalo_msg.sender_id == own_uid {
-                                        continue;
-                                    }
+                        // Determine encrypt_type from cmd/sub_cmd (zca-js convention)
+                        let encrypt_type: i64 = if sub_cmd == 0 { 0 } else { sub_cmd as i64 };
+                        let payload_str = BASE64.encode(&data[4..]);
 
-                                    let content = match &zalo_msg.content {
-                                        super::models::ZaloMessageContent::Text(t) => t.clone(),
-                                        super::models::ZaloMessageContent::Attachment(v) => {
-                                            format!("[attachment: {}]", v)
-                                        }
-                                    };
-
-                                    let incoming = IncomingMessage {
-                                        channel: "zalo".to_string(),
-                                        thread_id: zalo_msg.thread_id.clone(),
-                                        sender_id: zalo_msg.sender_id.clone(),
-                                        sender_name: None,
-                                        content,
-                                        thread_type: bizclaw_core::types::ThreadType::Direct,
-                                        timestamp: chrono::DateTime::from_timestamp(
-                                            zalo_msg.timestamp as i64,
-                                            0,
-                                        )
-                                        .unwrap_or_else(chrono::Utc::now),
-                                        reply_to: None,
-                                    };
-
-                                    if tx.send(incoming).await.is_err() {
-                                        tracing::warn!(
-                                            "Zalo WebSocket: message channel closed, stopping"
-                                        );
-                                        return Ok(());
-                                    }
-
-                                    tracing::debug!(
-                                        "Zalo: received message from {} in thread {}",
-                                        zalo_msg.sender_id,
-                                        zalo_msg.thread_id
-                                    );
-                                }
-                                ZaloEvent::Typing { thread_id, user_id } => {
-                                    tracing::trace!(
-                                        "Zalo: typing from {} in {}",
-                                        user_id,
-                                        thread_id
-                                    );
-                                }
-                                ZaloEvent::Reaction {
-                                    msg_id, reaction, ..
-                                } => {
-                                    tracing::debug!(
-                                        "Zalo: reaction '{}' on msg {}",
-                                        reaction,
-                                        msg_id
-                                    );
-                                }
-                                ZaloEvent::MessageUndo { msg_id, .. } => {
-                                    tracing::debug!("Zalo: message {} recalled", msg_id);
-                                }
-                                ZaloEvent::GroupEvent {
-                                    group_id,
-                                    event_type,
-                                    ..
-                                } => {
-                                    tracing::debug!(
-                                        "Zalo: group event '{}' in {}",
-                                        event_type,
-                                        group_id
-                                    );
-                                }
-                                ZaloEvent::ConnectionState(state) => {
-                                    tracing::info!("Zalo: connection state: {:?}", state);
-                                }
-                                ZaloEvent::Raw(json) => {
-                                    tracing::trace!("Zalo: raw event: {}", json);
-                                }
+                        match super::crypto::decode_event_data(
+                            &payload_str,
+                            encrypt_type,
+                            cipher_key,
+                        ) {
+                            Ok(json) => Some(json.to_string()),
+                            Err(e) => {
+                                // Fallback: try raw UTF-8 for unencrypted payloads
+                                tracing::trace!(
+                                    "Binary decode failed (cmd={}, enc={}): {}, trying raw",
+                                    cmd,
+                                    encrypt_type,
+                                    e
+                                );
+                                String::from_utf8(data[4..].to_vec()).ok()
                             }
                         }
-                        Err(e) => {
-                            tracing::warn!("Failed to parse Zalo event: {e}");
-                        }
+                    } else {
+                        None
                     }
                 }
                 Ok(WsMessage::Ping(data)) => {
                     tracing::trace!("Zalo ping received ({} bytes)", data.len());
+                    None
                 }
                 Ok(WsMessage::Close(frame)) => {
                     tracing::info!("Zalo WebSocket closed: {:?}", frame);
@@ -318,7 +261,6 @@ impl ZaloListener {
                     connected.store(false, Ordering::SeqCst);
 
                     if is_3000 {
-                        // Notify via IncomingMessage that re-login is required due to conflict
                         let incoming = IncomingMessage {
                             channel: "zalo".to_string(),
                             thread_id: "system".to_string(),
@@ -341,7 +283,104 @@ impl ZaloListener {
                     connected.store(false, Ordering::SeqCst);
                     break;
                 }
-                _ => {}
+                _ => None,
+            };
+
+            if let Some(text) = json_text_opt {
+                // 1. Forward to webhook if configured (fire and forget)
+                if let Some(url) = webhook_url {
+                    let client = reqwest::Client::new();
+                    let url_clone = url.to_string();
+                    let payload = text.clone();
+                    tokio::spawn(async move {
+                        let _ = client
+                            .post(&url_clone)
+                            .header("Content-Type", "application/json")
+                            .body(payload)
+                            .send()
+                            .await;
+                    });
+                }
+
+                // 2. Parse and handle internal routing
+                match Self::parse_ws_event(&text) {
+                    Ok(event) => {
+                        match event {
+                            ZaloEvent::Message(zalo_msg) => {
+                                // Skip self-sent messages unless self_listen is on
+                                if !self_listen && zalo_msg.sender_id == own_uid {
+                                    continue;
+                                }
+
+                                let content = match &zalo_msg.content {
+                                    super::models::ZaloMessageContent::Text(t) => t.clone(),
+                                    super::models::ZaloMessageContent::Attachment(v) => {
+                                        format!("[attachment: {}]", v)
+                                    }
+                                };
+
+                                let incoming = IncomingMessage {
+                                    channel: "zalo".to_string(),
+                                    thread_id: zalo_msg.thread_id.clone(),
+                                    sender_id: zalo_msg.sender_id.clone(),
+                                    sender_name: None,
+                                    content,
+                                    thread_type: bizclaw_core::types::ThreadType::Direct,
+                                    timestamp: chrono::DateTime::from_timestamp(
+                                        zalo_msg.timestamp as i64,
+                                        0,
+                                    )
+                                    .unwrap_or_else(chrono::Utc::now),
+                                    reply_to: None,
+                                };
+
+                                if tx.send(incoming).await.is_err() {
+                                    tracing::warn!(
+                                        "Zalo WebSocket: message channel closed, stopping"
+                                    );
+                                    return Ok(());
+                                }
+
+                                tracing::debug!(
+                                    "Zalo: received message from {} in thread {}",
+                                    zalo_msg.sender_id,
+                                    zalo_msg.thread_id
+                                );
+                            }
+                            ZaloEvent::Typing { thread_id, user_id } => {
+                                tracing::trace!("Zalo: typing from {} in {}", user_id, thread_id);
+                            }
+                            ZaloEvent::Reaction {
+                                msg_id, reaction, ..
+                            } => {
+                                tracing::debug!("Zalo: reaction '{}' on msg {}", reaction, msg_id);
+                            }
+                            ZaloEvent::MessageUndo { msg_id, .. } => {
+                                tracing::debug!("Zalo: message {} recalled", msg_id);
+                            }
+                            ZaloEvent::GroupEvent {
+                                group_id,
+                                event_type,
+                                ..
+                            } => {
+                                tracing::debug!(
+                                    "Zalo: group event '{}' in {}",
+                                    event_type,
+                                    group_id
+                                );
+                            }
+                            ZaloEvent::ConnectionState(state) => {
+                                tracing::info!("Zalo: connection state: {:?}", state);
+                            }
+                            ZaloEvent::Raw(json) => {
+                                tracing::trace!("Zalo: raw event: {}", json);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to parse Zalo event: {e}");
+                    }
+                }
             }
         }
 

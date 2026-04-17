@@ -301,14 +301,22 @@ pub async fn fetch_provider_models(
     match req.send().await {
         Ok(resp) if resp.status().is_success() => {
             if let Ok(body) = resp.json::<serde_json::Value>().await {
-                let models: Vec<String> = body["data"]
-                    .as_array()
-                    .map(|arr| {
-                        arr.iter()
-                            .filter_map(|m| m["id"].as_str().map(String::from))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let models: Vec<String> = if let Some(arr) = body["data"].as_array() {
+                    // OpenAI / Anthropic format
+                    arr.iter()
+                        .filter_map(|m| m["id"].as_str().map(String::from))
+                        .collect()
+                } else if let Some(arr) = body["models"].as_array() {
+                    // Gemini / Google format
+                    arr.iter()
+                        .filter_map(|m| {
+                            let name = m["name"].as_str()?;
+                            Some(name.strip_prefix("models/").unwrap_or(name).to_string())
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                };
                 if !models.is_empty() {
                     // Cache in DB
                     if let Err(e) = state.db.update_provider_models(&name, &models) {
@@ -564,11 +572,15 @@ pub async fn brain_download_model(
     let status_file = models_dir.join(format!(".dl_{}.json", filename));
 
     if dest.exists() && dest.metadata().map(|m| m.len()).unwrap_or(0) > 10 * 1024 * 1024 {
-        return Json(serde_json::json!({"ok": true, "message": "Model already downloaded", "status": "completed"}));
+        return Json(
+            serde_json::json!({"ok": true, "message": "Model already downloaded", "status": "completed"}),
+        );
     }
 
     if status_file.exists() {
-        return Json(serde_json::json!({"ok": true, "message": "Download already in progress", "status": "downloading"}));
+        return Json(
+            serde_json::json!({"ok": true, "message": "Download already in progress", "status": "downloading"}),
+        );
     }
 
     // Initialize status file
@@ -595,7 +607,10 @@ pub async fn brain_download_model(
                                 let pct = (downloaded as f64 / total as f64 * 100.0) as u32;
                                 if pct > last_pct {
                                     last_pct = pct;
-                                    let status = format!(r#"{{"progress":{}, "total":{}, "percent":{}}}"#, downloaded, total, pct);
+                                    let status = format!(
+                                        r#"{{"progress":{}, "total":{}, "percent":{}}}"#,
+                                        downloaded, total, pct
+                                    );
                                     let _ = std::fs::write(&status_file, status);
                                 }
                             }
@@ -627,7 +642,9 @@ pub async fn brain_download_status(
 
     if let Ok(content) = std::fs::read_to_string(&status_file) {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-            return Json(serde_json::json!({"ok": true, "status": "downloading", "progress": json}));
+            return Json(
+                serde_json::json!({"ok": true, "status": "downloading", "progress": json}),
+            );
         }
     }
 
@@ -638,4 +655,3 @@ pub async fn brain_download_status(
 
     Json(serde_json::json!({"ok": true, "status": "not_started"}))
 }
-

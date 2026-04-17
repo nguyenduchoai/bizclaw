@@ -51,6 +51,29 @@ impl SkillRegistry {
         self.skills.get(name).map(|s| s.content.as_str())
     }
 
+    /// Get full skill context for injection into agent prompts.
+    /// Returns the complete SKILL.md content including frontmatter.
+    pub fn get_skill_context(&self, name: &str) -> Option<String> {
+        self.skills.get(name).map(|s| {
+            let meta = &s.metadata;
+            let frontmatter = format!(
+                "---\nname: {}\ndescription: {}\ncategory: {}\nbusiness_category: {}\nbusiness_roles: {:?}\nindustry: {:?}\npain_points: {:?}\ntags: {:?}\nicon: {}\nversion: {}\n---\n{}",
+                meta.name,
+                meta.description,
+                meta.category,
+                meta.business_category,
+                meta.business_roles,
+                meta.industry,
+                meta.pain_points,
+                meta.tags,
+                meta.icon,
+                meta.version,
+                s.content
+            );
+            frontmatter
+        })
+    }
+
     /// List all installed skills.
     pub fn list(&self) -> Vec<&SkillManifest> {
         self.skills.values().collect()

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Workflow Builder - BizClaw</title>
+  <link rel="stylesheet" href="/static/dashboard/workflow-builder.css">
+</head>
+<body>
+  <div class="workflow-builder">
+    <!-- Toolbar -->
+    <div class="workflow-toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-primary" onclick="workflow.save()">💾 Lưu</button>
+        <button class="btn btn-secondary" onclick="workflow.preview()">👁️ Xem trước</button>
+        <button class="btn btn-success" onclick="workflow.run()">▶️ Chạy thử</button>
+      </div>
+      <div class="toolbar-center">
+        <input type="text" id="workflowName" class="workflow-name-input" placeholder="Tên Workflow..." value="Untitled Workflow">
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-outline" onclick="workflow.exportJson()">📤 Export JSON</button>
+        <button class="btn btn-outline" onclick="workflow.importJson()">📥 Import JSON</button>
+        <button class="btn btn-outline" onclick="workflow.clearCanvas()">🗑️ Xoá Canvas</button>
+      </div>
+    </div>
+
+    <!-- Step Palette (Left) -->
+    <div class="workflow-palette">
+      <h4>📦 Các bước</h4>
+      <div class="palette-category">
+        <div class="palette-category-label">Trigger</div>
+        <div class="step-item" draggable="true" data-type="trigger" data-config='{"channel":"zalo"}'>
+          <span class="step-icon">⚡</span>
+          <span class="step-label">Trigger</span>
+        </div>
+      </div>
+      <div class="palette-category">
+        <div class="palette-category-label">Actions</div>
+        <div class="step-item" draggable="true" data-type="action" data-config='{"agent":"default"}'>
+          <span class="step-icon">🎯</span>
+          <span class="step-label">Action</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="agent" data-config='{"agent":"ai-agent"}'>
+          <span class="step-icon">🤖</span>
+          <span class="step-label">AI Agent</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="notify" data-config='{"channel":"zalo","template":""}'>
+          <span class="step-icon">📢</span>
+          <span class="step-label">Notify</span>
+        </div>
+      </div>
+      <div class="palette-category">
+        <div class="palette-category-label">Logic</div>
+        <div class="step-item" draggable="true" data-type="condition" data-config='{"field":"","operator":"equals","value":""}'>
+          <span class="step-icon">🔀</span>
+          <span class="step-label">If/Else</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="loop" data-config='{"maxIterations":10,"condition":""}'>
+          <span class="step-icon">🔁</span>
+          <span class="step-label">Loop</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="delay" data-config='{"seconds":5}'>
+          <span class="step-icon">⏰</span>
+          <span class="step-label">Delay</span>
+        </div>
+      </div>
+      <div class="palette-category">
+        <div class="palette-category-label">Data</div>
+        <div class="step-item" draggable="true" data-type="transform" data-config='{"template":""}'>
+          <span class="step-icon">✨</span>
+          <span class="step-label">Transform</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="query" data-config='{"sql":""}'>
+          <span class="step-icon">🗄️</span>
+          <span class="step-label">SQL Query</span>
+        </div>
+        <div class="step-item" draggable="true" data-type="rag" data-config='{"knowledgeBase":"","query":""}'>
+          <span class="step-icon">📚</span>
+          <span class="step-label">RAG Search</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas (Center) -->
+    <div class="workflow-canvas" id="workflowCanvas">
+      <div class="canvas-content" id="canvasContent">
+        <div class="workflow-start" id="workflowStart">
+          <span class="start-icon">▶️</span>
+          <span class="start-label">Bắt đầu</span>
+          <div class="connector-point output" data-node-id="start"></div>
+        </div>
+        <div class="workflow-end" id="workflowEnd">
+          <div class="connector-point input" data-node-id="end"></div>
+          <span class="end-icon">🏁</span>
+          <span class="end-label">Kết thúc</span>
+        </div>
+        <svg class="connections-svg" id="connectionsSvg"></svg>
+        <div class="steps-container" id="stepsContainer"></div>
+      </div>
+    </div>
+
+    <!-- Properties Panel (Right) -->
+    <div class="workflow-properties">
+      <h4>⚙️ Cài đặt</h4>
+      <div id="stepProperties" class="properties-empty">
+        <div class="empty-state">
+          <span class="empty-icon">👆</span>
+          <p>Chọn một bước để cài đặt</p>
+        </div>
+      </div>
+      <div id="stepPropertiesForm" class="properties-form" style="display:none">
+        <div class="form-group">
+          <label>Tên bước</label>
+          <input type="text" id="propName" class="form-control" placeholder="Tên bước...">
+        </div>
+        <div class="form-group">
+          <label>Loại</label>
+          <div class="step-type-display" id="propType">-</div>
+        </div>
+        <div class="form-group">
+          <label>ID</label>
+          <div class="step-id-display" id="propId">-</div>
+        </div>
+        <div id="configFields"></div>
+        <div class="form-actions">
+          <button class="btn btn-danger btn-sm" onclick="workflow.deleteSelected()">🗑️ Xoá bước</button>
+        </div>
+      </div>
+      <div class="workflow-info" id="workflowInfo" style="display:none">
+        <h5>📊 Thông tin Workflow</h5>
+        <div class="info-item">
+          <span class="info-label">ID:</span>
+          <span class="info-value" id="infoId">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Số bước:</span>
+          <span class="info-value" id="infoSteps">0</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Kết nối:</span>
+          <span class="info-value" id="infoConnections">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="modal" id="previewModal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>👁️ Xem trước Workflow</h3>
+        <button class="modal-close" onclick="workflow.closePreview()">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre id="previewContent" class="json-preview"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/dashboard/workflow-builder.js"></script>
+</body>
+</html>

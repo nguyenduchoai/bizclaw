@@ -141,6 +141,22 @@ function ProvidersPage({ config, lang }) {
     } catch(e) { showToast('❌ '+e.message,'error'); }
   };
 
+  const refreshModels = async (name) => {
+    try {
+      showToast('⏳ Đang cập nhật model cho ' + name + '...', 'info');
+      const r = await authFetch('/api/v1/providers/' + encodeURIComponent(name) + '/fetch-models', { method: 'POST' });
+      const d = await r.json();
+      if (d.ok) {
+        showToast('✅ Đã cập nhật ' + (d.models?.length || 0) + ' models cho ' + name, 'success');
+        load(); // Reload provider list to show new models
+      } else {
+        showToast('❌ ' + (d.error || 'Lỗi cập nhật model'), 'error');
+      }
+    } catch (e) {
+      showToast('❌ ' + e.message, 'error');
+    }
+  };
+
   const inp = 'width:100%;padding:8px;margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px';
 
   return html`<div>
@@ -257,7 +273,8 @@ function ProvidersPage({ config, lang }) {
     <div class="card">${loading?html`<div style="text-align:center;padding:20px;color:var(--text2)">Loading...</div>`:html`<table><thead><tr><th></th><th>Provider</th><th>Type</th><th>Models</th><th>Status</th><th style="text-align:right">Thao tác</th></tr></thead><tbody>
       ${providers.map(p=>html`<tr key=${p.name}><td style="font-size:20px">${p.icon||'🤖'}</td><td><strong>${p.label||p.name}</strong></td><td><span class="badge ${typeColor(p.provider_type)}">${p.provider_type}</span></td><td style="font-size:12px">${(p.models||[]).slice(0,3).join(', ')}</td><td>${p.name===active?html`<span class="badge badge-green">✅ Active</span>`:html`<span class="badge">—</span>`}</td>
         <td style="text-align:right;white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onClick=${()=>openConfig(p)} title="Cấu hình">🔑</button>
+          ${p.name !== 'brain' && html`<button class="btn btn-outline btn-sm" onClick=${()=>refreshModels(p.name)} title="Cập nhật Model">🔄</button>`}
+          <button class="btn btn-outline btn-sm" style="margin-left:4px" onClick=${()=>openConfig(p)} title="Cấu hình">🔑</button>
           ${p.name!==active?html`<button class="btn btn-outline btn-sm" style="margin-left:4px" onClick=${()=>activateProvider(p.name,(p.models||[])[0])} title="Kích hoạt">⚡</button>`:''}
           <button class="btn btn-outline btn-sm" style="margin-left:4px;color:var(--red)" onClick=${()=>deleteProvider(p.name)} title="Xoá">🗑️</button>
         </td>

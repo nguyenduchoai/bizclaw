@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizClaw — Agent Dashboard</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/dashboard/dashboard-new.css">
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import {
+  h, html, render, Component, createContext,
+  useState, useEffect, useContext, useCallback, useRef, useMemo,
+  useReducer, useLayoutEffect, useErrorBoundary
+} from '/static/dashboard/vendor/standalone.mjs';
+
+window.h = h; window.html = html; window.render = render;
+window.useState = useState; window.useEffect = useEffect;
+window.useContext = useContext; window.useCallback = useCallback;
+window.useRef = useRef; window.useMemo = useMemo;
+window.createContext = createContext;
+window.Component = Component;
+
+const { App } = await import('/static/dashboard/app-new.js');
+const appRoot = document.getElementById('app');
+
+render(html`<${App} />`, appRoot);
+</script>
+</body>
+</html>

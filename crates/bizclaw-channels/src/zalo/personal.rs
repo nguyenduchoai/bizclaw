@@ -50,6 +50,9 @@ impl ZaloPersonalChannel {
                 login_data.uid.clone(),
                 login_data.zpw_enk,
                 login_data.zpw_key,
+                None, // secret_key extracted separately if needed
+                Some(cookie.to_string()),
+                None, // imei
             )
             .await;
         self.cookie = Some(cookie.to_string());

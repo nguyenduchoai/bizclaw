@@ -235,7 +235,7 @@ function DashboardPage({ config, lang }) {
       <${StatsCard} label=${t('dash.clock', lang)} value=${clock} color="accent" sub=${dateStr} icon="⏰" />
       <${StatsCard} label=${t('dash.uptime', lang)} value=${uptimeStr} color="green" icon="🟢" />
       <${StatsCard} label="Agents" value=${agents.length} color="blue" icon="🤖" sub="${agents.filter(a => a.status !== 'offline').length} ${t('dash.online', lang)}" />
-      <${StatsCard} label="Tokens" value=${totalTokens > 1000 ? (totalTokens/1000).toFixed(1) + 'k' : totalTokens} color="accent2" icon="🎯" sub=${t('dash.today', lang) || 'Hôm nay'} />
+      <${StatsCard} label="Tokens" value=${(totalTokens > 1000 ? (totalTokens/1000).toFixed(1) + 'k' : totalTokens)} color="accent2" icon="🎯" sub=${t('dash.today', lang) || 'Hôm nay'} />
       <${StatsCard} label=${t('dash.avg_response', lang) || 'Phản hồi TB'} value=${avgResponseMs + 'ms'} color=${avgResponseMs > 3000 ? 'red' : 'green'} icon="⚡" />
       <${StatsCard} label=${t('dash.cost', lang) || 'Chi phí'} value=${'$' + totalCost.toFixed(3)} color="accent" icon="💰" />
     </div>
@@ -324,7 +324,7 @@ function DashboardPage({ config, lang }) {
               animation:slideIn 0.3s ease ${i * 0.05}s both">
               <span style="font-size:16px">${ev.event_type?.includes('llm') ? '🤖' : ev.event_type?.includes('tool') ? '🛠️' : ev.event_type?.includes('scheduler') ? '⏰' : '⚡'}</span>
               <div style="flex:1;min-width:0">
-                <span class="badge ${ev.event_type?.includes('error') ? 'badge-red' : ev.event_type?.includes('completed') ? 'badge-green' : 'badge-blue'}" style="font-size:10px">${ev.event_type}</span>
+                <span class="badge ${ev.event_type?.includes('error') ? 'badge-red' : ev.event_type?.includes('completed') ? 'badge-green' : 'badge-blue'}" style="font-size:10px">${String(ev.event_type).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}</span>
                 <span style="margin-left:6px;color:var(--text2)">${ev.agent || ''}</span>
               </div>
               <span style="color:var(--text2);font-family:var(--mono);font-size:10px">${new Date(ev.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>

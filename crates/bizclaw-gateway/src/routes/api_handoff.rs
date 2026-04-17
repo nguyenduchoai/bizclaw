@@ -1,14 +1,13 @@
 use axum::{
-    extract::{Path, State},
     Json,
+    extract::{Path, State},
 };
-use bizclaw_core::error::{BizClawError, Result};
 
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::sync::Arc;
 use uuid::Uuid;
-use std::fs;
 
 use crate::server::AppState;
 
@@ -75,7 +74,11 @@ impl Default for HandoffSettings {
 }
 
 fn get_settings_path(state: &AppState) -> std::path::PathBuf {
-    state.config_path.parent().unwrap_or(std::path::Path::new(".")).join("handoff-settings.json")
+    state
+        .config_path
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .join("handoff-settings.json")
 }
 
 pub fn load_handoff_settings(state: &AppState) -> HandoffSettings {
@@ -90,9 +93,7 @@ pub fn load_handoff_settings(state: &AppState) -> HandoffSettings {
     HandoffSettings::default()
 }
 
-pub async fn get_handoff_settings(
-    State(state): State<Arc<AppState>>,
-) -> Json<HandoffSettings> {
+pub async fn get_handoff_settings(State(state): State<Arc<AppState>>) -> Json<HandoffSettings> {
     Json(load_handoff_settings(&state))
 }
 
@@ -107,14 +108,12 @@ pub async fn save_handoff_settings(
     Json(serde_json::json!({"status": "ok"}))
 }
 
-pub async fn list_handoff_queue(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn list_handoff_queue(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    
+
     // Ensure table exists
     conn.execute(
         "CREATE TABLE IF NOT EXISTS handoff_queue (
@@ -129,24 +128,27 @@ pub async fn list_handoff_queue(
             created_at TEXT NOT NULL
         )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     let mut stmt = conn.prepare("SELECT id, customer, channel, reason, message, status, context_summary, ai_attempts, created_at FROM handoff_queue ORDER BY created_at DESC").unwrap();
-    
+
     let mut queue = Vec::new();
-    let iter = stmt.query_map([], |row| {
-        Ok(HandoffTicket {
-            id: row.get(0)?,
-            customer: row.get(1)?,
-            channel: row.get(2)?,
-            reason: row.get(3)?,
-            message: row.get(4)?,
-            status: row.get(5)?,
-            context_summary: row.get(6)?,
-            ai_attempts: row.get(7)?,
-            created_at: row.get(8)?,
+    let iter = stmt
+        .query_map([], |row| {
+            Ok(HandoffTicket {
+                id: row.get(0)?,
+                customer: row.get(1)?,
+                channel: row.get(2)?,
+                reason: row.get(3)?,
+                message: row.get(4)?,
+                status: row.get(5)?,
+                context_summary: row.get(6)?,
+                ai_attempts: row.get(7)?,
+                created_at: row.get(8)?,
+            })
         })
-    }).unwrap();
+        .unwrap();
 
     for t in iter {
         if let Ok(ticket) = t {
@@ -163,9 +165,13 @@ pub async fn resolve_handoff(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    conn.execute("UPDATE handoff_queue SET status = 'resolved' WHERE id = ?1", params![id]).unwrap();
+    conn.execute(
+        "UPDATE handoff_queue SET status = 'resolved' WHERE id = ?1",
+        params![id],
+    )
+    .unwrap();
 
     let mut activity_log = state.activity_log.lock().unwrap();
     activity_log.push(crate::openai_compat::ActivityEvent {
@@ -184,9 +190,10 @@ pub async fn delete_handoff(
 ) -> Json<serde_json::Value> {
     let conn = match state.db.lock_conn() {
         Ok(c) => c,
-        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+        Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
     };
-    conn.execute("DELETE FROM handoff_queue WHERE id = ?1", params![id]).unwrap();
+    conn.execute("DELETE FROM handoff_queue WHERE id = ?1", params![id])
+        .unwrap();
 
     let mut activity_log = state.activity_log.lock().unwrap();
     activity_log.push(crate::openai_compat::ActivityEvent {
@@ -214,17 +221,22 @@ pub async fn request_handoff(
     execute_handoff(state, req).await
 }
 
-pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -> Json<serde_json::Value> {
+pub async fn execute_handoff(
+    state: Arc<AppState>,
+    req: HandoffRequestPayload,
+) -> Json<serde_json::Value> {
     let id = Uuid::new_v4().to_string();
     let channel = req.channel.unwrap_or_else(|| "unknown".into());
-    let reason = req.reason.unwrap_or_else(|| "Cần hỗ trợ từ nhân viên".into());
+    let reason = req
+        .reason
+        .unwrap_or_else(|| "Cần hỗ trợ từ nhân viên".into());
     let message = req.message.unwrap_or_else(|| "".into());
     let created_at = chrono::Utc::now().to_rfc3339();
 
     {
         let conn = match state.db.lock_conn() {
             Ok(c) => c,
-            Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")}))
+            Err(e) => return Json(serde_json::json!({"error": format!("DB error: {e}")})),
         };
 
         conn.execute(
@@ -240,7 +252,8 @@ pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -
                 created_at TEXT NOT NULL
             )",
             [],
-        ).unwrap();
+        )
+        .unwrap();
 
         if let Err(e) = conn.execute(
             "INSERT INTO handoff_queue (id, customer, channel, reason, message, status, context_summary, ai_attempts, created_at)
@@ -252,21 +265,35 @@ pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -
     }
 
     // Pause the thread for AI so it stops responding automatically
-    state.paused_threads.write().await.insert(req.customer.clone());
-    tracing::info!("⏸️ AI paused for thread: {} due to Hand-off request", req.customer);
+    state
+        .paused_threads
+        .write()
+        .await
+        .insert(req.customer.clone());
+    tracing::info!(
+        "⏸️ AI paused for thread: {} due to Hand-off request",
+        req.customer
+    );
 
     // Send Zalo Notification
-    let cfg = state.full_config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let cfg = state
+        .full_config
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
     let mut sent_notification = false;
-    
+
     // Check all Zalo channels, if any has notify_user_id and oa_access_token, dispatch.
     for zalo_cfg in cfg.channel.zalo.iter() {
         let access_token = &zalo_cfg.oa_access_token;
         let admin_id = &zalo_cfg.notify_user_id;
 
         if !access_token.is_empty() && !admin_id.is_empty() {
-            let n_msg = format!("🚨 [Có Khách Cần Hỗ Trợ]\nKhách hàng: {}\nLý do: {}\nTin nhắn: {}", req.customer, reason, message);
-            
+            let n_msg = format!(
+                "🚨 [Có Khách Cần Hỗ Trợ]\nKhách hàng: {}\nLý do: {}\nTin nhắn: {}",
+                req.customer, reason, message
+            );
+
             tokio::spawn({
                 let token = access_token.clone();
                 let uid = admin_id.clone();
@@ -276,7 +303,8 @@ pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -
                         "message": { "text": n_msg }
                     });
                     let client = reqwest::Client::new();
-                    let _ = client.post("https://openapi.zalo.me/v3.0/oa/message/cs")
+                    let _ = client
+                        .post("https://openapi.zalo.me/v3.0/oa/message/cs")
                         .header("access_token", token)
                         .json(&payload)
                         .send()
@@ -292,7 +320,10 @@ pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -
     for tg_cfg in cfg.channel.telegram.iter() {
         let bot_token = tg_cfg.resolve_bot_token();
         if !bot_token.is_empty() && !tg_cfg.allowed_chat_ids.is_empty() {
-            let n_msg = format!("🚨 <b>Có Khách Cần Hỗ Trợ</b>\nKhách hàng: <code>{}</code>\nLý do: {}\nTin nhắn: {}", req.customer, reason, message);
+            let n_msg = format!(
+                "🚨 <b>Có Khách Cần Hỗ Trợ</b>\nKhách hàng: <code>{}</code>\nLý do: {}\nTin nhắn: {}",
+                req.customer, reason, message
+            );
             for admin_id in &tg_cfg.allowed_chat_ids {
                 tokio::spawn({
                     let token = bot_token.clone();
@@ -305,7 +336,11 @@ pub async fn execute_handoff(state: Arc<AppState>, req: HandoffRequestPayload) -
                             "parse_mode": "HTML"
                         });
                         let client = reqwest::Client::new();
-                        let _ = client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
+                        let _ = client
+                            .post(&format!(
+                                "https://api.telegram.org/bot{}/sendMessage",
+                                token
+                            ))
                             .json(&payload)
                             .send()
                             .await;

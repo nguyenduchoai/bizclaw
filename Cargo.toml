@@ -24,6 +24,13 @@ members = [
     "crates/bizclaw-skills",
     "crates/bizclaw-webauth",
     "crates/bizclaw-catchme",
+    "crates/bizclaw-ecommerce",
+    "crates/bizclaw-content",
+    "crates/bizclaw-office",
+    "crates/bizclaw-i18n",
+    "crates/bizclaw-social",
+    "crates/bizclaw-media",
+    "crates/bizclaw-crm",
 ]
 
 # ── Workspace-wide lint policy ──────────────────────────
@@ -66,6 +73,7 @@ async-trait = "0.1"
 tokio-stream = "0.1"
 # Crypto
 aes = "0.8"
+aes-gcm = "0.10"
 rsa = "0.9.6"
 sha2 = "0.10"
 hmac = "0.12"
@@ -94,6 +102,8 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
+# URL parsing
+url = "2"
 # Email
 lettre = { version = "0.11", features = ["tokio1-native-tls", "builder"] }
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
@@ -130,6 +140,7 @@ bizclaw-hands = { path = "crates/bizclaw-hands" }
 bizclaw-ffi = { path = "crates/bizclaw-ffi" }
 bizclaw-skills = { path = "crates/bizclaw-skills" }
 bizclaw-webauth = { path = "crates/bizclaw-webauth" }
+bizclaw-crm = { path = "crates/bizclaw-crm" }
 
 [package]
 name = "bizclaw"
