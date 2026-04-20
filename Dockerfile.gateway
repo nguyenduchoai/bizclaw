@@ -2,7 +2,7 @@
 # Build: docker build -f Dockerfile.gateway -t bizclaw-gateway .
 # Run:   docker run -p 3000:3000 -v ~/.bizclaw:/root/.bizclaw bizclaw-gateway serve
 
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.95-bookworm AS builder
 
 WORKDIR /src
 COPY . .
