@@ -26,7 +26,7 @@ reqwest.workspace = true
 rusqlite.workspace = true
 sqlx.workspace = true
 uuid = { version = "1", features = ["v4"] }
-bcrypt = "0.15"
+bcrypt = "0.19"
 jsonwebtoken = "9"
 chrono = { version = "0.4", features = ["serde"] }
 lettre = { workspace = true, features = ["tokio1-native-tls", "builder"] }
