@@ -4,7 +4,6 @@ use std::process::Stdio;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command};
-use tokio::sync::mpsc;
 use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -428,7 +427,6 @@ impl LightpandaClient {
                 "id": 1
             });
 
-            let (tx, mut rx) = mpsc::channel(1);
             let input_str = serde_json::to_string(&input).map_err(|e| {
                 BrowserError::ProtocolError(format!("Failed to serialize command: {}", e))
             })?;
