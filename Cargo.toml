@@ -112,7 +112,7 @@ rand = "0.8"
 dirs = "6"
 shellexpand = "3"
 hostname = "0.4"
-whoami = "1"
+whoami = "2"
 # WebSocket
 tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 # HTTP server
