@@ -1,0 +1,43 @@
+{
+  "name": "@bizclaw/meta-ads-mcp",
+  "version": "0.1.0",
+  "description": "Meta Facebook/Instagram Ads MCP server for Vietnamese businesses",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "bizclaw-meta-ads": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest"
+  },
+  "keywords": [
+    "mcp",
+    "meta",
+    "facebook-ads",
+    "instagram-ads",
+    "advertising",
+    "vietnam"
+  ],
+  "author": "BizClaw Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "facebook-nodejs-business-sdk": "^23.0.0",
+    "zod": "^3.23.8",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3",
+    "tsx": "^4.16.2",
+    "vitest": "^2.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

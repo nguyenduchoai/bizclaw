@@ -803,6 +803,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizclaw-ecommerce-vn"
+version = "1.1.7"
+dependencies = [
+ "aes-gcm",
+ "anyhow",
+ "base64 0.22.1",
+ "bizclaw-core",
+ "bizclaw-mcp",
+ "chrono",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
+]
+
+[[package]]
 name = "bizclaw-evaluator"
 version = "1.1.7"
 dependencies = [
@@ -1061,6 +1079,32 @@ dependencies = [
  "shellexpand",
  "tempfile",
  "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
+]
+
+[[package]]
+name = "bizclaw-meta-ads"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
+]
+
+[[package]]
+name = "bizclaw-misa"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "uuid 1.21.0",

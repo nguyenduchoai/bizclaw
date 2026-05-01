@@ -408,5 +408,143 @@
     "difficulty": "hard",
     "requires_key": true,
     "tags": ["cloud", "aws", "s3", "lambda"]
+  },
+  {
+    "id": "sapo",
+    "name": "🛒 Sapo POS & Online",
+    "description": "Quản lý Sapo POS & Online — products, orders, customers, inventory, analytics (105 tools)",
+    "category": "ecommerce-vn",
+    "command": "npx",
+    "args": ["-y", "sapo-mcp", "--mode=pos-online,web,analytics"],
+    "env": {
+      "SAPO_STORE": "",
+      "SAPO_API_KEY": "",
+      "SAPO_API_SECRET": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Tạo Private App tại developers.sapo.vn → Store name → API Key + Secret",
+    "tags": ["sapo", "pos", "ecommerce", "vietnam", "orders", "products", "customers", "inventory"],
+    "source": "https://github.com/nguyennguyenit/Sapo-MCP",
+    "features": ["pos-online", "web", "pos-counter", "analytics"],
+    "tools_count": 105
+  },
+  {
+    "id": "haravan",
+    "name": "🌐 Haravan E-commerce",
+    "description": "Haravan OpenAPI MCP — products, orders, customers, inventory + Smart Tools (RFM, inventory health, reorder plan)",
+    "category": "ecommerce-vn",
+    "command": "npx",
+    "args": ["-y", "haravan-mcp", "mcp", "-t", ""],
+    "env": {
+      "HARAVAN_ACCESS_TOKEN": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Tạo Private App trên Haravan Admin → Cài đặt → Ứng dụng → Tạo ứng dụng riêng",
+    "tags": ["haravan", "ecommerce", "vietnam", "orders", "products", "customers", "analytics", "smart-tools"],
+    "source": "https://github.com/pluginmd/Haravan-MCP",
+    "features": ["smart-tools", "analytics", "rfm-analysis", "inventory-optimization"],
+    "tools_count": 70
+  },
+  {
+    "id": "kiotviet",
+    "name": "🏪 KiotViet POS",
+    "description": "KiotViet Public API MCP — products, orders, invoices, customers, branches, suppliers (36 tools)",
+    "category": "ecommerce-vn",
+    "command": "node",
+    "args": ["/path/to/kiotviet-mcp/dist/cli.js", "mcp"],
+    "env": {
+      "KIOTVIET_CLIENT_ID": "",
+      "KIOTVIET_CLIENT_SECRET": "",
+      "KIOTVIET_RETAILER": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Thiết lập cửa hàng → Thiết lập kết nối API trên KiotViet",
+    "tags": ["kiotviet", "pos", "retail", "vietnam", "orders", "invoices", "inventory"],
+    "source": "https://github.com/haudnn/kiotviet-mcp",
+    "features": ["auto-token-refresh", "fnb-mode", "presets"],
+    "tools_count": 36
+  },
+  {
+    "id": "ladisales",
+    "name": "📱 LadiSales (LadiPage)",
+    "description": "LadiSales API MCP — products, orders, customers, discounts, shipping (9 core tools)",
+    "category": "ecommerce-vn",
+    "command": "npx",
+    "args": ["-y", "ladipage-mcp"],
+    "env": {
+      "LADISALES_API_KEY": "",
+      "LADISALES_STORE_ID": ""
+    },
+    "difficulty": "easy",
+    "requires_key": true,
+    "key_instructions": "Lấy API Key từ LadiPage Settings → Tích hợp",
+    "tags": ["ladisales", "ladipage", "ecommerce", "vietnam", "orders", "products", "customers"],
+    "source": "https://github.com/EGANY-Team/ladi-mcp-server",
+    "features": ["multi-store-mode", "http-transport"],
+    "tools_count": 9
+  },
+  {
+    "id": "misa",
+    "name": "📊 MISA Accounting",
+    "description": "MISA API MCP — invoices, financial reports, tax compliance, customer management (coming soon)",
+    "category": "ecommerce-vn",
+    "command": "npx",
+    "args": ["-y", "misa-mcp"],
+    "env": {
+      "MISA_API_KEY": "",
+      "MISA_COMPANY_ID": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Liên hệ MISA để được cấp API credentials",
+    "tags": ["misa", "accounting", "invoices", "vietnam", "tax", "financial"],
+    "source": "coming-soon",
+    "features": ["invoices", "financial-reports", "tax-compliance"],
+    "tools_count": 0,
+    "status": "planned"
+  },
+  {
+    "id": "meta-ads",
+    "name": "📢 Meta Ads Manager",
+    "description": "Meta Facebook Ads MCP — campaigns, ad sets, ads, insights, audience management (coming soon)",
+    "category": "advertising",
+    "command": "npx",
+    "args": ["-y", "meta-ads-mcp"],
+    "env": {
+      "META_ACCESS_TOKEN": "",
+      "META_AD_ACCOUNT_ID": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Tạo Meta App tại developers.facebook.com → Lấy Access Token từ Meta Business Suite",
+    "tags": ["meta", "facebook", "ads", "advertising", "campaigns", "audience"],
+    "source": "coming-soon",
+    "features": ["campaign-management", "audience-insights", "performance-analytics", "ad-creation"],
+    "tools_count": 0,
+    "status": "planned"
+  },
+  {
+    "id": "zalo-oa",
+    "name": "💬 Zalo Official Account",
+    "description": "Zalo OA API MCP — messages, broadcasts, customer support automation (coming soon)",
+    "category": "communication",
+    "command": "npx",
+    "args": ["-y", "zalo-oa-mcp"],
+    "env": {
+      "ZALO_APP_ID": "",
+      "ZALO_APP_SECRET": "",
+      "ZALO_OA_ID": ""
+    },
+    "difficulty": "medium",
+    "requires_key": true,
+    "key_instructions": "Tạo Zalo App tại developers.zalo.me → Lấy App ID và App Secret",
+    "tags": ["zalo", "chat", "vietnam", "customer-support", "broadcast", "oa"],
+    "source": "coming-soon",
+    "features": ["messaging", "broadcast", "oa-management", "customer-support"],
+    "tools_count": 0,
+    "status": "planned"
   }
 ]
