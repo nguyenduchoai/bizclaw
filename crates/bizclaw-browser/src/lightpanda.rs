@@ -417,7 +417,7 @@ impl LightpandaClient {
 
     async fn send_command(&self, method: &str, params: Option<serde_json::Value>) -> Result<serde_json::Value> {
         let mut cmd = Command::new("lightpanda");
-        cmd.args(&["send", method]);
+        cmd.args(["send", method]);
 
         if let Some(p) = params {
             let input = serde_json::json!({

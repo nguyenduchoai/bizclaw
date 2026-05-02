@@ -1,0 +1,334 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/digits/Github/bizclaw/crates/bizclaw-sandbox/Cargo.toml
+workspace: /Users/digits/Github/bizclaw/Cargo.toml
+    Checking tokio v1.49.0
+    Checking moxcms v0.8.1
+    Checking psm v0.1.30
+    Checking phf_shared v0.11.3
+    Checking core2 v0.4.0
+    Checking jpeg-decoder v0.3.2
+    Checking new_debug_unreachable v1.0.6
+    Checking adler32 v1.2.0
+    Checking event-listener v2.5.3
+    Checking rle-decode-fast v1.0.3
+    Checking libflate_lz77 v2.2.0
+    Checking stacker v0.1.23
+    Checking rand v0.7.3
+    Checking async-channel v1.9.0
+    Checking appkit-nsworkspace-bindings v0.1.2
+    Checking objc2-foundation v0.2.2
+    Checking lzma-sys v0.1.20
+    Checking bzip2-sys v0.1.13+1.0.8
+    Checking nom v5.1.3
+    Checking png v0.17.16
+    Checking tiff v0.9.1
+    Checking event-listener-strategy v0.5.4
+    Checking lzma-rust2 v0.13.0
+    Checking phf_shared v0.13.1
+    Checking flume v0.11.1
+    Checking env_filter v1.0.0
+    Checking ecb v0.1.2
+    Checking ureq-proto v0.6.0
+    Checking core-graphics-types v0.2.0
+    Checking color_quant v1.1.0
+    Checking cfg-if v0.1.10
+    Checking base64 v0.12.3
+    Checking rangemap v1.7.1
+    Checking utf8-zero v0.8.1
+    Checking jiff v0.2.23
+    Checking debug_unsafe v0.1.4
+    Checking home v0.5.12
+    Checking dary_heap v0.3.8
+    Checking atoi_simd v0.17.0
+    Checking lopdf v0.38.0
+    Checking libflate v2.2.1
+    Checking oauth1-request v0.3.3
+    Checking zip v6.0.0
+    Checking ureq v3.3.0
+    Checking imap-proto v0.10.2
+    Checking image v0.24.9
+    Checking core-graphics v0.24.0
+    Checking pin-project v1.1.11
+    Checking phf v0.13.1
+    Checking objc2-app-kit v0.2.2
+    Checking async-channel v2.5.0
+    Checking phf v0.11.3
+    Checking bzip2 v0.5.2
+    Checking active-win-pos-rs v0.10.0
+    Checking xz2 v0.1.7
+    Checking stop-token v0.7.0
+    Checking derive_builder v0.20.2
+    Checking chumsky v0.9.3
+    Checking inflate v0.4.5
+    Checking type1-encoding-parser v0.1.0
+    Checking adobe-cmap-parser v0.4.1
+    Checking zip v7.2.0
+    Checking image v0.25.10
+    Checking imap-proto v0.16.6
+    Checking lzma-rs v0.3.0
+    Checking lzma-rust2 v0.16.2
+    Checking charset v0.1.5
+    Checking quick-xml v0.38.4
+    Checking codepage v0.1.2
+    Checking directories v6.0.0
+    Checking email-encoding v0.4.1
+    Checking euclid v0.20.14
+    Checking tokio-stream v0.1.18
+    Checking tokio-util v0.7.18
+    Checking tokio-native-tls v0.3.1
+    Checking tower v0.5.3
+    Checking async-compression v0.4.41
+    Checking tokio-rustls v0.26.4
+    Checking tokio-tungstenite v0.24.0
+    Checking bizclaw-core v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-core)
+    Checking h2 v0.4.13
+    Checking sqlx-core v0.8.6
+    Checking env_logger v0.11.9
+    Checking quick-xml v0.31.0
+    Checking which v8.0.2
+    Checking tower-http v0.6.8
+    Checking self_cell v1.2.2
+    Checking cff-parser v0.1.0
+    Checking email_address v0.2.9
+    Checking semver v1.0.27
+    Checking postscript v0.14.1
+    Checking lzw v0.10.0
+    Checking fast-float2 v0.2.3
+    Checking mac v0.1.1
+    Checking arboard v3.6.1
+    Checking precomputed-hash v0.1.1
+    Checking bufstream v0.1.4
+    Checking base64 v0.13.1
+    Checking constant_time_eq v0.4.2
+    Checking pdf-extract v0.10.0
+    Checking bizclaw-catchme v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-catchme)
+    Checking zip v8.1.0
+    Checking imap v2.4.1
+    Checking calamine v0.33.0
+    Checking futf v0.1.5
+    Checking pdf_oxide v0.3.13
+    Checking rustc_version v0.4.1
+    Checking lettre v0.11.19
+    Checking async-imap v0.11.2
+    Checking headless_chrome v1.0.21
+    Checking sqlx-mysql v0.8.6
+    Checking sqlx-sqlite v0.8.6
+    Checking sqlx-postgres v0.8.6
+    Checking async-stream v0.3.6
+    Checking mailparse v0.16.1
+    Checking zip v2.4.2
+    Checking enigo v0.3.0
+    Checking bizclaw-security v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-security)
+    Checking bizclaw-brain v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-brain)
+    Checking bizclaw-db v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-db)
+    Checking hyper v1.8.1
+    Checking bizclaw-memory v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-memory)
+    Checking mail-parser v0.9.4
+crates/bizclaw-security/src/approval.rs:67:5: warning: multiple fields are never read
+crates/bizclaw-security/src/approval.rs:121:25: warning: method `get_entries` is never used
+crates/bizclaw-security/src/approval.rs:84:5: warning: this function has too many arguments (8/7)
+crates/bizclaw-security/src/secrets.rs:61:29: warning: stripping a prefix manually
+warning: `bizclaw-security` (lib) generated 4 warnings
+    Checking dtoa v1.0.11
+    Checking dtoa-short v0.3.5
+    Checking tendril v0.4.3
+    Checking string_cache v0.8.9
+    Checking cssparser v0.34.0
+    Checking hyper-util v0.1.20
+    Checking rquickjs-sys v0.9.0
+    Checking markup5ever v0.14.1
+    Checking fxhash v0.2.1
+    Checking servo_arc v0.4.3
+    Checking unicode-width v0.2.2
+    Checking unsafe-libyaml v0.2.11
+    Checking getopts v0.2.24
+    Checking selectors v0.26.0
+    Checking rquickjs-core v0.9.0
+    Checking serde_yaml v0.9.34+deprecated
+    Checking html5ever v0.29.1
+    Checking sqlx v0.8.6
+    Checking multer v3.1.0
+    Checking tokio-tungstenite v0.28.0
+    Checking num-bigint v0.4.6
+    Checking axum-core v0.5.6
+    Checking serde_path_to_error v0.1.20
+    Checking hyper-tls v0.6.0
+    Checking hyper-rustls v0.27.7
+    Checking matchit v0.8.4
+    Checking ego-tree v0.10.0
+    Checking reqwest v0.12.28
+    Checking rquickjs v0.9.0
+    Checking crunchy v0.2.4
+    Checking pem v3.0.6
+    Checking ownedbytes v0.7.0
+    Checking scraper v0.22.0
+    Checking similar v2.7.0
+    Checking fixedbitset v0.5.7
+    Checking petgraph v0.8.3
+    Checking tantivy-common v0.7.0
+    Checking webclaw-core v0.3.1 (https://github.com/0xMassi/webclaw#44f23332)
+    Checking simple_asn1 v0.6.4
+    Checking bitpacking v0.9.3
+    Checking fuzzy-matcher v0.3.7
+    Checking jsonwebtoken v9.3.1
+    Checking blowfish v0.9.1
+    Checking utf8-ranges v1.0.5
+    Checking bizclaw-sandbox v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-sandbox)
+    Checking bizclaw-providers v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-providers)
+    Checking bizclaw-mcp v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-mcp)
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:10:24: warning: unused import: `ToolCallResult`
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:12:48: warning: unused import: `UNIX_EPOCH`
+    Checking bizclaw-browser v0.1.0 (/Users/digits/Github/bizclaw/crates/bizclaw-browser)
+crates/bizclaw-sandbox/src/executor.rs:83:46: warning: value assigned to `last_error` is never read
+crates/bizclaw-sandbox/src/lib.rs:37:5: warning: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+warning: `bizclaw-sandbox` (lib) generated 2 warnings
+    Checking reqwest-oauth1 v0.3.0
+crates/bizclaw-browser/src/tools.rs:3:14: warning: unused imports: `Engine` and `engine::general_purpose::STANDARD`
+crates/bizclaw-browser/src/tools.rs:5:28: warning: unused import: `warn`
+crates/bizclaw-browser/src/session.rs:2:20: warning: unused import: `BrowserError`
+    Checking bizclaw-channels v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-channels)
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:242:9: warning: unused variable: `api_url`: help: if this is intentional, prefix it with an underscore: `_api_url`
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:150:39: warning: unused variable: `api_url`: help: if this is intentional, prefix it with an underscore: `_api_url`
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:151:13: warning: unused variable: `prompt`: help: if this is intentional, prefix it with an underscore: `_prompt`
+    Checking axum v0.8.8
+crates/bizclaw-mcp/src/trendradar/trend_monitor.rs:134:9: warning: this `if` statement can be collapsed
+warning: `bizclaw-mcp` (lib) generated 6 warnings (run `cargo clippy --fix --lib -p bizclaw-mcp` to apply 6 suggestions)
+    Checking foreign-types-shared v0.1.1
+    Checking strsim v0.11.1
+    Checking clap_lex v1.0.0
+    Checking bizclaw-orchestrator v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-orchestrator)
+    Checking clap_builder v4.5.60
+crates/bizclaw-orchestrator/src/task_dag.rs:96:21: warning: variable does not need to be mutable
+    Checking foreign-types v0.3.2
+crates/bizclaw-orchestrator/src/coordinator.rs:13:5: warning: field `team` is never read
+crates/bizclaw-browser/src/lightpanda.rs:5:34: warning: unused import: `AsyncWriteExt`
+    Checking bizclaw-skills v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-skills)
+crates/bizclaw-browser/src/tools.rs:123:13: warning: unused variable: `node_id`: help: if this is intentional, prefix it with an underscore: `_node_id`
+crates/bizclaw-browser/src/tools.rs:167:13: warning: unused variable: `clear_params`: help: if this is intentional, prefix it with an underscore: `_clear_params`
+crates/bizclaw-browser/src/tools.rs:248:13: warning: unused variable: `text_result`: help: if this is intentional, prefix it with an underscore: `_text_result`
+crates/bizclaw-browser/src/tools.rs:484:13: warning: unused variable: `node_id`: help: if this is intentional, prefix it with an underscore: `_node_id`
+crates/bizclaw-browser/src/tools.rs:549:13: warning: unused variable: `result`: help: if this is intentional, prefix it with an underscore: `_result`
+    Checking tantivy-fst v0.5.0
+crates/bizclaw-browser/src/session.rs:73:22: warning: unused variable: `page_id`: help: if this is intentional, prefix it with an underscore: `_page_id`
+warning: `bizclaw-orchestrator` (lib) generated 2 warnings (run `cargo clippy --fix --lib -p bizclaw-orchestrator` to apply 1 suggestion)
+    Checking bizclaw-scheduler v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-scheduler)
+crates/bizclaw-browser/src/captcha.rs:194:57: warning: unused variable: `screenshot_base64`: help: if this is intentional, prefix it with an underscore: `_screenshot_base64`
+crates/bizclaw-browser/src/captcha.rs:378:42: warning: unused variable: `image_url`: help: if this is intentional, prefix it with an underscore: `_image_url`
+crates/bizclaw-browser/src/captcha.rs:378:59: warning: unused variable: `background_url`: help: if this is intentional, prefix it with an underscore: `_background_url`
+crates/bizclaw-browser/src/captcha.rs:387:42: warning: unused variable: `images`: help: if this is intentional, prefix it with an underscore: `_images`
+crates/bizclaw-browser/src/proxy.rs:310:17: warning: unused variable: `check_url_for_result`: help: if this is intentional, prefix it with an underscore: `_check_url_for_result`
+    Checking bcrypt v0.15.1
+    Checking bizclaw-crm v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-crm)
+crates/bizclaw-browser/src/cdp.rs:98:57: warning: useless conversion to the same type: `std::string::String`: help: consider removing `.into()`: `msg`
+crates/bizclaw-browser/src/tools.rs:324:14: warning: called `map(..).flatten()` on `Option`: help: try replacing `map` with `and_then` and remove the `.flatten()`: `and_then(|s| serde_json::from_str(s).ok())`
+crates/bizclaw-browser/src/tools.rs:350:14: warning: called `map(..).flatten()` on `Option`: help: try replacing `map` with `and_then` and remove the `.flatten()`: `and_then(|s| serde_json::from_str(s).ok())`
+crates/bizclaw-browser/src/tools.rs:422:14: warning: called `map(..).flatten()` on `Option`: help: try replacing `map` with `and_then` and remove the `.flatten()`: `and_then(|s| serde_json::from_str(s).ok())`
+crates/bizclaw-browser/src/captcha.rs:141:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-browser/src/captcha.rs:149:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-browser/src/captcha.rs:157:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-browser/src/captcha.rs:169:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-browser/src/captcha.rs:180:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-skills/src/web.rs:234:29: warning: unused variable: `slug`: help: if this is intentional, prefix it with an underscore: `_slug`
+crates/bizclaw-skills/src/web.rs:238:31: warning: unused variable: `skill_id`: help: if this is intentional, prefix it with an underscore: `_skill_id`
+crates/bizclaw-skills/src/web.rs:238:47: warning: unused variable: `page`: help: if this is intentional, prefix it with an underscore: `_page`
+crates/bizclaw-skills/src/web.rs:201:5: warning: field `config` is never read
+crates/bizclaw-browser/src/captcha.rs:452:32: warning: accessing first element with `parts.get(0)`: help: try: `parts.first()`
+crates/bizclaw-browser/src/captcha.rs:513:32: warning: accessing first element with `parts.get(0)`: help: try: `parts.first()`
+crates/bizclaw-browser/src/captcha.rs:623:98: warning: this `if` has identical blocks
+crates/bizclaw-browser/src/proxy.rs:175:9: warning: matching on `Some` with `ok()` is redundant
+crates/bizclaw-browser/src/proxy.rs:192:37: warning: stripping a prefix manually
+crates/bizclaw-browser/src/proxy.rs:194:37: warning: stripping a prefix manually
+crates/bizclaw-browser/src/proxy.rs:196:36: warning: stripping a prefix manually
+crates/bizclaw-browser/src/proxy.rs:198:35: warning: stripping a prefix manually
+warning: `bizclaw-skills` (lib) generated 4 warnings (run `cargo clippy --fix --lib -p bizclaw-skills` to apply 3 suggestions)
+    Checking tantivy-bitpacker v0.6.0
+crates/bizclaw-browser/src/lightpanda.rs:420:18: warning: the borrowed expression implements the required traits: help: change this to: `["send", method]`
+crates/bizclaw-browser/src/behavior.rs:75:27: warning: useless use of `vec!`
+crates/bizclaw-browser/src/behavior.rs:88:25: warning: useless use of `vec!`
+crates/bizclaw-browser/src/behavior.rs:104:23: warning: useless use of `vec!`
+    Checking openssl-sys v0.9.111
+warning: `bizclaw-browser` (lib) generated 36 warnings (run `cargo clippy --fix --lib -p bizclaw-browser` to apply 30 suggestions)
+    Checking bizclaw-workflows v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-workflows)
+crates/bizclaw-crm/src/omni/dedupe.rs:155:13: warning: variable `verified` is assigned to, but never used
+crates/bizclaw-crm/src/omni/dedupe.rs:170:17: warning: value assigned to `verified` is never read
+    Checking cron v0.13.0
+    Checking rand_distr v0.4.3
+crates/bizclaw-crm/src/omni/dedupe.rs:164:27: warning: called `unwrap` on `c.dob` after checking its variant with `is_some`
+    Checking pathdiff v0.2.3
+    Checking murmurhash32 v0.3.1
+    Checking open v5.3.3
+    Checking openssl v0.10.75
+    Checking tantivy-stacker v0.3.0
+    Checking bizclaw-hands v0.2.0 (/Users/digits/Github/bizclaw/crates/bizclaw-hands)
+    Checking clap v4.5.60
+    Checking tantivy-sstable v0.3.0
+    Checking rustix v0.38.44
+warning: `bizclaw-crm` (lib) generated 3 warnings
+    Checking bizclaw-agi v0.1.0 (/Users/digits/Github/bizclaw/crates/bizclaw-agi)
+    Checking itertools v0.12.1
+crates/bizclaw-agi/src/loop_engine.rs:16:38: warning: unused import: `StateSnapshot`
+    Checking instant v0.1.13
+    Checking downcast-rs v1.2.1
+    Checking fastdivide v0.4.2
+    Checking measure_time v0.8.3
+    Checking fs4 v0.8.4
+    Checking arc-swap v1.9.1
+    Checking tantivy-query-grammar v0.22.0
+crates/bizclaw-agi/src/ses.rs:120:14: warning: unused variable: `history`: help: if this is intentional, prefix it with an underscore: `_history`
+    Checking lru v0.12.5
+    Checking sketches-ddsketch v0.2.2
+crates/bizclaw-agi/src/evaluator.rs:52:5: warning: field `config` is never read
+    Checking tantivy-tokenizer-api v0.3.0
+    Checking rust-stemmers v1.2.0
+crates/bizclaw-agi/src/world_state.rs:129:9: warning: returning the result of a `let` binding from a block
+crates/bizclaw-agi/src/evaluator.rs:117:9: warning: returning the result of a `let` binding from a block
+crates/bizclaw-agi/src/evaluator.rs:129:13: warning: this `if` statement can be collapsed
+    Checking tantivy-columnar v0.3.0
+warning: `bizclaw-agi` (lib) generated 6 warnings (run `cargo clippy --fix --lib -p bizclaw-agi` to apply 5 suggestions)
+    Checking num_cpus v1.17.0
+    Checking census v0.4.2
+    Checking oneshot v0.1.13
+    Checking rustc-hash v1.1.0
+    Checking levenshtein_automata v0.2.1
+    Checking lz4_flex v0.11.6
+    Checking htmlescape v0.3.1
+    Checking quick-xml v0.20.0
+    Checking uuid v0.8.2
+    Checking siphasher v0.3.11
+    Checking redb v2.6.3
+    Checking dashmap v6.1.0
+    Checking feed-rs v0.6.1
+    Checking self-replace v1.5.0
+    Checking glob v0.3.3
+    Checking bizclaw-updater v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-updater)
+    Checking tantivy v0.22.1
+    Checking bizclaw-i18n v0.1.0 (/Users/digits/Github/bizclaw/crates/bizclaw-i18n)
+    Checking bizclaw-trendradar v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-trendradar)
+    Checking bizclaw-resilience v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-resilience)
+crates/bizclaw-resilience/src/retry.rs:182:23: error[E0433]: failed to resolve: use of unresolved module or unlinked crate `futures`: use of unresolved module or unlinked crate `futures`
+crates/bizclaw-resilience/src/retry.rs:177:17: error: cannot find macro `ready` in this scope
+crates/bizclaw-resilience/src/circuit_breaker.rs:196:29: error[E0782]: expected a type, found a trait
+crates/bizclaw-resilience/src/retry.rs:210:72: error[E0121]: the placeholder `_` is not allowed within types on item signatures for opaque types: not allowed in type signatures
+crates/bizclaw-resilience/src/circuit_breaker.rs:84:53: error[E0782]: expected a type, found a trait
+crates/bizclaw-resilience/src/circuit_breaker.rs:106:34: error[E0782]: expected a type, found a trait
+    Checking bizclaw-webauth v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-webauth)
+crates/bizclaw-resilience/src/retry.rs:219:44: warning: impl trait in impl method signature does not match trait method signature
+    Checking bizclaw-knowledge v1.1.7 (/Users/digits/Github/bizclaw/crates/bizclaw-knowledge)
+crates/bizclaw-resilience/src/rate_limiter.rs:179:14: error[E0599]: no method named `clone` found for struct `dashmap::mapref::one::RefMut<'_, std::string::String, rate_limiter::RateLimiter>` in the current scope: method not found in `dashmap::mapref::one::RefMut<'_, std::string::String, rate_limiter::RateLimiter>`
+crates/bizclaw-resilience/src/rate_limiter.rs:49:25: error[E0382]: use of moved value: `config`: value used here after move
+warning: `bizclaw-resilience` (lib) generated 1 warning
+error: could not compile `bizclaw-resilience` (lib) due to 10 previous errors; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+crates/bizclaw-trendradar/src/sources/mod.rs:13:9: warning: unused variable: `ts`: help: if this is intentional, prefix it with an underscore: `_ts`
+crates/bizclaw-trendradar/src/detector/mod.rs:182:36: warning: unused variable: `topic`: help: if this is intentional, prefix it with an underscore: `_topic`
+crates/bizclaw-trendradar/src/detector/mod.rs:67:5: warning: field `interests` is never read
+crates/bizclaw-trendradar/src/detector/mod.rs:73:5: warning: fields `timestamp` and `hotness` are never read
+crates/bizclaw-trendradar/src/sources/mod.rs:13:14: warning: this operation has no effect: help: consider reducing it to: `now`
+crates/bizclaw-trendradar/src/sources/mod.rs:79:33: warning: redundant closure: help: replace the closure with the function itself: `now_rfc3339`
+crates/bizclaw-trendradar/src/detector/mod.rs:104:34: warning: length comparison to one: help: using `!is_empty` is clearer and more explicit: `!items.is_empty()`
+crates/bizclaw-trendradar/src/alerts/mod.rs:59:22: warning: `format!` in `format!` args
+warning: `bizclaw-trendradar` (lib) generated 8 warnings (run `cargo clippy --fix --lib -p bizclaw-trendradar` to apply 5 suggestions)
+crates/bizclaw-knowledge/src/graph.rs:392:39: warning: you seem to use `.enumerate()` and immediately discard the index
+warning: `bizclaw-knowledge` (lib) generated 1 warning (run `cargo clippy --fix --lib -p bizclaw-knowledge` to apply 1 suggestion)
+crates/bizclaw-channels/src/zalo/client/listener.rs:194:5: warning: this function has too many arguments (8/7)
+warning: `bizclaw-channels` (lib) generated 1 warning

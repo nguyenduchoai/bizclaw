@@ -42,11 +42,12 @@ struct RateLimiterState {
 
 impl RateLimiter {
     pub fn new(config: RateLimiterConfig, algorithm: RateLimitAlgorithm) -> Self {
+        let tokens = config.burst_size as f64;
         Self {
             config,
             algorithm,
             state: Arc::new(RwLock::new(RateLimiterState {
-                tokens: config.burst_size as f64,
+                tokens,
                 last_refill: Instant::now(),
                 requests: VecDeque::new(),
             })),
@@ -140,7 +141,7 @@ impl RateLimiter {
         match self.algorithm {
             RateLimitAlgorithm::TokenBucket => state.tokens as u32,
             RateLimitAlgorithm::SlidingWindow | RateLimitAlgorithm::FixedWindow => {
-                (self.config.requests_per_second - state.requests.len() as u32).max(0)
+                (self.config.requests_per_second - state.requests.len() as u32)
             }
         }
     }
@@ -160,7 +161,7 @@ pub struct RateLimitExceeded {
 }
 
 pub struct MultiTenantRateLimiter {
-    limiters: dashmap::DashMap<String, RateLimiter>,
+    limiters: dashmap::DashMap<String, Arc<RateLimiter>>,
     default_config: RateLimiterConfig,
 }
 
@@ -175,7 +176,7 @@ impl MultiTenantRateLimiter {
     pub fn get_or_create(&self, tenant_id: &str) -> Arc<RateLimiter> {
         self.limiters
             .entry(tenant_id.to_string())
-            .or_insert_with(|| RateLimiter::new(self.default_config.clone(), RateLimitAlgorithm::SlidingWindow))
+            .or_insert_with(|| Arc::new(RateLimiter::new(self.default_config.clone(), RateLimitAlgorithm::SlidingWindow)))
             .clone()
     }
 

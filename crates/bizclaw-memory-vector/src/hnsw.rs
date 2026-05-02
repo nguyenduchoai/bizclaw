@@ -1,6 +1,5 @@
 //! HNSW index implementation
 
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

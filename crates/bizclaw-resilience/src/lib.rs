@@ -64,4 +64,4 @@ pub use rate_limiter::{
     MultiTenantRateLimiter, RateLimiter, RateLimiterConfig, RateLimitAlgorithm, RateLimitExceeded,
     RateLimitToken,
 };
-pub use retry::{retry, RetryConfig, RetryConfigBuilder, RetryError, RetryableExt};
+pub use retry::{retry, RetryConfig, RetryConfigBuilder, RetryError};

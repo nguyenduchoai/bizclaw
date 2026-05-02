@@ -78,10 +78,11 @@ impl CircuitBreaker {
         matches!(self.state(), CircuitState::Closed | CircuitState::HalfOpen)
     }
 
-    pub async fn execute<F, Fut, T>(&self, operation: F) -> Result<T, CircuitBreakerError>
+    pub async fn execute<F, Fut, T, E>(&self, operation: F) -> Result<T, CircuitBreakerError>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = Result<T, std::error::Error>>,
+        Fut: std::future::Future<Output = Result<T, E>>,
+        E: std::error::Error + Send + Sync + 'static,
     {
         if !self.is_available() {
             return Err(CircuitBreakerError::Open {
@@ -96,14 +97,15 @@ impl CircuitBreaker {
             }
             Err(e) => {
                 self.on_failure();
-                Err(CircuitBreakerError::ExecutionFailed(e))
+                Err(CircuitBreakerError::ExecutionFailed(Box::new(e)))
             }
         }
     }
 
-    pub fn execute_sync<F, T>(&self, operation: F) -> Result<T, CircuitBreakerError>
+    pub fn execute_sync<F, T, E>(&self, operation: F) -> Result<T, CircuitBreakerError>
     where
-        F: FnOnce() -> Result<T, std::error::Error>,
+        F: FnOnce() -> Result<T, E>,
+        E: std::error::Error + Send + Sync + 'static,
     {
         if !self.is_available() {
             return Err(CircuitBreakerError::Open {
@@ -118,7 +120,7 @@ impl CircuitBreaker {
             }
             Err(e) => {
                 self.on_failure();
-                Err(CircuitBreakerError::ExecutionFailed(e))
+                Err(CircuitBreakerError::ExecutionFailed(Box::new(e)))
             }
         }
     }
@@ -193,7 +195,7 @@ pub enum CircuitBreakerError {
     Open { retry_after: Duration },
 
     #[error("Operation failed: {0}")]
-    ExecutionFailed(#[from] std::error::Error),
+    ExecutionFailed(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 pub struct MultiServiceCircuitBreaker {

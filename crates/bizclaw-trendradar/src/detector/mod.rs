@@ -101,7 +101,7 @@ impl Detector {
         // Calculate trends for each topic group
         let mut trends: Vec<Trend> = topic_groups
             .into_iter()
-            .filter(|(_, items)| items.len() >= 1)
+            .filter(|(_, items)| !items.is_empty())
             .map(|(topic, items)| {
                 self.create_trend(&topic, items)
             })
@@ -179,7 +179,7 @@ impl Detector {
         0.5 // Default velocity for new topics
     }
 
-    fn determine_trajectory(&self, topic: &str, mentions: u64, velocity: f32) -> Trajectory {
+    fn determine_trajectory(&self, _topic: &str, mentions: u64, velocity: f32) -> Trajectory {
         // New if recently appeared
         if velocity > 2.0 {
             return Trajectory::New;

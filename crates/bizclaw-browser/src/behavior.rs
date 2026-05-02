@@ -72,44 +72,38 @@ impl SessionState {
     }
 
     pub fn random_user_agent() -> String {
-        let user_agents = vec![
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        let user_agents = ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        ];
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"];
         use rand::Rng;
         let mut rng = rand::thread_rng();
         user_agents[rng.gen_range(0..user_agents.len())].to_string()
     }
 
     pub fn random_timezone() -> String {
-        let timezones = vec![
-            "America/New_York",
+        let timezones = ["America/New_York",
             "America/Los_Angeles",
             "America/Chicago",
             "Europe/London",
             "Europe/Paris",
             "Asia/Tokyo",
             "Asia/Singapore",
-            "Asia/Ho_Chi_Minh",
-        ];
+            "Asia/Ho_Chi_Minh"];
         use rand::Rng;
         let mut rng = rand::thread_rng();
         timezones[rng.gen_range(0..timezones.len())].to_string()
     }
 
     pub fn random_viewport() -> Viewport {
-        let options = vec![
-            (1920, 1080, 1.0),
+        let options = [(1920, 1080, 1.0),
             (2560, 1440, 1.0),
             (1366, 768, 1.0),
             (1440, 900, 1.0),
             (1536, 864, 1.0),
             (1280, 720, 1.0),
-            (3840, 2160, 1.5),
-        ];
+            (3840, 2160, 1.5)];
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let (w, h, d) = options[rng.gen_range(0..options.len())];

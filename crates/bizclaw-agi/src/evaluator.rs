@@ -113,8 +113,8 @@ impl Evaluator {
         let variable_count = snapshot.state.variables.len();
         
         // Higher is generally better for quality
-        let quality = ((entity_count + variable_count) as f32 / 10.0).min(1.0);
-        quality
+        
+        ((entity_count + variable_count) as f32 / 10.0).min(1.0)
     }
 
     fn evaluate_relevance(&self, goal: &str, snapshot: &StateSnapshot) -> f32 {
@@ -126,14 +126,13 @@ impl Evaluator {
         let mut relevance: f32 = 0.0;
         
         for keyword in keywords {
-            if goal_lower.contains(keyword) {
-                if snapshot.state.entities.values().any(|e| 
+            if goal_lower.contains(keyword)
+                && snapshot.state.entities.values().any(|e| 
                     e.entity_type.to_lowercase().contains(keyword) ||
                     e.id.to_lowercase().contains(keyword)
                 ) {
                     relevance += 0.2;
                 }
-            }
         }
         
         relevance.min(1.0)

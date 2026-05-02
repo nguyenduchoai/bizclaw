@@ -66,7 +66,7 @@ impl PairingManager {
     fn random_code(len: usize) -> String {
         const CHARSET: &str = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+        use std::hash::Hasher;
         
         let mut code = String::new();
         let mut hasher = DefaultHasher::new();

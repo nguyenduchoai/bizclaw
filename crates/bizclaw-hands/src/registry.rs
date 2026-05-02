@@ -215,6 +215,41 @@ fn builtin_hands() -> Vec<HandManifest> {
             license: String::new(),
         },
         HandManifest {
+            name: "trend_social".into(),
+            label: "Auto Trend to Social".into(),
+            icon: "🔥".into(),
+            description: "Tự động quét trend buổi sáng, viết bài và nhờ Mama Agent đăng lên Zalo & Facebook.".into(),
+            version: "1.0.0".into(),
+            schedule: HandSchedule::Cron("0 8 * * *".into()), // Daily at 8 AM
+            phases: vec![
+                PhaseManifest {
+                    name: "scan_trends".into(),
+                    description: "Quét TrendRadar".into(),
+                    allowed_tools: vec!["web_search".into()],
+                    timeout_secs: 300,
+                    requires_approval: false,
+                },
+                PhaseManifest {
+                    name: "write_and_post".into(),
+                    description: "Viết nội dung và gửi Mama đăng bài".into(),
+                    allowed_tools: vec![],
+                    timeout_secs: 300,
+                    requires_approval: false, // Auto post!
+                },
+            ],
+            provider: String::new(),
+            model: String::new(),
+            max_runtime_secs: 600,
+            enabled: true,
+            notify_channels: vec!["zalo".into()],
+            tools: Default::default(),
+            dashboard: Default::default(),
+            author: Default::default(),
+            tags: vec!["trend".into(), "social".into()],
+            min_version: String::new(),
+            license: String::new(),
+        },
+        HandManifest {
             name: "monitor".into(),
             label: "Monitor Hand".into(),
             icon: "🔔".into(),
@@ -385,7 +420,7 @@ mod tests {
     #[test]
     fn test_registry_defaults() {
         let reg = HandRegistry::with_defaults();
-        assert_eq!(reg.count(), 7, "Should have 7 built-in hands");
+        assert_eq!(reg.count(), 8, "Should have 8 built-in hands");
 
         let names: Vec<_> = reg
             .list()
@@ -399,6 +434,7 @@ mod tests {
         assert!(names.contains(&"sync"));
         assert!(names.contains(&"outreach"));
         assert!(names.contains(&"security"));
+        assert!(names.contains(&"trend_social"));
     }
 
     #[test]

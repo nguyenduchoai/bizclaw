@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnConfig {
@@ -26,7 +26,9 @@ pub struct SpawnConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Default)]
 pub enum AgentRole {
+    #[default]
     Coordinator,
     Researcher,
     Coder,
@@ -35,11 +37,6 @@ pub enum AgentRole {
     Custom(String),
 }
 
-impl Default for AgentRole {
-    fn default() -> Self {
-        AgentRole::Coordinator
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Delegation {
@@ -55,18 +52,15 @@ pub struct Delegation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Default)]
 pub enum Priority {
     Low,
+    #[default]
     Normal,
     High,
     Critical,
 }
 
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Normal
-    }
-}
 
 impl Priority {
     pub fn as_u8(&self) -> u8 {
@@ -130,7 +124,7 @@ impl AgentRegistry {
     }
 
     pub async fn spawn(&self, config: SpawnConfig) -> String {
-        let id = format!("agent_{}", uuid::Uuid::new_v4().to_string().replace("-", "")[..12].to_string());
+        let id = format!("agent_{}", &uuid::Uuid::new_v4().to_string().replace("-", "")[..12]);
         let now = Utc::now().timestamp();
 
         let agent = SpawnedAgent {
@@ -158,7 +152,7 @@ impl AgentRegistry {
         priority: Priority,
     ) -> Result<String, String> {
         let now = Utc::now().timestamp();
-        let id = format!("del_{}", uuid::Uuid::new_v4().to_string().replace("-", "")[..12].to_string());
+        let id = format!("del_{}", &uuid::Uuid::new_v4().to_string().replace("-", "")[..12]);
 
         let delegation = Delegation {
             id: id.clone(),

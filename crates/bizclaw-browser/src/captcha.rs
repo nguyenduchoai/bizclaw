@@ -138,7 +138,7 @@ impl CaptchaSolver {
     fn load_providers_from_env() -> Vec<CaptchaProviderConfig> {
         let mut providers = Vec::new();
 
-        if let Some(api_key) = std::env::var("TWOCAPTCHA_API_KEY").ok() {
+        if let Ok(api_key) = std::env::var("TWOCAPTCHA_API_KEY") {
             providers.push(CaptchaProviderConfig {
                 name: "2captcha".to_string(),
                 api_key: Some(api_key),
@@ -146,7 +146,7 @@ impl CaptchaSolver {
             });
         }
 
-        if let Some(api_key) = std::env::var("ANTI_CAPTCHA_API_KEY").ok() {
+        if let Ok(api_key) = std::env::var("ANTI_CAPTCHA_API_KEY") {
             providers.push(CaptchaProviderConfig {
                 name: "anticaptcha".to_string(),
                 api_key: Some(api_key),
@@ -154,7 +154,7 @@ impl CaptchaSolver {
             });
         }
 
-        if let Some(api_key) = std::env::var("CAPMONSTER_API_KEY").ok() {
+        if let Ok(api_key) = std::env::var("CAPMONSTER_API_KEY") {
             providers.push(CaptchaProviderConfig {
                 name: "capmonster".to_string(),
                 api_key: Some(api_key),
@@ -166,7 +166,7 @@ impl CaptchaSolver {
     }
 
     fn load_llm_config_from_env() -> Option<LlmProviderConfig> {
-        if let Some(api_key) = std::env::var("OPENAI_API_KEY").ok() {
+        if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
             return Some(LlmProviderConfig {
                 provider: LlmProvider::OpenAI,
                 api_key,
@@ -177,7 +177,7 @@ impl CaptchaSolver {
             });
         }
 
-        if let Some(api_key) = std::env::var("ANTHROPIC_API_KEY").ok() {
+        if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
             return Some(LlmProviderConfig {
                 provider: LlmProvider::Anthropic,
                 api_key,
@@ -191,7 +191,7 @@ impl CaptchaSolver {
         None
     }
 
-    pub async fn detect_captcha(&self, page_html: &str, screenshot_base64: &str) -> Option<CaptchaType> {
+    pub async fn detect_captcha(&self, page_html: &str, _screenshot_base64: &str) -> Option<CaptchaType> {
         if page_html.contains("g-recaptcha-response") || page_html.contains("data-sitekey") {
             if let Some(site_key) = self.extract_site_key(page_html, "data-sitekey") {
                 if page_html.contains("reaptcha-v2") || page_html.contains("g-recaptcha") {
@@ -375,7 +375,7 @@ impl CaptchaSolver {
         Err(CaptchaError::NotFound)
     }
 
-    async fn solve_slider_captcha(&self, image_url: &str, background_url: &str, screenshot_base64: &str) -> Result<String, CaptchaError> {
+    async fn solve_slider_captcha(&self, _image_url: &str, _background_url: &str, screenshot_base64: &str) -> Result<String, CaptchaError> {
         if let Some(llm_config) = &self.llm_config {
             let prompt = "This is a slider CAPTCHA. Analyze the images and determine how many pixels to slide to match the pieces. Return ONLY a number between 0-100 representing the percentage to slide.";
             return self.solve_with_llm_config(screenshot_base64, llm_config, prompt).await;
@@ -384,7 +384,7 @@ impl CaptchaSolver {
         Ok("50".to_string())
     }
 
-    async fn solve_rotate_captcha(&self, images: &[String], screenshot_base64: &str) -> Result<String, CaptchaError> {
+    async fn solve_rotate_captcha(&self, _images: &[String], screenshot_base64: &str) -> Result<String, CaptchaError> {
         if let Some(llm_config) = &self.llm_config {
             let prompt = "This is an image rotation CAPTCHA. Analyze the images and determine the correct rotation order. Return the order as comma-separated numbers (e.g., '3,1,4,2').";
             return self.solve_with_llm_config(screenshot_base64, llm_config, prompt).await;
@@ -449,7 +449,7 @@ impl CaptchaSolver {
         match captcha_type {
             "recaptcha" | "recaptcha-v3" | "hcaptcha" | "turnstile" => {
                 let parts: Vec<&str> = challenge.split(',').collect();
-                let site_key = parts.get(0).unwrap_or(&"");
+                let site_key = parts.first().unwrap_or(&"");
                 let page_url = parts.get(1).unwrap_or(&"");
 
                 let submit_url = format!(
@@ -510,7 +510,7 @@ impl CaptchaSolver {
         match captcha_type {
             "recaptcha" | "recaptcha-v3" | "hcaptcha" => {
                 let parts: Vec<&str> = challenge.split(',').collect();
-                let site_key = parts.get(0).unwrap_or(&"");
+                let site_key = parts.first().unwrap_or(&"");
                 let page_url = parts.get(1).unwrap_or(&"");
 
                 let client = reqwest::Client::new();

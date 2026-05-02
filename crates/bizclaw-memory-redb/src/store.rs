@@ -83,8 +83,8 @@ impl RedbStore {
         let bytes = serde_json::to_vec(&stored)?;
         
         {
-            let table = write_txn.open_table(DATA_TABLE)?;
-            table.insert(key, &bytes)?;
+            let mut table = write_txn.open_table(DATA_TABLE)?;
+            table.insert(key, bytes.as_slice())?;
         }
         
         write_txn.commit()?;
@@ -105,7 +105,7 @@ impl RedbStore {
         let mut existed = false;
         
         {
-            let table = write_txn.open_table(DATA_TABLE)?;
+            let mut table = write_txn.open_table(DATA_TABLE)?;
             if table.remove(key)?.is_some() {
                 existed = true;
             }
@@ -143,8 +143,12 @@ impl RedbStore {
             ScanOrder::Backward => Box::new(table.iter()?.rev()),
         };
         
-        for (key, value) in iter {
-            let key_str = String::from_utf8_lossy(key.value()).to_string();
+        for item in iter {
+            let (key, value) = match item {
+                Ok(i) => i,
+                Err(_) => continue,
+            };
+            let key_str = key.value().to_string();
             
             if let Some(p) = prefix {
                 if !key_str.starts_with(p) {
@@ -191,15 +195,15 @@ impl RedbStore {
         let mut write_txn = db.begin_write()?;
         
         {
-            let table = write_txn.open_table(DATA_TABLE)?;
+            let mut table = write_txn.open_table(DATA_TABLE)?;
             
-            for (key, value) in ops.puts {
-                let stored = StoredValue::new(key.clone(), value);
+            for (key, value) in &ops.puts {
+                let stored = StoredValue::new(key.clone(), value.clone());
                 let bytes = serde_json::to_vec(&stored)?;
-                table.insert(key.as_str(), &bytes)?;
+                table.insert(key.as_str(), bytes.as_slice())?;
             }
             
-            for key in ops.deletes {
+            for key in &ops.deletes {
                 table.remove(key.as_str())?;
             }
         }

@@ -389,7 +389,7 @@ impl GraphService {
         let mut entities = Vec::new();
         let words: Vec<&str> = text.split_whitespace().collect();
 
-        for (_i, word) in words.iter().enumerate() {
+        for word in words.iter() {
             let word = word.trim_matches(|c: char| !c.is_alphanumeric());
             if word.len() > 2 {
                 let capitalized: String = word

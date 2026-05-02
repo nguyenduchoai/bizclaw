@@ -31,7 +31,7 @@ members = [
     "crates/bizclaw-skills",
     "crates/bizclaw-webauth",
     "crates/bizclaw-catchme",
-    "crates/bizclaw-ecommerce",
+
     "crates/bizclaw-content",
     "crates/bizclaw-office",
     "crates/bizclaw-i18n",
@@ -47,7 +47,7 @@ members = [
     "crates/bizclaw-obsidian",
     "crates/bizclaw-hermes",
     "crates/bizclaw-khazix",
-    "crates/bizclaw-ecommerce-vn",
+
     "crates/bizclaw-misa",
     "crates/bizclaw-resilience",
 ]

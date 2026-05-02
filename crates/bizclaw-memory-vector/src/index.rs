@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 use tracing::{debug, info};
 
 use crate::hnsw::HnswIndex;
-use crate::{BatchResult, DistanceMetric, DocumentMetadata, SearchOptions, SearchResult, VectorDocument};
+use crate::{BatchResult, DistanceMetric, DocumentMetadata, SearchOptions, SearchResult, VectorDocument, IndexStats};
 
 pub struct VectorIndex {
     index: Arc<RwLock<HnswIndex>>,

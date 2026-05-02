@@ -13,7 +13,7 @@ use chrono::{DateTime, Utc};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::world_state::{WorldState, StateSnapshot, ExecutionStep};
+use crate::world_state::{WorldState, ExecutionStep};
 use crate::evaluator::{Evaluator, EvaluationResult};
 use crate::replanner::Replanner;
 use crate::ses::SkillEvolutionScore;

@@ -10,7 +10,7 @@ fn now_rfc3339() -> String {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    let ts = now + 0; // UTC offset
+    let _ts = now; // UTC offset
     format!("{}Z", now)
 }
 
@@ -76,7 +76,7 @@ impl RssSource {
                 .published
                 .or(entry.updated)
                 .map(|dt| dt.to_rfc3339())
-                .unwrap_or_else(|| now_rfc3339());
+                .unwrap_or_else(now_rfc3339);
 
             items.push(NewsItem {
                 id: format!("{}_{}", self.name.to_lowercase().replace(' ', "_"), i),

@@ -231,11 +231,11 @@ impl MarketplaceService {
         }
     }
 
-    pub fn get_skill(&self, slug: &str) -> Option<Skill> {
+    pub fn get_skill(&self, _slug: &str) -> Option<Skill> {
         None
     }
 
-    pub fn get_reviews(&self, skill_id: &str, page: u32) -> Vec<Review> {
+    pub fn get_reviews(&self, _skill_id: &str, _page: u32) -> Vec<Review> {
         vec![]
     }
 

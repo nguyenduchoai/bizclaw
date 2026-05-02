@@ -172,7 +172,7 @@ impl ProxyManager {
             }).await;
         }
 
-        if let Some(urls_str) = std::env::var("PROXY_LIST").ok() {
+        if let Ok(urls_str) = std::env::var("PROXY_LIST") {
             let urls: Vec<&str> = urls_str.split(',').collect();
             for url in urls {
                 let url = url.trim();
@@ -307,7 +307,7 @@ impl ProxyManager {
 
         for (url, check_url) in proxy_entries {
             let url_for_result = url.clone();
-            let check_url_for_result = check_url.clone();
+            let _check_url_for_result = check_url.clone();
             let is_healthy = tokio::spawn(async move {
                 let client = reqwest::Client::builder()
                     .timeout(std::time::Duration::from_secs(10))

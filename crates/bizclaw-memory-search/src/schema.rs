@@ -3,7 +3,7 @@
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::*;
-use tantivy::{doc, IndexRecordOption, TextFieldIndexing, TextOptions};
+use tantivy::doc;
 
 pub fn create_schema() -> Schema {
     let mut schema_builder = Schema::builder();
@@ -38,7 +38,7 @@ pub fn create_schema() -> Schema {
     schema_builder.build()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DocType {
     Message,
     Document,

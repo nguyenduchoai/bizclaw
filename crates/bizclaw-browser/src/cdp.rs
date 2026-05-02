@@ -95,7 +95,7 @@ impl CdpClient {
                             let msg = serde_json::to_string(&wire_cmd)
                                 .unwrap_or_default();
                             pending_commands.insert(cmd_id, cmd.response_tx);
-                            if write.send(Message::Text(msg.into())).await.is_err() {
+                            if write.send(Message::Text(msg)).await.is_err() {
                                 error!("Failed to send CDP command");
                                 break;
                             }

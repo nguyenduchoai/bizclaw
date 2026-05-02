@@ -31,6 +31,8 @@ pub fn builtin_workflows() -> Vec<Workflow> {
         fidus_cost_tracker(),
         optimo_funnel_audit(),
         mercury_outreach(),
+        // Automation
+        auto_trend_social_pipeline(),
     ]
 }
 
@@ -54,6 +56,30 @@ pub fn content_pipeline() -> Workflow {
                 .with_prompt("Apply the review feedback and create the final polished version of this article:\n\n{{input}}")
                 .with_timeout(300),
         )
+}
+
+/// Auto Trend to Zalo & Facebook Pipeline: Scan Trends -> Write Content -> Post Zalo & Facebook.
+pub fn auto_trend_social_pipeline() -> Workflow {
+    Workflow::new(
+        "auto_trend_social",
+        "Tự động quét Trend -> Viết bài -> Đăng Zalo & Facebook",
+    )
+    .with_tags(vec!["trend", "zalo", "facebook", "automation", "mama"])
+    .add_step(
+        WorkflowStep::new("scan_trends", "trend-scout", StepType::Sequential)
+            .with_prompt("Dùng bộ TrendRadar để quét các tin tức nóng nhất hôm nay về chủ đề: {{input}}. Phân tích và tổng hợp lại thành top 3 tin nổi bật nhất (tóm tắt ý chính).")
+            .with_timeout(300),
+    )
+    .add_step(
+        WorkflowStep::new("write_content", "content-writer", StepType::Sequential)
+            .with_prompt("Dựa vào 3 tin tức nóng nhất sau đây, hãy viết một bài đăng (post) thật thu hút, ngôn từ sắc bén, sử dụng emoji phù hợp và có call-to-action.\nChỉ trả về nội dung bài viết, không thêm lời giải thích:\n\n{{input}}")
+            .with_timeout(300),
+    )
+    .add_step(
+        WorkflowStep::new("post_social", "mama", StepType::Sequential)
+            .with_prompt("Bạn là Mama Agent. Nhận nội dung bài viết sau và thực hiện 2 việc ĐỒNG THỜI:\n1. Gọi action `zalo_post` để đăng lên Nhật ký Zalo.\n2. Gọi action `facebook_post` để đăng lên Facebook của sếp.\n\nNội dung bài viết:\n{{input}}")
+            .with_timeout(120),
+    )
 }
 
 /// Expert consensus: 3 experts analyze independently → vote/merge.

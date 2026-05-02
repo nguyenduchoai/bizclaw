@@ -1,10 +1,8 @@
 //! Retry with Exponential Backoff
 
 use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
 use std::time::Duration;
-use tokio::time::{sleep, Sleep};
+use tokio::time::sleep;
 
 #[derive(Debug, Clone)]
 pub struct RetryConfig {
@@ -37,6 +35,12 @@ impl RetryConfig {
 
 pub struct RetryConfigBuilder {
     config: RetryConfig,
+}
+
+impl Default for RetryConfigBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RetryConfigBuilder {
@@ -150,83 +154,7 @@ pub enum RetryError<E> {
     Exhausted { attempts: u32, last_error: E },
 }
 
-pub struct RetryFuture<F, Fut, T, E>
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Result<T, E>>,
-{
-    operation: F,
-    config: RetryConfig,
-    attempt: u32,
-    delay: Duration,
-    future: Option<Fut>,
-    sleep: Option<Sleep>,
-}
 
-impl<F, Fut, T, E> Future for RetryFuture<F, Fut, T, E>
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Result<T, E>>,
-    E: std::error::Error,
-{
-    type Output = Result<T, RetryError<E>>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        loop {
-            if let Some(ref mut sleep) = self.sleep {
-                ready!(Pin::new(sleep).poll(cx));
-                self.sleep = None;
-            }
-
-            if let Some(fut) = self.future.take() {
-                match futures::poll!(fut) {
-                    Poll::Ready(Ok(value)) => return Poll::Ready(Ok(value)),
-                    Poll::Ready(Err(e)) => {
-                        self.attempt += 1;
-                        if self.attempt >= self.config.max_attempts {
-                            return Poll::Ready(Err(RetryError::Exhausted {
-                                attempts: self.attempt,
-                                last_error: e,
-                            }));
-                        }
-
-                        let delay = calculate_delay(&self.config, self.attempt);
-                        self.sleep = Some(sleep(delay));
-                        self.future = Some((self.operation)());
-                    }
-                    Poll::Pending => {
-                        self.future = Some(fut);
-                        return Poll::Pending;
-                    }
-                }
-            } else if self.attempt == 0 {
-                self.future = Some((self.operation)());
-            }
-        }
-    }
-}
-
-pub trait RetryableExt<T, E> {
-    fn retry(self, config: RetryConfig) -> RetryFuture<impl FnMut() -> _, impl Future<Output = Result<T, E>>, T, E>;
-}
-
-impl<T, E, Fut, F> RetryableExt<T, E> for F
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Result<T, E>>,
-    E: std::error::Error,
-{
-    fn retry(self, config: RetryConfig) -> RetryFuture<Self, Fut, T, E> {
-        RetryFuture {
-            operation: self,
-            config,
-            attempt: 0,
-            delay: Duration::ZERO,
-            future: None,
-            sleep: None,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

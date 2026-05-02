@@ -2,7 +2,7 @@
 //! Fast local commands that don't need LLM inference.
 
 use serde::{Deserialize, Serialize};
-use crate::context_summarizer::{apply_summarization, rule_based_summarize, SummarizationConfig};
+use crate::context_summarizer::{apply_summarization, SummarizationConfig};
 use bizclaw_core::types::message::Message;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,7 +56,7 @@ impl LocalCommandParser {
         
         self.commands.iter()
             .find(|(name, _)| *name == cmd_name)
-            .map(|(name, cmd)| ParsedCommand {
+            .map(|(_name, cmd)| ParsedCommand {
                 command: cmd.clone(),
                 args: parts.get(1).map(|s| s.to_string()),
                 handler: cmd.handler,

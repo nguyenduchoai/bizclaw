@@ -1,8 +1,7 @@
 use crate::cdp::CdpClient;
 use crate::error::{BrowserError, Result};
-use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserToolResult {
@@ -120,7 +119,7 @@ impl BrowserTools {
     pub async fn click_at(&self, selector: &str, x: i32, y: i32) -> Result<BrowserToolResult> {
         debug!("Clicking at {} ({}, {})", selector, x, y);
         
-        let node_id = self.find_element(selector).await?;
+        let _node_id = self.find_element(selector).await?;
         
         let params = serde_json::json!({
             "type": "mousePressed",
@@ -164,7 +163,7 @@ impl BrowserTools {
         });
         self.client.send_command("DOM.focus", Some(focus_params)).await?;
         
-        let clear_params = serde_json::json!({
+        let _clear_params = serde_json::json!({
             "nodeId": node_id
         });
         self.client.send_command("Runtime.callFunctionOn", Some(serde_json::json!({
@@ -245,7 +244,7 @@ impl BrowserTools {
             "nodeId": node_id
         });
         
-        let text_result = self.client.send_command("DOM.getBoxModel", Some(text_params)).await?;
+        let _text_result = self.client.send_command("DOM.getBoxModel", Some(text_params)).await?;
         
         let text = self.client.send_command("Runtime.evaluate", Some(serde_json::json!({
             "expression": format!("document.querySelector('{}').textContent", selector.replace('\'', "\\'"))
@@ -321,8 +320,7 @@ impl BrowserTools {
         let content = result.get("result")
             .and_then(|r| r.get("value"))
             .and_then(|v| v.as_str())
-            .map(|s| serde_json::from_str(s).ok())
-            .flatten()
+            .and_then(|s| serde_json::from_str(s).ok())
             .unwrap_or(serde_json::json!({}));
         
         Ok(BrowserToolResult::ok(content))
@@ -347,8 +345,7 @@ impl BrowserTools {
         let elements = result.get("result")
             .and_then(|r| r.get("value"))
             .and_then(|v| v.as_str())
-            .map(|s| serde_json::from_str(s).ok())
-            .flatten()
+            .and_then(|s| serde_json::from_str(s).ok())
             .unwrap_or(serde_json::Value::Array(vec![]));
         
         Ok(BrowserToolResult::ok(serde_json::json!({
@@ -419,8 +416,7 @@ impl BrowserTools {
         let info = url_result.get("result")
             .and_then(|r| r.get("value"))
             .and_then(|v| v.as_str())
-            .map(|s| serde_json::from_str(s).ok())
-            .flatten()
+            .and_then(|s| serde_json::from_str(s).ok())
             .unwrap_or(serde_json::json!({}));
         
         Ok(BrowserToolResult::ok(info))
@@ -481,7 +477,7 @@ impl BrowserTools {
     pub async fn hover(&self, selector: &str) -> Result<BrowserToolResult> {
         debug!("Hovering over: {}", selector);
         
-        let node_id = self.find_element(selector).await?;
+        let _node_id = self.find_element(selector).await?;
         
         let params = serde_json::json!({
             "type": "mouseMoved",
@@ -546,7 +542,7 @@ impl BrowserTools {
             checked
         );
         
-        let result = self.client.send_command("Runtime.evaluate", Some(serde_json::json!({
+        let _result = self.client.send_command("Runtime.evaluate", Some(serde_json::json!({
             "expression": js
         }))).await?;
         

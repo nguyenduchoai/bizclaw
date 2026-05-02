@@ -118,15 +118,15 @@ impl WorldState {
             Vec::new()
         };
 
-        let snapshot = StateSnapshot {
+        
+
+        StateSnapshot {
             id,
             iteration,
             timestamp: Utc::now(),
             state: self.data.clone(),
             diff_from_previous,
-        };
-
-        snapshot
+        }
     }
 
     pub fn save_snapshot(&mut self) -> String {

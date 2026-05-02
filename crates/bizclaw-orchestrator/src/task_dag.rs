@@ -93,7 +93,7 @@ impl TaskDag {
                 let mut ready_to_run = true;
 
                 // Check incoming edges (predecessors)
-                let mut incoming = self
+                let incoming = self
                     .graph
                     .neighbors_directed(idx, petgraph::Direction::Incoming);
                 for pred_idx in incoming {

@@ -117,7 +117,7 @@ impl SkillEvolutionScore {
 
     /// Calculate SES metrics from evaluation result (async version)
     async fn calculate_metrics_internal(&self, skill_id: &str, eval_result: &EvaluationResult) -> SesMetrics {
-        let (history, effectiveness, error_rate, adaptation_speed, consistency, total, successful) = {
+        let (_history, effectiveness, error_rate, adaptation_speed, consistency, total, successful) = {
             let h = self.skill_history.read().await;
             let history_vec = h.get(skill_id).cloned();
             let effectiveness = eval_result.score;

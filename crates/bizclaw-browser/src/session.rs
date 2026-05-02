@@ -1,5 +1,5 @@
 use crate::cdp::CdpClient;
-use crate::error::{BrowserError, Result};
+use crate::error::Result;
 use crate::skills::{SkillRegistry, SkillMatch};
 use crate::stealth::{StealthConfig, StealthManager};
 use crate::tools::BrowserTools;
@@ -70,7 +70,7 @@ impl BrowserSession {
         let session_id = Uuid::new_v4().to_string();
         info!("Creating browser session: {}", session_id);
         
-        let (client, page_id) = if let Some(ref existing_page_id) = config.page_id {
+        let (client, _page_id) = if let Some(ref existing_page_id) = config.page_id {
             let ws_url = format!("ws://localhost:{}/devtools/page/{}", config.chrome_debug_port, existing_page_id);
             let c = CdpClient::connect(&ws_url).await?;
             (c, existing_page_id.clone())

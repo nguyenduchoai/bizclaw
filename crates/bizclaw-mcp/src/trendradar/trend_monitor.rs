@@ -7,9 +7,9 @@
 //! - Alert generation
 //! - Multi-source aggregation
 
-use super::{Sentiment, ToolCallResult, TrendAnalysis, TrendNews, TrendRadarConfig, TrendTrajectory};
+use super::{Sentiment, TrendAnalysis, TrendNews, TrendRadarConfig, TrendTrajectory};
 use std::collections::HashMap;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime};
 
 /// Source configuration for trend monitoring
 #[derive(Debug, Clone)]
@@ -131,11 +131,10 @@ impl TrendMonitor {
         let cache_key = format!("scan_{}", self.config.interests.join("_"));
 
         // Check cache
-        if let Some((instant, data)) = self.cache.get(&cache_key) {
-            if instant.elapsed() < self.cache_duration {
+        if let Some((instant, data)) = self.cache.get(&cache_key)
+            && instant.elapsed() < self.cache_duration {
                 return Ok(data.clone());
             }
-        }
 
         // Call TrendRadar MCP
         let trends = self.fetch_trends_from_mcp(api_url, &self.config.interests).await?;
@@ -147,8 +146,8 @@ impl TrendMonitor {
     }
 
     /// Analyze a specific topic
-    pub async fn analyze_topic(&self, api_url: &str, topic: &str) -> Result<TrendAnalysis, String> {
-        let prompt = format!(
+    pub async fn analyze_topic(&self, _api_url: &str, topic: &str) -> Result<TrendAnalysis, String> {
+        let _prompt = format!(
             r#"Analyze the trend "{}" and provide:
 1. Total mentions across platforms
 2. Sentiment breakdown (positive/neutral/negative)
@@ -239,7 +238,7 @@ impl TrendMonitor {
     /// Fetch trends from TrendRadar MCP server
     async fn fetch_trends_from_mcp(
         &self,
-        api_url: &str,
+        _api_url: &str,
         interests: &[String],
     ) -> Result<Vec<TrendNews>, String> {
         // MCP call simulation - in real implementation, this would call the MCP server

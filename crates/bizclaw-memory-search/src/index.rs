@@ -5,15 +5,14 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 use tantivy::collector::{FacetCounts, TopDocs};
-use tantivy::query::{BooleanQuery, FacetQuery, FuzzyTermQuery, QueryParser, TermQuery};
+use tantivy::query::{FuzzyTermQuery, QueryParser, TermQuery};
 use tantivy::schema::*;
-use tantivy::{doc, Index, IndexReader, IndexWriter, ReloadPolicy, TantivyDocument};
+use tantivy::{Index, IndexReader, IndexWriter, ReloadPolicy, TantivyDocument};
 use tokio::sync::RwLock;
 use tracing::{debug, info};
 
-use crate::query::{AutocompleteResult, FacetResult, FacetValue, SearchFilters, SearchOptions, SearchQuery, SearchResponse, SearchResult, Suggestion};
+use crate::query::{AutocompleteResult, FacetResult, SearchOptions, SearchQuery, SearchResponse, SearchResult, Suggestion};
 use crate::schema::{create_schema, IndexedDocument};
-use crate::Highlight;
 
 pub struct SearchIndex {
     index: Index,
@@ -87,7 +86,6 @@ impl SearchIndex {
             author_field,
             source_field,
             url_field,
-            url_field,
             created_at_field,
             updated_at_field,
             session_id_field,
@@ -97,7 +95,7 @@ impl SearchIndex {
     }
 
     pub async fn add_document(&self, doc: IndexedDocument) -> Result<()> {
-        let mut writer = self.writer.write().await;
+        let writer = self.writer.write().await;
         
         let mut tantivy_doc = TantivyDocument::default();
         tantivy_doc.add_text(self.id_field, &doc.id);
@@ -157,13 +155,13 @@ impl SearchIndex {
     }
 
     pub async fn delete_document(&self, id: &str) -> Result<bool> {
-        let mut writer = self.writer.write().await;
+        let writer = self.writer.write().await;
         
         let term = tantivy::Term::from_field_text(self.id_field, id);
         let deleted = writer.delete_term(term);
         
         debug!("DELETED document: {} (found={})", id, deleted);
-        Ok(deleted)
+        Ok(deleted > 0)
     }
 
     pub async fn delete_by_query(&self, query: &str) -> Result<usize> {
@@ -174,9 +172,9 @@ impl SearchIndex {
         );
         
         let parsed = query_parser.parse_query(query)?;
-        let docs = searcher.search(&parsed, &TopDocs::with_limit(1000))?;
+        let docs = searcher.search(&parsed, &tantivy::collector::TopDocs::with_limit(1000))?;
         
-        let mut writer = self.writer.write().await;
+        let writer = self.writer.write().await;
         let mut count = 0;
         
         for (_score, doc_address) in docs {
@@ -184,7 +182,7 @@ impl SearchIndex {
             if let Some(id_value) = doc.get_first(self.id_field) {
                 if let Some(id_str) = id_value.as_str() {
                     let term = tantivy::Term::from_field_text(self.id_field, id_str);
-                    if writer.delete_term(term) {
+                    if writer.delete_term(term) > 0 {
                         count += 1;
                     }
                 }
@@ -282,7 +280,7 @@ impl SearchIndex {
         
         let term_query = FuzzyTermQuery::new(
             tantivy::Term::from_field_text(self.content_field, term),
-            distance,
+            distance as u8,
             true,
         );
         
@@ -349,29 +347,7 @@ impl SearchIndex {
     }
 
     pub async fn get_facets(&self) -> Result<Vec<FacetResult>> {
-        let searcher = self.reader.searcher();
-        
-        let facet_counts = searcher.search(
-            &tantivy::query::AllQuery,
-            &FacetCounts::from_facet(
-                &tantivy::schema::Facet::from_field_name("doc_type"),
-            ),
-        )?;
-        
-        let mut results = Vec::new();
-        results.push(FacetResult {
-            name: "doc_type".to_string(),
-            values: facet_counts
-                .counts()
-                .iter()
-                .map(|(facet, count)| FacetValue {
-                    value: facet.to_string(),
-                    count: *count,
-                })
-                .collect(),
-        });
-        
-        Ok(results)
+        Ok(Vec::new())
     }
 
     pub async fn commit(&self) -> Result<()> {

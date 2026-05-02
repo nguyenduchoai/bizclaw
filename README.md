@@ -8,9 +8,7 @@
 
 BizClaw là **AI Agent platform** giúp doanh nghiệp Việt Nam:
 - Tự động trả lời khách hàng trên Zalo, Telegram, Facebook
-- Quản lý đơn hàng từ SAPO, Haravan, KiotViet
-- Chạy quảng cáo Meta Ads tự động
-- Tạo báo cáo kinh doanh tự động
+- Tạo báo cáo tự động
 - Hoạt động 24/7, không cần nhân viên trực chat
 
 ### Điểm khác biệt
@@ -98,37 +96,6 @@ app_secret = "abc123"
 
 ---
 
-## 🛒 Kết Nối E-commerce
-
-### SAPO POS
-
-```toml
-[ecommerce.sapo]
-enabled = true
-api_key = "sapo-api-key"
-api_secret = "sapo-secret"
-shop_domain = "mystore.sapo.vn"
-```
-
-### Haravan
-
-```toml
-[ecommerce.haravan]
-enabled = true
-access_token = "haravan-token"
-```
-
-### KiotViet
-
-```toml
-[ecommerce.kiotviet]
-enabled = true
-client_id = "kv-client-id"
-client_secret = "kv-secret"
-retailer_name = "your-store"
-```
-
----
 
 ## 📊 AI Providers
 
@@ -177,27 +144,6 @@ Khách hàng hỏi → BizClaw nhận → AI trả lời tự động
                     Nếu cần tư vấn → Chuyển nhân viên
 ```
 
-### 2. Quản Lý Đơn Hàng Tự Động
-
-```
-Đơn mới từ SAPO/Haravan → BizClaw nhận
-                               ↓
-                    Kiểm tra tồn kho
-                               ↓
-                    Xác nhận với khách
-                               ↓
-                    Cập nhật trạng thái
-```
-
-### 3. Chạy Quảng Cáo Meta Ads
-
-```
-BizClaw Agent → Tạo campaign mới
-                    ↓
-              Tối ưu budget tự động
-                    ↓
-              Báo cáo hiệu quả hàng ngày
-```
 
 ### 4. Báo Cáo Kinh Doanh
 
@@ -222,10 +168,10 @@ Agent → Query đơn hàng từ nhiều nền tảng
 │   Engine    │   Brain     │   Registry │   Hub    │
 ├──────────────┴──────────────┴──────────────┴──────────┤
 │              Channel Adapters                          │
-├────────────┬────────────┬────────────┬───────────────┤
-│   Zalo     │  Telegram  │  Facebook  │  E-commerce │
-│            │            │            │   Platforms  │
-└────────────┴────────────┴────────────┴───────────────┘
+├────────────┬────────────┬────────────┐
+│   Zalo     │  Telegram  │  Facebook  │
+│            │            │            │
+└────────────┴────────────┴────────────┘
 ```
 
 ---
@@ -237,7 +183,7 @@ Agent → Query đơn hàng từ nhiều nền tảng
 | `bizclaw-agent` | AI Agent engine với tool calling |
 | `bizclaw-gateway` | HTTP API server |
 | `bizclaw-channels` | Zalo, Telegram, Discord adapters |
-| `bizclaw-ecommerce-vn` | SAPO, Haravan, KiotViet, PancakePOS |
+
 | `bizclaw-memory` | SQLite, Vector, Structured storage |
 | `bizclaw-mcp` | Model Context Protocol client |
 | `bizclaw-resilience` | Rate limiting, Circuit breaker |
