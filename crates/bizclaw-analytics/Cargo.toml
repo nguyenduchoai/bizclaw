@@ -1,0 +1,29 @@
+[package]
+name = "bizclaw-analytics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Analytics & reporting agent - KPIs, dashboards, automated insights for Vietnamese businesses"
+
+[dependencies]
+bizclaw-core.workspace = true
+bizclaw-db.workspace = true
+bizclaw-memory.workspace = true
+bizclaw-tools.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+futures.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+
+[features]
+default = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

@@ -1,0 +1,31 @@
+[package]
+name = "bizclaw-invoice"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Invoice management agent for Vietnamese market - VAT, electronic invoices, payment tracking"
+
+[dependencies]
+bizclaw-core.workspace = true
+bizclaw-db.workspace = true
+bizclaw-tools.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+futures.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+rand.workspace = true
+urlencoding.workspace = true
+
+[features]
+default = []
+vietnam = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

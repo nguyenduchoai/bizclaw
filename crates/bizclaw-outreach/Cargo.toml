@@ -1,0 +1,29 @@
+[package]
+name = "bizclaw-outreach"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Outreach automation agent - Cold email, Zalo, LinkedIn for Vietnamese market"
+
+[dependencies]
+bizclaw-core.workspace = true
+bizclaw-channels.workspace = true
+bizclaw-memory.workspace = true
+bizclaw-tools.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+futures.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+
+[features]
+default = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

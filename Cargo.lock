@@ -612,6 +612,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizclaw-analytics"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bizclaw-core",
+ "bizclaw-db",
+ "bizclaw-memory",
+ "bizclaw-tools",
+ "chrono",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
+]
+
+[[package]]
 name = "bizclaw-brain"
 version = "1.1.7"
 dependencies = [
@@ -909,6 +930,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "bizclaw-invoice"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bizclaw-core",
+ "bizclaw-db",
+ "bizclaw-tools",
+ "chrono",
+ "futures",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid 1.21.0",
+]
+
+[[package]]
 name = "bizclaw-khazix"
 version = "0.1.0"
 dependencies = [
@@ -938,6 +981,29 @@ dependencies = [
  "tracing",
  "uuid 1.21.0",
  "zip 2.4.2",
+]
+
+[[package]]
+name = "bizclaw-legal"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bizclaw-core",
+ "bizclaw-knowledge",
+ "bizclaw-tools",
+ "chrono",
+ "futures",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
 ]
 
 [[package]]
@@ -1099,6 +1165,27 @@ dependencies = [
  "petgraph",
  "serde",
  "serde_json",
+ "tokio",
+ "tracing",
+ "uuid 1.21.0",
+]
+
+[[package]]
+name = "bizclaw-outreach"
+version = "1.1.7"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bizclaw-channels",
+ "bizclaw-core",
+ "bizclaw-memory",
+ "bizclaw-tools",
+ "chrono",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
  "uuid 1.21.0",

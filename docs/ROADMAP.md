@@ -1,6 +1,24 @@
 # BizClaw Roadmap
 
-## Q1 2025 - Desktop App Launch
+> **🎯 Vision: AI Platform cho Doanh Nghiệp Một Người (OPC) Việt Nam**
+> 
+> *Một người, một đội quân AI, vận hành mọi nghiệp vụ doanh nghiệp.*
+
+## Q1 2025 - OPC Suite Launch ✅
+
+### Business Agents (NEW)
+- [x] **bizclaw-outreach** - Outreach automation (Zalo, Email, LinkedIn)
+- [x] **bizclaw-invoice** - Invoice & VAT management (Vietnamese regulations)
+- [x] **bizclaw-legal** - Contracts & compliance (Luật DN, BLLĐ 2019)
+- [x] **bizclaw-analytics** - KPIs & dashboards
+
+### Vietnamese Features
+- [x] Vietnamese templates (Hợp đồng, Email, Zalo)
+- [x] VietQR payment integration
+- [x] VAT invoice generation
+- [x] Vietnamese legal compliance checks
+
+## Q2 2025 - Desktop App Launch
 
 ### Desktop App Polish ✅
 - [x] Tauri configuration
@@ -18,7 +36,7 @@
 - [ ] Keyboard shortcuts
 - [ ] Theme customization
 
-## Q2 2025 - Skills Marketplace Web
+## Q3 2025 - Skills Marketplace Web
 
 ### Web UI
 - [ ] Skill browser with categories
@@ -33,7 +51,7 @@
 - [ ] Payment integration (optional)
 - [ ] Analytics dashboard
 
-## Q3 2025 - Mobile Companion
+## Q4 2025 - Mobile Companion
 
 ### React Native App
 - [ ] Project setup
@@ -48,7 +66,7 @@
 - [ ] Quick actions
 - [ ] Widget support
 
-## Q4 2025 - Enterprise Features
+## Q1 2026 - Enterprise Features
 
 ### Team Collaboration
 - [ ] Shared agents
