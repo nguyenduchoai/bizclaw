@@ -49,6 +49,7 @@ members = [
     "crates/bizclaw-khazix",
     "crates/bizclaw-ecommerce-vn",
     "crates/bizclaw-misa",
+    "crates/bizclaw-resilience",
 ]
 
 # ── Workspace-wide lint policy ──────────────────────────
