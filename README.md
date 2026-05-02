@@ -1,108 +1,320 @@
-# 🦞 BizClaw
+# 🦞 BizClaw - AI Agent Platform cho Doanh Nghiệp Việt Nam
 
-**Self-hosted AI Agent Platform** — Chạy AI Agent của riêng bạn, kết nối mọi kênh, 100% private.
-
-<p align="center">
-  <a href="https://github.com/nguyenduchoai/bizclaw/actions"><img src="https://img.shields.io/github/actions/workflow/status/nguyenduchoai/bizclaw/ci?style=flat-square" alt="Build"></a>
-  <a href="https://github.com/nguyenduchoai/bizclaw/releases"><img src="https://img.shields.io/github/v/release/nguyenduchoai/bizclaw?style=flat-square" alt="Version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License"></a>
-</p>
+**Nền tảng AI Agent tự-host, kết nối Zalo, Telegram, Meta Ads, SAPO, Haravan... giúp tự động hóa bán hàng, chăm sóc khách hàng 24/7.**
 
 ---
 
-## ✨ Features
+## 🎯 BizClaw Là Gì?
 
-- **🤖 18+ AI Providers**: OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, MiniMax...
-- **💬 8 Channels**: Zalo, Telegram, Discord, Slack, WhatsApp, Email, Webhook
-- **🔧 40+ Tools**: Browser, Database, Social media, File, Shell, Memory
-- **🛡️ Security**: AES-256, Prompt injection detection, API Key Vault
-- **⚡ Rust-powered**: Fast, lightweight, self-hosted
+BizClaw là **AI Agent platform** giúp doanh nghiệp Việt Nam:
+- Tự động trả lời khách hàng trên Zalo, Telegram, Facebook
+- Quản lý đơn hàng từ SAPO, Haravan, KiotViet
+- Chạy quảng cáo Meta Ads tự động
+- Tạo báo cáo kinh doanh tự động
+- Hoạt động 24/7, không cần nhân viên trực chat
+
+### Điểm khác biệt
+
+| Platform khác | BizClaw |
+|--------------|---------|
+| ChatGPT/Gemini | Agent có trí nhớ, kết nối business data |
+| SaaS đắt tiền | Self-hosted, unlimited usage |
+| Cần nhiều nhân viên | Tự động hóa 80% công việc |
+| Dữ liệu ra cloud | 100% private, tự host |
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Cài Đặt Nhanh
+
+### Cách 1: Docker (Recommended)
 
 ```bash
+# Tạo docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+services:
+  bizclaw:
+    image: ghcr.io/nguyenduchoai/bizclaw:latest
+    ports:
+      - "3000:3000"  # Web Dashboard
+      - "8080:8080"  # API Gateway
+    volumes:
+      - ./data:/data
+    environment:
+      - AI_PROVIDER=openai
+      - OPENAI_API_KEY=sk-xxx
+      - ADMIN_PASSWORD=your-secure-password
+EOF
+
+# Chạy
+docker-compose up -d
+```
+
+Truy cập `http://localhost:3000`
+
+### Cách 2: Build từ Source
+
+```bash
+# Yêu cầu: Rust 1.85+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 # Clone & build
 git clone https://github.com/nguyenduchoai/bizclaw.git
 cd bizclaw
 cargo build --release
 
 # Chạy
-./target/release/bizclaw-desktop
-```
-
-### Docker
-```bash
-docker run -d --name bizclaw -p 3000:3000 -p 8080:8080 -v bizclaw-data:/data \
-  nguyenduchoai/bizclaw:latest
+./target/release/bizclaw-gateway
 ```
 
 ---
 
-## 📋 Channels & Providers
+## 💬 Kết Nối Kênh Chat
 
-| Channels | Providers |
-|----------|-----------|
-| Zalo, Telegram, Discord, Slack | OpenAI (GPT-4o, o1) |
-| WhatsApp, Email, Webhook | Anthropic (Claude 3.5, 4) |
-| Facebook, Instagram, TikTok | Google Gemini, DeepSeek, Groq |
+### Zalo Official Account (Zalo OA)
+
+```toml
+[channels.zalo]
+enabled = true
+app_id = "123456789012345678"
+app_secret = "your-app-secret"
+```
+
+### Telegram Bot
+
+```toml
+[channels.telegram]
+enabled = true
+bot_token = "6123456789:AAFxxx"
+```
+
+### Facebook/Instagram
+
+```toml
+[channels.facebook]
+enabled = true
+page_access_token = "EAAxxx"
+app_secret = "abc123"
+```
 
 ---
 
-## ⚙️ Configuration
+## 🛒 Kết Nối E-commerce
+
+### SAPO POS
+
+```toml
+[ecommerce.sapo]
+enabled = true
+api_key = "sapo-api-key"
+api_secret = "sapo-secret"
+shop_domain = "mystore.sapo.vn"
+```
+
+### Haravan
+
+```toml
+[ecommerce.haravan]
+enabled = true
+access_token = "haravan-token"
+```
+
+### KiotViet
+
+```toml
+[ecommerce.kiotviet]
+enabled = true
+client_id = "kv-client-id"
+client_secret = "kv-secret"
+retailer_name = "your-store"
+```
+
+---
+
+## 📊 AI Providers
 
 ```toml
 [ai]
-providers = ["openai", "anthropic", "gemini"]
+default_provider = "openai"
 
-[channels.telegram]
-enabled = true
-bot_token = "YOUR_BOT_TOKEN"
+[ai.providers]
+[ai.providers.openai]
+api_key = "sk-xxx"
+model = "gpt-4o"
 
-[channels.zalo]
-enabled = true
-app_id = "YOUR_APP_ID"
+[ai.providers.anthropic]
+api_key = "sk-ant-xxx"
+model = "claude-sonnet-4-20250514"
+
+[ai.providers.gemini]
+api_key = "AIzaSyxxx"
+model = "gemini-2.0-flash"
 ```
 
 ---
 
-## 📁 Project Structure
+## 🔧 Tools Mặc Định
+
+| Tool | Chức năng |
+|------|-----------|
+| `web_search` | Tìm kiếm Google/DuckDuckGo |
+| `browser` | Điều khiển Chrome headless |
+| `database` | Query SQL (PostgreSQL, MySQL, SQLite) |
+| `file` | Đọc/ghi file |
+| `shell` | Chạy commands |
+| `http_request` | Gọi API |
+| `social_post` | Đăng Facebook, Telegram |
+| `zalo_tool` | Gửi Zalo, đọc tin nhắn |
+
+---
+
+## 📱 Use Cases Cụ Thể
+
+### 1. Chatbot Chăm Sóc Khách Hàng
 
 ```
-bizclaw/
-├── crates/
-│   ├── bizclaw-agent/      # AI Agent core
-│   ├── bizclaw-gateway/    # HTTP API
-│   ├── bizclaw-channels/   # Channel integrations
-│   ├── bizclaw-providers/  # AI provider adapters
-│   ├── bizclaw-tools/      # Tool registry
-│   ├── bizclaw-memory/     # Vector memory
-│   ├── bizclaw-security/   # Security layer
-│   ├── bizclaw-evaluator/  # LLM-as-Judge
-│   ├── bizclaw-redteam/    # Security testing
-│   └── bizclaw-hai/        # Conversation flows
-└── docs/                   # Documentation
+Khách hàng hỏi → BizClaw nhận → AI trả lời tự động
+                                    ↓
+                    Nếu cần tư vấn → Chuyển nhân viên
 ```
+
+### 2. Quản Lý Đơn Hàng Tự Động
+
+```
+Đơn mới từ SAPO/Haravan → BizClaw nhận
+                               ↓
+                    Kiểm tra tồn kho
+                               ↓
+                    Xác nhận với khách
+                               ↓
+                    Cập nhật trạng thái
+```
+
+### 3. Chạy Quảng Cáo Meta Ads
+
+```
+BizClaw Agent → Tạo campaign mới
+                    ↓
+              Tối ưu budget tự động
+                    ↓
+              Báo cáo hiệu quả hàng ngày
+```
+
+### 4. Báo Cáo Kinh Doanh
+
+```
+Agent → Query đơn hàng từ nhiều nền tảng
+              ↓
+        Tổng hợp doanh thu
+              ↓
+        Gửi báo cáo Telegram/Zalo cho老板
+```
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    BizClaw Gateway                       │
+│                    (HTTP/WebSocket)                    │
+├──────────────┬──────────────┬──────────────┬──────────┤
+│   Agent     │   Memory    │   Tools    │   Skills │
+│   Engine    │   Brain     │   Registry │   Hub    │
+├──────────────┴──────────────┴──────────────┴──────────┤
+│              Channel Adapters                          │
+├────────────┬────────────┬────────────┬───────────────┤
+│   Zalo     │  Telegram  │  Facebook  │  E-commerce │
+│            │            │            │   Platforms  │
+└────────────┴────────────┴────────────┴───────────────┘
+```
+
+---
+
+## 📁 Modules Chính
+
+| Crate | Mô tả |
+|-------|--------|
+| `bizclaw-agent` | AI Agent engine với tool calling |
+| `bizclaw-gateway` | HTTP API server |
+| `bizclaw-channels` | Zalo, Telegram, Discord adapters |
+| `bizclaw-ecommerce-vn` | SAPO, Haravan, KiotViet, PancakePOS |
+| `bizclaw-memory` | SQLite, Vector, Structured storage |
+| `bizclaw-mcp` | Model Context Protocol client |
+| `bizclaw-resilience` | Rate limiting, Circuit breaker |
+| `bizclaw-security` | Encryption, Vault, Sandboxing |
+
+---
+
+## 🔒 Security
+
+```toml
+[security]
+encryption_key = "auto"  # AES-256-GCM tự động
+prompt_injection_detection = true
+api_key_vault = "encrypted"
+
+[vault]
+backend = "file"  # hoặc "postgres"
+```
+
+---
+
+## 📈 Performance
+
+| Metric | Value |
+|--------|-------|
+| Response time | < 100ms |
+| Memory usage | ~50MB idle |
+| Concurrent users | Unlimited |
+| Token efficiency | Context compression tự động |
 
 ---
 
 ## 🤝 Contributing
 
 ```bash
-git checkout -b feature/my-feature
-git commit -m "feat: add feature"
-git push origin feature/my-feature
+# Fork & clone
+git clone https://github.com/YOUR_USER/bizclaw.git
+cd bizclaw
+
+# Tạo feature branch
+git checkout -b feature/your-feature
+
+# Develop
+cargo build --release
+
+# Test
+cargo test
+
+# Commit & push
+git add .
+git commit -m "feat: add awesome feature"
+git push origin feature/your-feature
 ```
+
+---
+
+## 📚 Tài Liệu
+
+- [Setup Guide](docs/SETUP_GUIDE.md)
+- [Architecture Overview](docs/ARCHITECTURE.md)
+- [SME Quickstart](docs/sme-quickstart.md)
+- [API Endpoints](docs/api/endpoints.md)
+
+---
+
+## 🆘 Support
+
+- 📖 Documentation: [bizclaw.cloud/docs](https://bizclaw.cloud/docs)
+- 💬 Issues: GitHub Issues
+- 📧 Email: support@bizclaw.cloud
 
 ---
 
 ## 📄 License
 
-MIT License
+MIT License - Tự do sử dụng cho mục đích thương mại.
 
 ---
 
-<p align="center">
-  Made with ❤️ in Vietnam
-</p>
+**Made with ❤️ for Vietnamese businesses**
