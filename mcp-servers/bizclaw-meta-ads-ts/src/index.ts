@@ -47,7 +47,7 @@ class MetaAdsMCPServer {
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name, arguments: args = {} } = request.params;
 
       try {
         switch (name) {
@@ -273,7 +273,7 @@ class MetaAdsMCPServer {
       content: [
         {
           type: "text",
-          text: `Ad Set created successfully!\n\nAd Set ID: ${adset.id}\nName: ${adset.name}\nOptimization Goal: ${adset.optimizationGoal}`,
+          text: `Ad Set created successfully!\n\nAd Set ID: ${adset.id}\nName: ${adset.name}\nOptimization Goal: ${adset.optimization_goal}`,
         },
       ],
     };
@@ -417,11 +417,13 @@ class MetaAdsMCPServer {
       privacyUrl,
     });
 
+    const formData = form as { id: string; name: string };
+
     return {
       content: [
         {
           type: "text",
-          text: `Lead Form created successfully!\n\nForm ID: ${form.id}\nName: ${form.name}`,
+          text: `Lead Form created successfully!\n\nForm ID: ${formData.id}\nName: ${formData.name}`,
         },
       ],
     };
