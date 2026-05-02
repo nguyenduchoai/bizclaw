@@ -16,7 +16,7 @@ uuid.workspace = true
 anyhow.workspace = true
 crossbeam-channel = "0.5"
 arboard = "3.6.1"
-active-win-pos-rs = "0.10.0"
+active-win-pos-rs = "0.10.1"
 
 # System monitoring (to be enabled lazily or via features)
 # active-win-pos-rs = "0.8"
