@@ -49,7 +49,6 @@ members = [
     "crates/bizclaw-khazix",
     "crates/bizclaw-ecommerce-vn",
     "crates/bizclaw-misa",
-    "crates/bizclaw-meta-ads",
 ]
 
 # ── Workspace-wide lint policy ──────────────────────────
