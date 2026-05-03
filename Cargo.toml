@@ -120,7 +120,7 @@ byteorder = "1"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 time = { version = "0.3", features = ["serde"] }
-rand = "0.8"
+rand = "0.9"
 dirs = "6"
 shellexpand = "3"
 hostname = "0.4"
