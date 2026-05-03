@@ -34,7 +34,7 @@ bizclaw-db.workspace = true
 bizclaw-security.workspace = true
 bizclaw-tools.workspace = true
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio-native-tls", "chrono", "uuid", "json"] }
-jsonwebtoken = "9"
+jsonwebtoken = "10"
 hex = "0.4"
 rand.workspace = true
 urlencoding.workspace = true
