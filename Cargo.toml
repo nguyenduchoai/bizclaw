@@ -126,7 +126,7 @@ shellexpand = "3"
 hostname = "0.4"
 whoami = "1"
 # WebSocket
-tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+tokio-tungstenite = { version = "0.28", features = ["native-tls"] }
 # HTTP server
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
