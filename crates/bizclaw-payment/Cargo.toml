@@ -19,7 +19,7 @@ tracing.workspace = true
 futures.workspace = true
 uuid.workspace = true
 chrono.workspace = true
-sha2 = "0.10"
+sha2 = "0.11"
 
 [features]
 default = []
