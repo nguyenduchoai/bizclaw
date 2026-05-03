@@ -1,0 +1,178 @@
+# ═══════════════════════════════════════════════════════════
+# BizClaw Quick Start Config
+# Copy file này vào ~/.bizclaw/config.toml rồi chỉnh sửa
+#
+# Hướng dẫn:
+# 1. Chọn 1 provider (bỏ comment dòng api_key)
+# 2. Paste API key vào
+# 3. Chạy: ./bizclaw serve
+# 4. Mở: http://localhost:3000
+# ═══════════════════════════════════════════════════════════
+
+# ▸ CHỌN 1 TRONG CÁC PROVIDER (bỏ comment 1 cặp)
+# ─────────────────────────────────────────────────────────
+
+# ── Option A: Ollama (MIỄN PHÍ, chạy local) ──
+# default_provider = "ollama"
+# default_model = "qwen3"
+
+# ── Option B: DeepSeek (rẻ nhất, $0.14/1M tokens) ──
+# default_provider = "deepseek"
+# default_model = "deepseek-chat"
+# api_key = "sk-..."
+
+# ── Option C: Gemini (free tier 60 req/phút) ──
+# default_provider = "gemini"
+# default_model = "gemini-2.5-flash"
+# api_key = "AIza..."
+
+# ── Option D: OpenAI ──
+default_provider = "openai"
+default_model = "gpt-4o-mini"
+# api_key = "sk-..."
+
+# ── Option E: Groq (free tier, siêu nhanh) ──
+# default_provider = "groq"
+# default_model = "llama-3.3-70b-versatile"
+# api_key = "gsk_..."
+
+default_temperature = 0.7
+
+# ═══════════════════════════════════════════════════════════
+# IDENTITY — Tên và tính cách AI
+# ═══════════════════════════════════════════════════════════
+[identity]
+name = "BizClaw"
+persona = "Trợ lý AI thông minh cho doanh nghiệp Việt Nam"
+system_prompt = """Bạn là BizClaw — trợ lý AI chuyên nghiệp.
+Luôn trả lời bằng tiếng Việt khi người dùng hỏi tiếng Việt.
+Xưng 'em', gọi 'anh/chị'. Ngắn gọn, rõ ràng, hữu ích.
+Khi không chắc chắn, hãy hỏi lại thay vì đoán."""
+
+# ═══════════════════════════════════════════════════════════
+# GATEWAY — Web Dashboard
+# ═══════════════════════════════════════════════════════════
+[gateway]
+port = 3000
+host = "127.0.0.1"   # Đổi thành "0.0.0.0" nếu muốn truy cập từ xa
+
+# ═══════════════════════════════════════════════════════════
+# SECURITY — Bảo mật
+# ═══════════════════════════════════════════════════════════
+[autonomy]
+level = "supervised"           # "autonomous" = tự do, "supervised" = cần duyệt
+workspace_only = true
+allowed_commands = ["git", "npm", "cargo", "ls", "cat", "grep", "python3", "node"]
+# approval_required_tools = ["shell", "http_request"]  # Bật nếu cần duyệt
+
+[secrets]
+encrypt = true
+
+# ═══════════════════════════════════════════════════════════
+# CHANNELS — Kết nối kênh (bỏ comment để bật)
+# ═══════════════════════════════════════════════════════════
+
+# ── Zalo (Personal Account) ──
+# [channel.zalo]
+# name = "Zalo Cá Nhân"
+# enabled = true
+# mode = "personal"
+# [channel.zalo.personal]
+# cookie_path = "~/.bizclaw/zalo/cookie.json"
+# self_listen = false
+# [channel.zalo.rate_limit]
+# max_messages_per_minute = 20
+# max_messages_per_hour = 200
+# [channel.zalo.allowlist]
+# block_strangers = true
+# user_ids = []   # Chỉ cho phép các ID này nhắn tin
+
+# ── Telegram ──
+# [[channel.telegram]]
+# name = "Bot Hỗ Trợ"
+# enabled = true
+# bot_token = "123456:ABC-DEF..."
+# allowed_chat_ids = []  # Để trống = cho phép tất cả
+
+# ── Discord ──
+# [[channel.discord]]
+# name = "Discord Bot"
+# enabled = true
+# bot_token = "..."
+# allowed_channel_ids = []
+
+# ── Email (IMAP/SMTP) ──
+# [[channel.email]]
+# enabled = true
+# imap_host = "imap.gmail.com"
+# imap_port = 993
+# smtp_host = "smtp.gmail.com"
+# smtp_port = 587
+# email = "your-email@gmail.com"
+# password = "app-password-16-chars"
+
+# ═══════════════════════════════════════════════════════════
+# MCP SERVERS — Mở rộng tools (thêm bao nhiêu cũng được)
+# Xem catalog đầy đủ: data/mcp-servers-catalog.json
+# ═══════════════════════════════════════════════════════════
+
+# ── Puppeteer: chụp web, scrape, fill form ──
+# [[mcp_servers]]
+# name = "puppeteer"
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-puppeteer"]
+
+# ── Brave Search: tìm kiếm web chất lượng ──
+# [[mcp_servers]]
+# name = "brave-search"
+# command = "npx"
+# args = ["-y", "@anthropic/mcp-server-brave-search"]
+# [mcp_servers.env]
+# BRAVE_API_KEY = "..."
+
+# ── GitHub: quản lý repos ──
+# [[mcp_servers]]
+# name = "github"
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-github"]
+# [mcp_servers.env]
+# GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_..."
+
+# ── Memory: bộ nhớ dài hạn ──
+# [[mcp_servers]]
+# name = "memory"
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-memory"]
+
+# ── Context7: docs thư viện mới nhất ──
+# [[mcp_servers]]
+# name = "context7"
+# command = "npx"
+# args = ["-y", "@context7/mcp"]
+
+# ═══════════════════════════════════════════════════════════
+# BRAIN ENGINE — Chạy AI offline (không cần API key)
+# ═══════════════════════════════════════════════════════════
+[brain]
+enabled = true
+model_path = "~/.bizclaw/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+threads = 4
+max_tokens = 512
+context_length = 2048
+auto_download = true
+
+# Dynamic Model Loading — Providers sẽ fetch models từ API
+[[brain.providers]]
+name = "minimax"  # Fetch models tự động từ MiniMax API
+
+[[brain.providers]]
+name = "deepseek"
+
+[[brain.providers]]
+name = "openai"
+
+[[brain.providers]]
+name = "anthropic"
+
+[[brain.providers]]
+name = "gemini"

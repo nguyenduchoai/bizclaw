@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="BizClaw Desktop"
+           Manufacturer="BizClaw Team"
+           Version="$(var.Version)"
+           UpgradeCode="8E7A5D3C-4F2B-1A9E-0B6D-7C8F3E2D1A0B">
+    <MajorUpgrade DowngradeErrorMessage="Phiên bản mới hơn đã được cài đặt." />
+    <Feature Id="Main">
+      <ComponentGroupRef Id="BinComponents" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="BizClaw">
+        <Component Id="MainExe" Guid="*">
+          <File Source="$(var.BinDir)\bizclaw-desktop.exe" KeyPath="yes" />
+        </Component>
+        <Component Id="PathEntry" Guid="*">
+          <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <ComponentGroup Id="BinComponents">
+      <ComponentRef Id="MainExe" />
+      <ComponentRef Id="PathEntry" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>

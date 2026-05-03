@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=BizClaw
+Comment=Fast, small, and fully autonomous AI assistant infrastructure
+Exec=bizclaw
+Icon=bizclaw
+Type=Application
+Categories=Utility;AI;
+Keywords=ai;assistant;cli;
+StartupWMClass=bizclaw

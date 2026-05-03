@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BizClaw</string>
+    <string name="accessibility_description">BizClaw AI Agent — điều khiển ứng dụng để tự động post Facebook, trả lời Messenger, nhắn Zalo, và các tác vụ khác. Agent AI có thể đọc và tương tác với giao diện các ứng dụng trên máy.</string>
+</resources>

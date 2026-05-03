@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BizClaw icon foreground: stylized "B" with claw accent -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Main B shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,25 L35,83 L56,83 C66,83 74,77 74,70 C74,64 70,59 64,57
+                          C69,55 72,51 72,45 C72,37 65,25 56,25 Z
+                          M46,35 L54,35 C59,35 62,38 62,43 C62,48 59,51 54,51 L46,51 Z
+                          M46,59 L56,59 C62,59 65,63 65,68 C65,73 62,76 56,76 L46,76 Z" />
+
+    <!-- Claw accent marks (3 stripes top-right) -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M70,28 L78,22" 
+        android:strokeWidth="2.5"
+        android:strokeColor="#00E5FF" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M74,35 L82,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#00E5FF" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M76,43 L84,39"
+        android:strokeWidth="2"
+        android:strokeColor="#00E5FF" />
+</vector>
