@@ -2,7 +2,47 @@
 
 > **Biến điện thoại thành AI Agent chạy 24/7 — không chỉ chat, mà điều khiển cả điện thoại.**
 > 
-> **v0.6.2**: SME Business Dashboard — Auto-reply, Multi-platform posting, Email aggregation, Group monitoring
+> **v1.1.7**: Mobile Mama Shell — chat giao việc, Mission queue, Stop Gate, Knowledge/RAG local, Email Assistant, kênh Gmail/Outlook/Zalo/Facebook và Bridge về BizClaw Desktop.
+
+## Hiện trạng v1.1.7
+
+App chính Android đã được làm lại theo cùng triết lý với Desktop: chủ doanh nghiệp chỉ giao việc qua chat, Mama tự phân luồng sang tri thức, email, kênh bán hàng, ticket vận hành và bridge về Desktop khi cần.
+
+### Module đang build được
+
+| Module | Trạng thái | APK debug |
+|--------|------------|-----------|
+| `:app` | Mobile app chính, chạy độc lập hoặc gắn Desktop | `~/.cache/bizclaw/android-build/app/outputs/apk/debug/app-debug.apk` |
+| `:companion` | Companion/bridge nhẹ cho Desktop | `~/.cache/bizclaw/android-build/companion/outputs/apk/debug/companion-debug.apk` |
+
+Do repo đang đặt trên ổ ngoài `/Volumes`, Gradle build output được chuyển về `~/.cache/bizclaw/android-build` để tránh macOS sinh file `._*` làm hỏng Android resource/class processing.
+
+### Luồng chính đã có
+
+- **Mama Chat**: nhận yêu cầu bằng tiếng Việt, tự phân vai nội bộ: bán hàng, CSKH, nội dung, vận hành, email.
+- **Local hoặc Desktop Mode**: Android xử lý local khi đi ngoài đường, hoặc gửi việc về Desktop/Gateway qua `/api/v1/mam-agents/chat`.
+- **Mission Queue**: mỗi yêu cầu tạo ticket có agent, ưu tiên, trạng thái, hành động tiếp theo và Stop Gate.
+- **Stop Gate**: câu hỏi giá, ship, bảo hành, cam kết nếu thiếu tri thức sẽ chuyển sang chờ duyệt thay vì trả lời bừa.
+- **Knowledge local**: nạp FAQ, bảng giá, chính sách, mô tả sản phẩm/dịch vụ ngay trên điện thoại để giảm ảo giác.
+- **Email Assistant**: AI Rules dạng ngôn ngữ tự nhiên, phân loại email, tạo draft, lưu email quan trọng vào tri thức.
+- **Kênh trình duyệt/app**: mở Gmail, Outlook, Zalo, Facebook app hoặc fallback web để người dùng duyệt/gửi bằng phiên đăng nhập thật.
+- **Bridge**: lưu Desktop URL/API key, ping health, sync ticket mới nhất về Desktop.
+
+### Lệnh build
+
+```bash
+cd android
+COPYFILE_DISABLE=1 \
+JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+ANDROID_HOME=/Users/digits/Library/Android/sdk \
+ANDROID_SDK_ROOT=/Users/digits/Library/Android/sdk \
+PATH=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin:/Users/digits/Library/Android/sdk/platform-tools:$PATH \
+./gradlew :app:assembleDebug :companion:assembleDebug --no-daemon --max-workers=1
+```
+
+## Ghi chú legacy
+
+Các phần bên dưới là tài liệu/ý tưởng prototype cũ v0.6.x. Source cũ vẫn còn trong repo để tham khảo, nhưng app chính hiện chỉ compile source set `src/main/mobile/java` để tránh kéo theo các màn prototype chưa hoàn thiện.
 
 ## 🏗️ Kiến trúc
 

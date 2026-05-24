@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "BizClaw"
 include(":app")
+include(":companion")

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">BizClaw Companion</string>
+    <string name="accessibility_description">Cho phép BizClaw Companion đọc màn hình để tạo ticket và hỗ trợ thao tác theo yêu cầu đã duyệt.</string>
+</resources>

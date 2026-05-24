@@ -5,6 +5,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+val bizClawAndroidBuildRoot = System.getenv("BIZCLAW_ANDROID_BUILD_ROOT")
+    ?: "${System.getProperty("user.home")}/.cache/bizclaw/android-build"
+layout.buildDirectory.set(file("$bizClawAndroidBuildRoot/app"))
+
 android {
     namespace = "vn.bizclaw.app"
     compileSdk = 35
@@ -19,34 +23,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // BizClaw server defaults
-        buildConfigField("String", "DEFAULT_SERVER_URL", "\"http://localhost:3001\"")
+        buildConfigField("String", "DEFAULT_SERVER_URL", "\"http://10.0.2.2:3001\"")
         buildConfigField("String", "APP_VERSION", "\"1.1.7\"")
 
-        // NDK — only ARM64 (primary) + x86_64 (emulator)
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-    }
-
-    // llama.cpp engine build via CMake (on-device LLM inference)
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-
-    defaultConfig {
-        externalNativeBuild {
-            cmake {
-                arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
-                arguments += "-DCMAKE_BUILD_TYPE=Release"
-                arguments += "-DBUILD_SHARED_LIBS=ON"
-                arguments += "-DLLAMA_BUILD_COMMON=ON"
-                arguments += "-DLLAMA_CURL=OFF"
-                arguments += "-DGGML_LLAMAFILE=OFF"
-            }
-        }
     }
 
     signingConfigs {
@@ -82,6 +61,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.setSrcDirs(listOf("src/main/mobile/java"))
+        }
     }
 }
 
@@ -129,6 +114,9 @@ dependencies {
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // WebKit for WebView enhancements (ProxyController, WebViewFeature)
+    implementation("androidx.webkit:webkit:1.12.1")
+
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
@@ -139,4 +127,31 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
+}
+
+tasks.configureEach {
+    val clearsAppleDouble =
+        name.contains("resource", ignoreCase = true) ||
+        name.contains("manifest", ignoreCase = true) ||
+        name.contains("kotlin", ignoreCase = true) ||
+        name.contains("javac", ignoreCase = true) ||
+        name.contains("dex", ignoreCase = true)
+    if (clearsAppleDouble) {
+        doFirst {
+            delete(fileTree(layout.buildDirectory) {
+                include("**/._*")
+            })
+            delete(fileTree("src") {
+                include("**/._*")
+            })
+        }
+        doLast {
+            delete(fileTree(layout.buildDirectory) {
+                include("**/._*")
+            })
+            delete(fileTree("src") {
+                include("**/._*")
+            })
+        }
+    }
 }

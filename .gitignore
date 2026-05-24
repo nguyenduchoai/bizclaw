@@ -1,0 +1,31 @@
+# Build outputs
+app/build/
+build/
+.gradle/
+local.properties
+
+# Signing — NEVER commit keystores
+*.jks
+*.keystore
+keystore.properties
+
+# CMake build cache
+app/.cxx/
+
+# IDE
+.idea/
+*.iml
+
+# Keep the debug APK for distribution
+!app/build/
+app/build/*
+!app/build/outputs/
+app/build/outputs/*
+!app/build/outputs/apk/
+app/build/outputs/apk/*
+!app/build/outputs/apk/debug/
+app/build/outputs/apk/debug/*
+!app/build/outputs/apk/debug/app-debug.apk
+!app/build/outputs/apk/release/
+app/build/outputs/apk/release/*
+!app/build/outputs/apk/release/app-release.apk
