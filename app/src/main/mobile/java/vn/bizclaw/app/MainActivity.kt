@@ -1,13 +1,17 @@
 package vn.bizclaw.app
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +46,7 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -77,6 +82,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
@@ -122,6 +128,7 @@ private enum class MobileTab(
     Chat("Mama", Icons.Default.Chat),
     Mission("Việc", Icons.Default.Assignment),
     Channels("Kênh", Icons.Default.Email),
+    Translate("Phiên dịch", Icons.Default.Translate),
     Knowledge("Tri thức", Icons.Default.MenuBook),
     Bridge("Bridge", Icons.Default.PhoneAndroid),
 }
@@ -177,6 +184,7 @@ private data class EmailThread(
 private class MobileMamaState(private val context: Context) {
     private val prefs = context.getSharedPreferences("bizclaw_mobile", Context.MODE_PRIVATE)
     private val client = DesktopMamaClient()
+    val translator = TranslationController(context)
 
     val messages = mutableStateListOf<ChatItem>()
     val tickets = mutableStateListOf<MobileTicket>()
@@ -357,6 +365,29 @@ private class MobileMamaState(private val context: Context) {
             emailThreads[index] = thread.copy(knowledgeSaved = true, status = "knowledge_saved")
             persistEmailThreads()
         }
+    }
+
+    fun saveTranslationKnowledge() {
+        val transcript = translator.transcriptMarkdown()
+        if (transcript.isBlank()) {
+            notice = "Chưa có transcript để lưu tri thức."
+            return
+        }
+        addKnowledge(
+            name = "phien-dich-${System.currentTimeMillis()}.md",
+            content = transcript,
+            source = "android_translation",
+        )
+        val ticket = routeLocal("Tóm tắt và khai thác phiên dịch:\n$transcript", "android_translation").copy(
+            title = "Phiên dịch ${translator.provider.label} → ${translator.targetLanguage}",
+            agent = "mama",
+            status = "planned",
+            approvalRequired = false,
+            nextAction = "Dùng transcript để tạo tóm tắt, follow-up, FAQ hoặc bổ sung RAG.",
+            reply = "Đã lưu transcript phiên dịch vào tri thức local. Mama có thể dùng nội dung này để tóm tắt, tạo việc và phản hồi khách chính xác hơn.",
+        )
+        appendTicket(ticket)
+        notice = "Đã lưu phiên dịch vào Knowledge và Mission."
     }
 
     fun markTicket(ticket: MobileTicket, status: String) {
@@ -775,6 +806,7 @@ private fun BizClawMobileApp(state: MobileMamaState) {
                 MobileTab.Chat -> ChatTab(state, scope)
                 MobileTab.Mission -> MissionTab(state)
                 MobileTab.Channels -> ChannelsTab(state)
+                MobileTab.Translate -> TranslationTab(state)
                 MobileTab.Knowledge -> KnowledgeTab(state)
                 MobileTab.Bridge -> BridgeTab(state, scope)
             }
@@ -1043,6 +1075,149 @@ private fun EmailThreadCard(thread: EmailThread, state: MobileMamaState) {
                 OutlinedButton(onClick = { state.openPackage("com.google.android.gm", "https://mail.google.com/") }) {
                     Text("Mở Gmail")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TranslationTab(state: MobileMamaState) {
+    val translator = state.translator
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) translator.start() else translator.permissionDenied()
+    }
+
+    fun startWithPermission() {
+        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            translator.start()
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            MetricGrid(
+                listOf(
+                    "Trạng thái" to translator.status.label,
+                    "Đoạn dịch" to translator.rows.size.toString(),
+                    "Provider" to translator.provider.label,
+                    "Target" to translator.targetLanguage,
+                )
+            )
+        }
+        item {
+            SectionCard("Phiên dịch realtime") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TranslationProvider.entries.forEach { item ->
+                        FilterChip(
+                            selected = translator.provider == item,
+                            onClick = {
+                                if (!translator.isRunning) {
+                                    translator.provider = item
+                                    translator.saveSettings()
+                                }
+                            },
+                            label = { Text(item.label) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = translator.targetLanguage,
+                    onValueChange = {
+                        translator.targetLanguage = it.trim().ifBlank { "vi" }
+                        translator.saveSettings()
+                    },
+                    label = { Text("Ngôn ngữ đích") },
+                    placeholder = { Text("vi, en, ja, ko...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !translator.isRunning,
+                )
+                OutlinedTextField(
+                    value = translator.activeKey(),
+                    onValueChange = {
+                        translator.updateActiveKey(it)
+                        translator.saveSettings()
+                    },
+                    label = { Text("${translator.provider.label} API key") },
+                    placeholder = { Text("Dán key của nhà cung cấp") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !translator.isRunning,
+                    visualTransformation = PasswordVisualTransformation(),
+                )
+                translator.errorMessage?.let { message ->
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFF5D6C).copy(alpha = 0.14f)) {
+                        Text(message, modifier = Modifier.padding(12.dp), color = Color(0xFFFF9CA5))
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { if (translator.isRunning) translator.stop() else startWithPermission() },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(if (translator.isRunning) "Dừng" else "Bắt đầu nghe")
+                    }
+                    OutlinedButton(
+                        onClick = { translator.clear() },
+                        enabled = !translator.isRunning && translator.rows.isNotEmpty(),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Xóa")
+                    }
+                }
+                OutlinedButton(
+                    onClick = { state.saveTranslationKnowledge() },
+                    enabled = translator.rows.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Lưu transcript vào Knowledge")
+                }
+            }
+        }
+        if (translator.sourceProvisional.isNotBlank() || translator.targetProvisional.isNotBlank()) {
+            item {
+                TranslationLineCard(
+                    source = translator.sourceProvisional,
+                    translation = translator.targetProvisional,
+                    status = "live",
+                )
+            }
+        }
+        items(translator.rows, key = { it.id }) { row ->
+            TranslationLineCard(
+                source = row.source,
+                translation = row.translation,
+                status = row.provider.label,
+            )
+        }
+        if (translator.rows.isEmpty() && translator.sourceProvisional.isBlank() && translator.targetProvisional.isBlank()) {
+            item { EmptyCard("Chưa có transcript. Bấm Bắt đầu nghe để Mama phiên dịch realtime và lưu kết quả vào tri thức.") }
+        }
+    }
+}
+
+@Composable
+private fun TranslationLineCard(source: String, translation: String, status: String) {
+    ElevatedCard {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Phiên dịch", modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                StatusPill(status)
+            }
+            if (source.isNotBlank()) {
+                Text("Gốc", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                Text(source, style = MaterialTheme.typography.bodyMedium)
+            }
+            if (translation.isNotBlank()) {
+                Text("Dịch", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                Text(translation, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
         }
     }

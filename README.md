@@ -24,6 +24,7 @@ App chính Android đã được làm lại theo cùng triết lý với Desktop
 - **Knowledge local**: nạp FAQ, bảng giá, chính sách, mô tả sản phẩm/dịch vụ ngay trên điện thoại để giảm ảo giác.
 - **Email Assistant**: AI Rules dạng ngôn ngữ tự nhiên, phân loại email, tạo draft, lưu email quan trọng vào tri thức.
 - **Kênh trình duyệt/app**: mở Gmail, Outlook, Zalo, Facebook app hoặc fallback web để người dùng duyệt/gửi bằng phiên đăng nhập thật.
+- **Phiên dịch realtime**: nghe microphone, dịch trực tiếp qua Soniox/OpenAI/Qwen, lưu transcript vào Knowledge để Mama dùng lại.
 - **Bridge**: lưu Desktop URL/API key, ping health, sync ticket mới nhất về Desktop.
 
 ## 🏗️ Kiến trúc
