@@ -8,14 +8,12 @@
 
 App chính Android đã được làm lại theo cùng triết lý với Desktop: chủ doanh nghiệp chỉ giao việc qua chat, Mama tự phân luồng sang tri thức, email, kênh bán hàng, ticket vận hành và bridge về Desktop khi cần.
 
-### Module đang build được
+### Thành phần chính
 
-| Module | Trạng thái | APK debug |
-|--------|------------|-----------|
-| `:app` | Mobile app chính, chạy độc lập hoặc gắn Desktop | `~/.cache/bizclaw/android-build/app/outputs/apk/debug/app-debug.apk` |
-| `:companion` | Companion/bridge nhẹ cho Desktop | `~/.cache/bizclaw/android-build/companion/outputs/apk/debug/companion-debug.apk` |
-
-Do repo đang đặt trên ổ ngoài `/Volumes`, Gradle build output được chuyển về `~/.cache/bizclaw/android-build` để tránh macOS sinh file `._*` làm hỏng Android resource/class processing.
+| Module | Vai trò | Trạng thái |
+|--------|---------|------------|
+| `:app` | Mobile app chính, chạy độc lập hoặc gắn Desktop | Build được |
+| `:companion` | Companion/bridge nhẹ cho Desktop | Build được |
 
 ### Luồng chính đã có
 
@@ -27,22 +25,6 @@ Do repo đang đặt trên ổ ngoài `/Volumes`, Gradle build output được c
 - **Email Assistant**: AI Rules dạng ngôn ngữ tự nhiên, phân loại email, tạo draft, lưu email quan trọng vào tri thức.
 - **Kênh trình duyệt/app**: mở Gmail, Outlook, Zalo, Facebook app hoặc fallback web để người dùng duyệt/gửi bằng phiên đăng nhập thật.
 - **Bridge**: lưu Desktop URL/API key, ping health, sync ticket mới nhất về Desktop.
-
-### Lệnh build
-
-```bash
-cd android
-COPYFILE_DISABLE=1 \
-JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
-ANDROID_HOME=/Users/digits/Library/Android/sdk \
-ANDROID_SDK_ROOT=/Users/digits/Library/Android/sdk \
-PATH=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin:/Users/digits/Library/Android/sdk/platform-tools:$PATH \
-./gradlew :app:assembleDebug :companion:assembleDebug --no-daemon --max-workers=1
-```
-
-## Ghi chú legacy
-
-Các phần bên dưới là tài liệu/ý tưởng prototype cũ v0.6.x. Source cũ vẫn còn trong repo để tham khảo, nhưng app chính hiện chỉ compile source set `src/main/mobile/java` để tránh kéo theo các màn prototype chưa hoàn thiện.
 
 ## 🏗️ Kiến trúc
 
