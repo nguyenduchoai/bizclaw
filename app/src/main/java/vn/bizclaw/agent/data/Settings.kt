@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import vn.bizclaw.agent.llm.ModelVariant
+import vn.bizclaw.agent.llm.ProviderKind
 
 private const val PREFS = "bizclaw_settings"
 
@@ -26,6 +27,11 @@ class Settings(context: Context) {
     // Default to the largest variant this phone can actually hold rather than a fixed
     // one: a 16 GB flagship should not be handed the small model, and a 4 GB phone
     // would be killed by the large one.
+    private var providerState by mutableStateOf(
+        runCatching { ProviderKind.valueOf(prefs.getString(KEY_PROVIDER, "") ?: "") }
+            .getOrDefault(ProviderKind.GEMMA),
+    )
+
     private var modelVariantState by mutableStateOf(
         prefs.getString(KEY_MODEL, null)
             ?.let(ModelVariant::from)
@@ -61,6 +67,14 @@ class Settings(context: Context) {
             prefs.edit().putString(KEY_PERSONA, value).apply()
         }
 
+    /** Which model answers customers. Cloud providers send message text off-device. */
+    var provider: ProviderKind
+        get() = providerState
+        set(value) {
+            providerState = value
+            prefs.edit().putString(KEY_PROVIDER, value.name).apply()
+        }
+
     var modelVariant: ModelVariant
         get() = modelVariantState
         set(value) {
@@ -74,6 +88,7 @@ class Settings(context: Context) {
         const val KEY_BUSINESS = "business_name"
         const val KEY_PERSONA = "persona"
         const val KEY_MODEL = "model_variant"
+        const val KEY_PROVIDER = "provider"
 
         const val DEFAULT_PERSONA =
             "Nhân viên chăm sóc khách hàng, xưng \"em\", gọi khách là \"anh/chị\". " +

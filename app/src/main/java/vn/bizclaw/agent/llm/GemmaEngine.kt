@@ -11,6 +11,7 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.ResponseFormat
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -91,22 +92,36 @@ object GemmaEngine {
      *
      * Each reply is stateless on purpose: a shared conversation would let one customer's
      * chat leak into the next customer's answer.
+     *
+     * @param jsonSchema when set, decoding is constrained so the output parses as JSON
+     *   matching the schema. Used for order extraction, where a malformed answer would
+     *   silently drop a sale.
      */
-    suspend fun generate(prompt: String): Result<String> = lock.withLock {
-        val active = engine ?: return Result.failure(IllegalStateException("Engine chưa sẵn sàng"))
-        withContext(Dispatchers.Default) {
-            runCatching {
-                val config = ConversationConfig(
-                    // Low temperature: this is customer service, not creative writing —
-                    // we want the same answer to the same question every time.
-                    samplerConfig = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.3),
-                )
-                active.createConversation(config).use { conversation ->
-                    conversation.sendMessage(prompt).textOrEmpty()
+    suspend fun generate(prompt: String, jsonSchema: String? = null): Result<String> =
+        lock.withLock {
+            val active =
+                engine ?: return Result.failure(IllegalStateException("Engine chưa sẵn sàng"))
+            withContext(Dispatchers.Default) {
+                runCatching {
+                    val config = ConversationConfig(
+                        // Low temperature: this is customer service, not creative writing
+                        // — the same question should get the same answer every time.
+                        samplerConfig = SamplerConfig(topK = 20, topP = 0.9, temperature = 0.3),
+                    )
+                    active.createConversation(config).use { conversation ->
+                        val message = if (jsonSchema == null) {
+                            conversation.sendMessage(prompt)
+                        } else {
+                            conversation.sendMessage(
+                                prompt,
+                                responseFormat = ResponseFormat.json(jsonSchema),
+                            )
+                        }
+                        message.textOrEmpty()
+                    }
                 }
             }
         }
-    }
 
     /** Flattens a reply into plain text; non-text parts are irrelevant for chat replies. */
     private fun Message.textOrEmpty(): String =

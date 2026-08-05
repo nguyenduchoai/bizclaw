@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Icon
@@ -34,11 +36,15 @@ import vn.bizclaw.agent.ui.BizClawTheme
 import vn.bizclaw.agent.ui.HomeScreen
 import vn.bizclaw.agent.ui.InboxScreen
 import vn.bizclaw.agent.ui.KnowledgeScreen
+import vn.bizclaw.agent.ui.OrdersScreen
+import vn.bizclaw.agent.ui.ProviderScreen
 
 private enum class Tab(val title: String, val icon: ImageVector) {
     Home("Trạng thái", Icons.Default.Speed),
     Inbox("Hộp thư", Icons.Default.Inbox),
+    Orders("Đơn hàng", Icons.Default.ReceiptLong),
     Knowledge("Cửa hàng", Icons.Default.MenuBook),
+    Model("Model", Icons.Default.Memory),
 }
 
 class MainActivity : ComponentActivity() {
@@ -91,7 +97,9 @@ private fun BizClawShell(app: BizClawApp) {
             when (tab) {
                 Tab.Home -> HomeScreen(app)
                 Tab.Inbox -> InboxScreen(app)
+                Tab.Orders -> OrdersScreen(app)
                 Tab.Knowledge -> KnowledgeScreen(app)
+                Tab.Model -> ProviderScreen(app)
             }
         }
     }

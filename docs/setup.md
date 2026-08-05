@@ -55,6 +55,25 @@ Rồi truyền vào lúc build:
 5. Nhờ người khác nhắn thử vào Zalo/Messenger → xem draft ở tab **Hộp thư** → bấm **Gửi**.
 6. Khi thấy chất lượng ổn định mới bật **Tự gửi không cần duyệt**.
 
+## Dùng Claude / OpenAI thay cho Gemma
+
+Tab **Model** → chọn Claude hoặc OpenAI → dán API key.
+
+| | Lấy key ở | Model mặc định |
+|---|---|---|
+| Claude | console.anthropic.com | `claude-opus-5` (rẻ hơn: `claude-sonnet-5`, `claude-haiku-4-5`) |
+| OpenAI | platform.openai.com | gõ tay tên model có trong tài khoản |
+
+Bật cloud thì agent gọi tool được: tự tra giá, tra chính sách, tạo đơn. Đổi lại nội dung tin nhắn khách đi lên cloud của nhà cung cấp và tính phí theo token. Chưa nhập key thì app tự chạy tạm bằng Gemma.
+
+## Bật tự nhắn tin trước (Accessibility)
+
+Tab **Model** → **Bật quyền Accessibility** → chọn "BizClaw — tự nhắn tin".
+
+Sau đó ở tab **Đơn hàng**, đơn nào đến hạn hỏi thăm sẽ có nút **Nhắn ngay**: app soạn tin bằng model đang chọn, mở Zalo/Messenger, tìm khách và gửi.
+
+Chỉ chạy khi anh bấm nút. Nếu Zalo đổi giao diện thì app dừng và báo đúng bước hỏng, anh gửi tay.
+
 ## Giới hạn cần biết
 
 - Agent trả lời qua **nút trả lời nhanh của thông báo** (cùng cơ chế đồng hồ thông minh dùng). Nếu anh đã mở app chat và đọc tin đó thì thông báo biến mất → không gửi trực tiếp được nữa, tab Hộp thư sẽ báo "Hết hạn".

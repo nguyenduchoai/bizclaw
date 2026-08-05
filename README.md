@@ -1,15 +1,15 @@
 # BizClaw Agent
 
-> Trả lời tin nhắn Zalo/Messenger bằng AI chạy **hoàn toàn trên điện thoại**.
-> Không server, không API key, không gửi tin nhắn khách ra ngoài.
+> Trả lời tin nhắn Zalo/Messenger, tư vấn, báo giá và **chốt đơn** bằng AI.
+> Chạy on-device miễn phí, hoặc gắn API key Claude/OpenAI khi cần model mạnh.
 
-**v2.0.0** · Android 12+ · Gemma 4 qua LiteRT-LM
+**v2.1.0** · Android 12+ · Gemma 4 on-device, hoặc Claude / OpenAI qua API key
 
 ---
 
 ## Nó làm gì
 
-Khách nhắn tin → app đọc thông báo → Gemma 4 soạn câu trả lời dựa trên thông tin cửa hàng anh đã nạp → gửi lại vào đúng cuộc trò chuyện đó.
+Khách nhắn tin → app đọc thông báo → model soạn câu trả lời dựa trên bảng giá và chính sách anh đã nạp → gửi lại vào đúng cuộc trò chuyện đó. Khách chốt đơn thì agent bóc tách thành đơn hàng chờ anh duyệt.
 
 ```
 Khách nhắn Zalo/Messenger
@@ -18,25 +18,59 @@ Khách nhắn Zalo/Messenger
 MessageListenerService ──── đọc tên người gửi + nội dung từ thông báo
         │
         ▼
-ReplyAgent ──── ghép prompt: giọng điệu + tài liệu cửa hàng khớp câu hỏi
+ReplyAgent ──── chọn model theo cài đặt
+        │
+        ├─ Claude / OpenAI ──► agent gọi tool:
+        │                      tra_cuu_san_pham · tra_cuu_chinh_sach · tao_don_hang
+        │
+        └─ Gemma on-device ──► nhét sẵn bảng giá + chính sách vào prompt,
+                               bóc tách đơn bằng constrained JSON
         │
         ▼
-GemmaEngine ──── Gemma 4 chạy on-device (GPU, fallback CPU)
-        │
-        ├─► thiếu dữ liệu ──► chờ anh duyệt (luôn luôn)
-        └─► đủ dữ liệu ────► gửi thẳng hoặc chờ duyệt, tuỳ cài đặt
+        ├─► thiếu dữ liệu / có đơn ──► chờ anh duyệt (luôn luôn)
+        └─► đủ dữ liệu ─────────────► gửi thẳng hoặc chờ duyệt, tuỳ cài đặt
         │
         ▼
 ReplySender ──── bắn vào ô trả lời nhanh của thông báo
 ```
 
-## Vì sao đi qua thông báo, không dùng Accessibility
+## Chọn model
 
-Trả lời qua **RemoteInput của thông báo** — đúng cơ chế đồng hồ thông minh dùng để nhắn tin. Đây là API công khai, ổn định: Zalo và Messenger đổi giao diện liên tục nhưng nút trả lời nhanh đó buộc phải giữ nguyên.
+| | Gemma 4 (trên máy) | Claude / OpenAI |
+|---|---|---|
+| Tin nhắn khách | Không rời khỏi điện thoại | Gửi lên cloud của nhà cung cấp |
+| Chi phí | Miễn phí | Trả theo token |
+| Tool calling | ❌ (4B gọi tool không đủ tin cậy) | ✅ |
+| Chốt đơn | Bóc tách JSON 2 lượt | Agent tự gọi `tao_don_hang` |
+| Cần mạng | Không | Có |
 
-Accessibility thì đọc được cả màn hình, nhưng vỡ mỗi lần app chat cập nhật giao diện, tốn pin, và cần màn hình sáng.
+Đổi ở tab **Model**. Chọn cloud mà chưa nhập key thì app tự chạy tạm bằng Gemma chứ không đứng im.
 
-**Đổi lại, có 3 giới hạn thật:**
+## Tool calling
+
+Với Claude/OpenAI, mọi con số agent nói ra đều phải đi qua tool — app trả số, model chỉ quyết định lúc nào cần hỏi:
+
+| Tool | Làm gì |
+|---|---|
+| `tra_cuu_san_pham` | Giá + tồn kho từ bảng giá |
+| `tra_cuu_chinh_sach` | Phí ship, bảo hành, đổi trả từ tài liệu cửa hàng |
+| `tao_don_hang` | Tạo đơn nháp — chỉ khi đủ tên, sđt, địa chỉ, sản phẩm |
+
+Schema đều bật `strict` + `additionalProperties: false`, và có unit test chặn schema sai ngay lúc build. Tool báo "không có dữ liệu" thì agent bắt buộc chuyển việc cho chủ shop chứ không được đoán.
+
+## Chủ động nhắn trước
+
+Trả lời qua thông báo chỉ chạy được **khi khách nhắn trước**. Để hỏi thăm sau bán, app dùng Accessibility mở Zalo/Messenger, tìm khách, gõ tin và gửi.
+
+Chỉ chạy khi anh bấm **Nhắn ngay** ở tab Đơn hàng — agent không tự ý nhắn ai. Cách này bám vào giao diện Zalo/Messenger nên có thể hỏng khi hai app đó cập nhật; hỏng thì app báo đúng bước lỗi ("không tìm thấy ô tìm kiếm") để anh gửi tay.
+
+## Vì sao trả lời đi qua thông báo
+
+Đường **trả lời** dùng RemoteInput của thông báo — đúng cơ chế đồng hồ thông minh dùng để nhắn tin. Đây là API công khai, ổn định: Zalo và Messenger đổi giao diện liên tục nhưng nút trả lời nhanh đó buộc phải giữ nguyên.
+
+Accessibility chỉ dùng cho đường **chủ động nhắn trước** ở trên, vì đó là việc thông báo không làm được. Nó vỡ mỗi lần app chat cập nhật giao diện, nên không dùng cho luồng trả lời hàng ngày.
+
+**Đổi lại, đường trả lời có 3 giới hạn thật:**
 
 | Giới hạn | Hệ quả |
 |---|---|
@@ -46,18 +80,19 @@ Accessibility thì đọc được cả màn hình, nhưng vỡ mỗi lần app 
 
 ## Chống bịa
 
-Gemma 4 E4B không có dữ liệu sẽ **bịa giá, bịa phí ship, bịa chính sách bảo hành** — và câu đó bay thẳng tới khách đang trả tiền.
+Model nào cũng sẽ **bịa giá, bịa phí ship, bịa chính sách bảo hành** nếu không có dữ liệu — và câu đó bay thẳng tới khách đang trả tiền.
 
 Nên agent bị ràng buộc:
 
-1. Chỉ được dùng tài liệu trong tab **Cửa hàng**, và chỉ những tài liệu khớp câu hỏi mới được đưa vào prompt.
+1. Chỉ được dùng bảng giá và tài liệu trong tab **Cửa hàng**. Cloud thì bắt buộc gọi tool để lấy; on-device thì chỉ tài liệu khớp câu hỏi mới vào prompt.
 2. Thiếu dữ liệu → bắt buộc trả lời "để em kiểm tra rồi báo lại" và **tự chuyển sang chờ duyệt**, kể cả khi đã bật tự gửi.
-3. Cấm hứa giảm giá, hoàn tiền, đền bù ngoài tài liệu.
-4. `temperature = 0.3` — cùng câu hỏi cho cùng câu trả lời.
+3. Đơn hàng nào cũng là bản nháp, luôn chờ anh xác nhận. Xác nhận rồi mới trừ tồn kho.
+4. Cấm hứa giảm giá, hoàn tiền, đền bù ngoài tài liệu.
+5. Sản phẩm hết hàng thì phải nói thật là hết, không nhận đơn.
 
 Chưa nạp tài liệu nào thì agent gần như luôn chuyển việc lại cho anh. Đó là chủ ý.
 
-## Model
+## Model on-device
 
 | | Gemma 4 E2B | Gemma 4 E4B |
 |---|---|---|
@@ -77,20 +112,23 @@ Tóm tắt: tải model → cấp quyền đọc thông báo → nạp thông ti
 
 ```
 app/src/main/java/vn/bizclaw/agent/
-├── llm/          GemmaEngine · ModelCatalog · ModelDownloader
-├── messaging/    MessageListenerService · ReplySender · SupportedApps
-├── agent/        ReplyAgent · PromptBuilder · AgentService · BootReceiver
-├── data/         Settings · ExchangeStore · KnowledgeStore · Models
-└── ui/           HomeScreen · InboxScreen · KnowledgeScreen · Common
+├── llm/          LlmProvider · AnthropicProvider · OpenAiProvider · OnDeviceProvider
+│                 ProviderRegistry · ApiKeyStore · GemmaEngine · ModelDownloader
+├── messaging/    MessageListenerService · ReplySender · ChatAutomationService
+│                 ProactiveSender · SupportedApps
+├── agent/        ReplyAgent · AgentTools · PromptBuilder · OrderExtractor
+│                 AgentService · FollowUpWorker · BootReceiver
+├── data/         Settings · Catalog · OrderStore · KnowledgeStore · ExchangeStore
+└── ui/           Home · Inbox · Orders · Knowledge · Provider · Common
 ```
 
 | | |
 |---|---|
 | Ngôn ngữ | Kotlin 2.2, Jetpack Compose, Material 3 |
-| Inference | LiteRT-LM 0.15.0 (`com.google.ai.edge.litertlm`) |
-| Lưu trữ | SharedPreferences + kotlinx.serialization |
+| Inference | LiteRT-LM 0.15.0 on-device · Anthropic Messages API · OpenAI Chat Completions |
+| Lưu trữ | SharedPreferences + kotlinx.serialization; API key mã hoá (EncryptedSharedPreferences) |
 | Min SDK | 31 (Android 12) · Target 35 · arm64-v8a |
-| Kích thước | debug ~77 MB · release ~24 MB |
+| Kích thước | debug ~88 MB · release ~24 MB |
 | Quyền | 7, không có `QUERY_ALL_PACKAGES` |
 
 ## Trạng thái
@@ -99,7 +137,7 @@ app/src/main/java/vn/bizclaw/agent/
 
 - `./gradlew :app:assembleDebug` ✅
 - `./gradlew :app:assembleRelease` ✅ (24.4 MB, keystore truyền lúc build, không nằm trong repo)
-- `./gradlew :app:testDebugUnitTest` ✅ 5/5
+- `./gradlew :app:testDebugUnitTest` ✅ 20/20
 - Chữ ký API LiteRT-LM đối chiếu trực tiếp với AAR 0.15.0
 
 **Chưa kiểm chứng — cần máy thật:**
@@ -108,10 +146,14 @@ app/src/main/java/vn/bizclaw/agent/
 - Zalo bản hiện tại có nút trả lời nhanh trong thông báo hay không (Messenger thì có)
 - Chất lượng tiếng Việt của E4B cho chăm sóc khách hàng
 - Tốc độ và mức tốn pin khi chạy cả ngày
+- Tool calling thật với Claude/OpenAI (schema đã test, đường mạng thì chưa)
+- Accessibility có bám đúng giao diện Zalo/Messenger bản hiện tại không
 
 ## Riêng tư
 
-Tin nhắn khách không rời khỏi máy. Model chạy local, không có backend, không telemetry. Thứ duy nhất đi ra Internet là lần tải model từ Hugging Face.
+Ở chế độ **Gemma on-device**: tin nhắn khách không rời khỏi máy, không backend, không telemetry — thứ duy nhất đi ra Internet là lần tải model.
+
+Ở chế độ **Claude/OpenAI**: nội dung tin nhắn khách được gửi tới nhà cung cấp đó. Đây là đánh đổi có ý thức để lấy tool calling và chất lượng cao hơn — app nói rõ điều này ngay trên màn hình chọn model. API key lưu mã hoá và không bao giờ đi vào prompt.
 
 ## Không phân phối qua Play Store
 

@@ -76,6 +76,7 @@ class MessageListenerService : NotificationListenerService() {
                 receivedAt = sbn.postTime,
             )
             app.exchanges.add(outcome.exchange)
+            outcome.orders.forEach(app.orders::add)
 
             if (!outcome.safeToAutoSend) return@launch
 

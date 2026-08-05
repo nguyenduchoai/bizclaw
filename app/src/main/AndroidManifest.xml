@@ -51,6 +51,23 @@
             </intent-filter>
         </service>
 
+        <!--
+          Drives the chat apps' UI to start conversations nobody messaged us first.
+          Only runs when the owner explicitly triggers a send.
+        -->
+        <service
+            android:name=".messaging.ChatAutomationService"
+            android:exported="true"
+            android:label="@string/automation_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/chat_automation_config" />
+        </service>
+
         <!-- Holds the loaded Gemma engine so inference survives the UI being closed. -->
         <service
             android:name=".agent.AgentService"

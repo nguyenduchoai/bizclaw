@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import vn.bizclaw.agent.BizClawApp
 
@@ -30,12 +32,97 @@ import vn.bizclaw.agent.BizClawApp
 fun KnowledgeScreen(app: BizClawApp) {
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
+    var productName by remember { mutableStateOf("") }
+    var productPrice by remember { mutableStateOf("") }
+    var productStock by remember { mutableStateOf("") }
+    var productNote by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item {
+            SectionCard("Bảng giá") {
+                Text(
+                    "Agent báo giá và tính tiền đơn hàng từ đúng bảng này. " +
+                        "Sản phẩm hết hàng thì nó nói thật là hết chứ không nhận đơn.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = productName,
+                    onValueChange = { productName = it },
+                    label = { Text("Tên sản phẩm") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = productPrice,
+                        onValueChange = { productPrice = it.filter(Char::isDigit) },
+                        label = { Text("Giá (₫)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                    OutlinedTextField(
+                        value = productStock,
+                        onValueChange = { productStock = it.filter(Char::isDigit) },
+                        label = { Text("Tồn kho") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                }
+                OutlinedTextField(
+                    value = productNote,
+                    onValueChange = { productNote = it },
+                    label = { Text("Ghi chú (size, màu, chất liệu...)") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = {
+                        app.products.save(
+                            name = productName,
+                            price = productPrice.toLongOrNull() ?: 0L,
+                            stock = productStock.toIntOrNull() ?: 0,
+                            note = productNote,
+                        )
+                        productName = ""
+                        productPrice = ""
+                        productStock = ""
+                        productNote = ""
+                    },
+                    enabled = productName.isNotBlank() && productPrice.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Thêm sản phẩm") }
+            }
+        }
+
+        items(app.products.products, key = { it.id }) { product ->
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(product.name, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                        StatusPill(
+                            if (product.inStock) "còn ${product.stock}" else "hết hàng",
+                            if (product.inStock) Ok else Bad,
+                        )
+                    }
+                    Text(product.priceLabel, style = MaterialTheme.typography.bodyMedium)
+                    if (product.note.isNotBlank()) {
+                        Text(
+                            product.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    OutlinedButton(onClick = { app.products.delete(product.id) }) { Text("Xoá") }
+                }
+            }
+        }
+
         item {
             SectionCard("Thông tin cửa hàng") {
                 Text(

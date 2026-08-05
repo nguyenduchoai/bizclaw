@@ -72,6 +72,15 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
+    // Daily post-sale follow-up sweep.
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+
+    // Cloud providers (Claude, OpenAI) speak raw HTTP; no vendor SDK on Android.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // API keys at rest.
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // On-device Gemma 4 (LiteRT-LM). MediaPipe LLM Inference is maintenance-only.
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.15.0")
 

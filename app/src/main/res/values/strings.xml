@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BizClaw Agent</string>
+    <string name="automation_label">BizClaw — tự nhắn tin</string>
+    <string name="automation_description">Cho phép BizClaw mở Zalo/Messenger và gửi tin nhắn chăm sóc khách sau bán. Chỉ chạy khi anh bấm nút gửi trong app.</string>
 </resources>
