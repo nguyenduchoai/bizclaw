@@ -1,325 +1,127 @@
-# 📱 BizClaw Android — AI Agent Platform
+# BizClaw Agent
 
-> **Biến điện thoại thành AI Agent chạy 24/7 — không chỉ chat, mà điều khiển cả điện thoại.**
-> 
-> **v1.1.7**: Mobile Mama Shell — chat giao việc, Mission queue, Stop Gate, Knowledge/RAG local, Email Assistant, kênh Gmail/Outlook/Zalo/Facebook và Bridge về BizClaw Desktop.
+> Trả lời tin nhắn Zalo/Messenger bằng AI chạy **hoàn toàn trên điện thoại**.
+> Không server, không API key, không gửi tin nhắn khách ra ngoài.
 
-## Hiện trạng v1.1.7
-
-App chính Android đã được làm lại theo cùng triết lý với Desktop: chủ doanh nghiệp chỉ giao việc qua chat, Mama tự phân luồng sang tri thức, email, kênh bán hàng, ticket vận hành và bridge về Desktop khi cần.
-
-### Thành phần chính
-
-| Module | Vai trò | Trạng thái |
-|--------|---------|------------|
-| `:app` | Mobile app chính, chạy độc lập hoặc gắn Desktop | Build được |
-| `:companion` | Companion/bridge nhẹ cho Desktop | Build được |
-
-### Luồng chính đã có
-
-- **Mama Chat**: nhận yêu cầu bằng tiếng Việt, tự phân vai nội bộ: bán hàng, CSKH, nội dung, vận hành, email.
-- **Local hoặc Desktop Mode**: Android xử lý local khi đi ngoài đường, hoặc gửi việc về Desktop/Gateway qua `/api/v1/mam-agents/chat`.
-- **Mission Queue**: mỗi yêu cầu tạo ticket có agent, ưu tiên, trạng thái, hành động tiếp theo và Stop Gate.
-- **Stop Gate**: câu hỏi giá, ship, bảo hành, cam kết nếu thiếu tri thức sẽ chuyển sang chờ duyệt thay vì trả lời bừa.
-- **Knowledge local**: nạp FAQ, bảng giá, chính sách, mô tả sản phẩm/dịch vụ ngay trên điện thoại để giảm ảo giác.
-- **Email Assistant**: AI Rules dạng ngôn ngữ tự nhiên, phân loại email, tạo draft, lưu email quan trọng vào tri thức.
-- **Kênh trình duyệt/app**: mở Gmail, Outlook, Zalo, Facebook app hoặc fallback web để người dùng duyệt/gửi bằng phiên đăng nhập thật.
-- **Phiên dịch realtime**: nghe microphone, dịch trực tiếp qua Soniox/OpenAI/Qwen, lưu transcript vào Knowledge để Mama dùng lại.
-- **Bridge**: lưu Desktop URL/API key, ping health, sync ticket mới nhất về Desktop.
-
-## 🏗️ Kiến trúc
-
-```
-┌─────────────────────────────────────────────────────┐
-│  BizClaw Android App (Kotlin/Compose)                │
-│                                                      │
-│  ┌────────────────────────────────────────────┐      │
-│  │  UI Layer (Material 3 + Jetpack Compose)   │      │
-│  │  ChatScreen → AgentsScreen → Dashboard     │      │
-│  │  SettingsScreen → DashboardScreen          │      │
-│  └──────────────────┬─────────────────────────┘      │
-│                     │                                │
-│  ┌──────────────────┴─────────────────────────┐      │
-│  │  Service Layer                              │      │
-│  │  ├─ BizClawDaemonService (Foreground 24/7)  │      │
-│  │  ├─ BizClawAccessibilityService (App ctrl)  │      │
-│  │  ├─ AppController (Facebook/Messenger/Zalo) │      │
-│  │  ├─ DeviceCapabilities (Battery/GPS/Net)    │      │
-│  │  └─ BootReceiver (Auto-start on reboot)     │      │
-│  └──────────────────┬─────────────────────────┘      │
-│                     │ JNI/UniFFI                     │
-│  ┌──────────────────┴─────────────────────────┐      │
-│  │  bizclaw-ffi.so (Rust Native Library)       │      │
-│  │  7 FFI functions, 2-thread Tokio runtime    │      │
-│  │  <30MB RAM, arm64-v8a                       │      │
-│  └────────────────────────────────────────────┘      │
-└─────────────────────────────────────────────────────┘
-```
-
-## ⚡ Tính năng
-
-### 🤖 Embedded Rust Engine
-- Rust engine chạy trực tiếp trên phone (không cần server)
-- Foreground Service với `START_STICKY` — auto-restart khi bị kill
-- WakeLock giữ CPU hoạt động, agent chạy 24/7
-- Auto-start sau reboot (BootReceiver)
-
-### 📱 Device Tools
-Agent có thể truy cập phần cứng phone:
-
-| Tool | Mô tả |
-|------|--------|
-| `device.battery` | Level, charging, temperature |
-| `device.storage` | Free/used space |
-| `device.network` | WiFi/Cellular, SSID, online status |
-| `device.location` | GPS coordinates |
-| `device.cpu` | Cores, available RAM |
-| `device.notification` | Push notification |
-| `device.vibrate` | Rung điện thoại |
-| `device.clipboard` | Copy text |
-| `device.flashlight` | Bật/tắt đèn flash |
-| `device.open_url` | Mở URL trên browser |
-
-### ♿ Accessibility Service — Điều khiển App
-**Agent có thể điều khiển BẤT KỲ app nào trên điện thoại:**
-
-| Action | API | Mô tả |
-|--------|-----|--------|
-| `readScreen()` | Đọc | Lấy tất cả text, button, input trên màn hình |
-| `clickByText(text)` | Click | Chạm element bất kỳ theo text |
-| `typeText(text)` | Gõ | Nhập text vào input field |
-| `typeIntoField(hint, text)` | Gõ | Nhập text vào field theo hint/placeholder |
-| `tapAt(x, y)` | Chạm | Chạm tọa độ cụ thể |
-| `swipe(...)` | Vuốt | Scroll, pull-to-refresh |
-| `pressBack()` | Navigation | Phím Back |
-| `pressHome()` | Navigation | Phím Home |
-| `scrollDown()` | Scroll | Cuộn xuống |
-| `pressEnter()` | Submit | Gửi tin nhắn / submit |
-
-### 🛡️ Smart Agent Features (v0.5.0)
-
-**Stuck Detection (5 modes):**
-
-| Stuck Type | Trigger | Recovery |
-|------------|---------|----------|
-| Screen Frozen | Màn hình không đổi 3 rounds | Thử scroll, đổi approach |
-| Action Loop | Lặp cùng action 3+ lần | Dừng lại, tìm element khác |
-| Navigation Drift | Spam back/home/scroll | Interact trực tiếp |
-| Repeated Failures | 3 failures liên tiếp | Đọc screen trước |
-| Repetition Cycle | A-B-A-B pattern | Phá vỡi cycle hoàn toàn |
-
-**Vision Fallback:**
-Khi AccessibilityService không đọc được (WebView, Flutter, Game):
-```
-Accessibility tree empty? → Screenshot → Vision LLM → UI elements + tọa độ
-```
-
-**⚡ Flow Runner (No-LLM Macros):**
-Chuỗi hành động chạy instant, $0 cost:
-- `cross_post` — Đăng bài lên Facebook + Zalo + Instagram cùng lúc
-- `broadcast` — Gửi tin nhắn cho nhiều người (Zalo/Messenger/Telegram)
-- `sales_post` — Đăng bán hàng + gửi cho danh sách khách
-- Custom flows — Tự tạo và lưu trữ
-
-**🔗 Workflow Engine (Multi-App Chain):**
-Kết hợp LLM + macro chạy nhiều app tự động:
-```
-Step 1: [🤖 Agent] Shopee → "Check đơn hàng mới"
-Step 2: [⚡ Flow] Zalo → Báo cáo cho Boss
-Step 3: [⚡ Flow] Cross-post lên 3 nền tảng
-```
-
-**📊 Screen Diff:**
-Chỉ gửi *thay đổi* cho LLM, tiết kiệm ~80% token:
-```
-Round N vs N+1: +2 new, -1 removed, 15 unchanged
-→ Gửi 3 elements thay vì 17 → tiết kiệm 120 tokens
-```
-
-| Tool | Mô tả |
-|------|--------|
-| `screen_read_smart()` | Accessibility first, vision fallback |
-| `screen_read_diff()` | Chỉ gửi thay đổi, giảm token |
-| `screen_capture()` | Screenshot → Vision AI |
-| `flow_run()` | Chạy macro instant |
-| `flow_list()` | Xem danh sách flows |
-
-### ⚡ Pre-parsed Commands (v0.6.0)
-Local commands chạy **không cần LLM**, tức thì, $0 cost:
-
-| Command | Mô tả |
-|---------|-------|
-| `/status` | Xem session stats, context utilization |
-| `/compact` | Trigger context compaction (80% threshold) |
-| `/help` | Danh sách commands |
-| `/clear` | Xóa conversation history |
-| `/model` | Xem model info |
-| `/tools` | Danh sách tools |
-| `/health` | Check system health |
-
-### 🔄 Session Compaction (v0.6.0)
-Auto-compact khi context > 80%:
-- Giữ 10 messages gần nhất
-- Summarize older messages bằng LLM
-- Off-load full transcript ra file
-- Free ~60% context window
-
-### 📝 Feedback Collection (v0.6.0)
-Self-learning từ user feedback:
-- Thumbs up/down sau mỗi response
-- Track helpfulness score per agent
-- Generate optimization prompts từ failed interactions
-- Sync với gateway để train model
-
-### 🎙️ Meeting Assistant (v0.6.1)
-AI-powered meeting recording và transcription:
-
-| Feature | Mô tả |
-|---------|--------|
-| 🎤 Audio Recording | One-tap record với timer + waveform animation |
-| 📝 Transcription | Whisper API, Google STT, hoặc Ollama local |
-| 🤖 AI Recap | Tạo recap từ transcript thực tế |
-| ✅ Action Items | Trích xuất task, assignee, deadline, priority |
-| 📅 Calendar | Tích hợp calendar, tạo reminder từ action items |
-| 📱 Auto-send | Gửi recap qua Zalo/Email tự động |
-
-**Supported STT Providers:**
-- OpenAI Whisper API (recommended)
-- Google Speech-to-Text
-- Local Ollama + Whisper
-
-### 💬 Smart Auto-Reply (v0.6.2)
-AI-powered auto-reply cho Zalo/Chat:
-
-| Feature | Mô tả |
-|---------|--------|
-| AI Responses | LLM-generated contextual replies |
-| Template Responses | Canned responses cho FAQ |
-| Sentiment Detection | Phát hiện khách hàng khó tính |
-| Escalation | Chuyển chat phức tạp cho agent |
-| Rate Limiting | Tránh spam response |
-
-### 📧 Email Aggregation (v0.6.2)
-Multi-account email với digest:
-
-| Feature | Mô tả |
-|---------|--------|
-| Gmail/Outlook/OAuth | OAuth2 integration |
-| Smart Grouping | Thread detection, topic clustering |
-| Priority Filtering | Urgent, VIP, Promotions |
-| Digest Template | Daily/Weekly summary |
-
-### 📱 Multi-Platform Posting (v0.6.2)
-Unified Post Manager cho:
-
-| Platform | Status |
-|----------|--------|
-| Facebook Page/Group | ✅ |
-| Zalo OA | ✅ |
-| Instagram | ✅ |
-| LinkedIn | ✅ |
-| TikTok | 🔜 |
-| Custom Webhook | ✅ |
-
-### 📊 Unified Dashboard (v0.6.2)
-Tổng hợp metrics từ tất cả services:
-
-- **Zalo Metrics**: Chats, auto-reply, CSAT
-- **Email Metrics**: Unread, urgent, pending
-- **Social Metrics**: Posts, reach, engagement
-- **Action Items**: Tasks từ meetings, escalations
-- **Alerts**: Priority notifications
-- **Health Score**: 0-100% system health
-
-### 📘 App Workflows
-
-**Facebook:**
-```
-Agent → openApp("com.facebook.katana")
-     → clickByText("Bạn đang nghĩ gì")
-     → typeText("Nội dung bài viết")
-     → clickByText("Đăng")
-```
-
-**Messenger:**
-```
-Agent → openApp("com.facebook.orca")
-     → clickByText("Tên người nhận")
-     → typeIntoField("Aa", "Nội dung tin nhắn")
-     → clickByText("Gửi")
-```
-
-**Zalo:**
-```
-Agent → openApp("com.zing.zalo")
-     → clickByText("Tên liên hệ")
-     → typeIntoField("Nhắn tin", "Nội dung")
-     → pressEnter()
-```
-
-## 🛠️ Setup
-
-### Build
-```bash
-# Cần Android Studio + SDK 35
-cd android
-./gradlew assembleDebug
-```
-
-### Bật Accessibility Service
-```
-Settings → Accessibility → BizClaw Agent → Enable ✅
-```
-
-### Bật Daemon Service
-```
-Mở app → Dashboard → Nhấn "Khởi động Agent"
-```
-
-## 📦 Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Language | Kotlin 2.1, Rust |
-| UI | Jetpack Compose, Material 3, Material You |
-| Architecture | MVVM, Foreground Service, Accessibility Service |
-| Native | bizclaw-ffi (cdylib via JNI/UniFFI) |
-| Network | OkHttp 4.12, SSE streaming |
-| Security | EncryptedSharedPreferences |
-| Serialization | kotlinx.serialization |
-| Min SDK | 26 (Android 8.0) |
-| Target SDK | 35 (Android 15) |
-
-## 📊 Android Stats
-
-| Metric | Value |
-|--------|-------|
-| Kotlin files | 22 |
-| Lines of Code | 5,400+ |
-| Screens | 4 (Chat, Agents, Settings, Dashboard) |
-| Services | 2 (Daemon, Accessibility) |
-| Permissions | 12 |
-| FFI functions | 7 |
-| Device tools | 10 |
-| Agent tools | 24 |
-| Flow actions | 24 |
-| Stuck detection modes | 5 |
-| Vision providers | 3 (Gemini, OpenAI, Ollama) |
-| Supported apps | Facebook, Messenger, Zalo, any app |
-
-## ⚠️ OEM Battery Killer
-
-App tự phát hiện hãng phone và cảnh báo:
-
-| Hãng | Hướng dẫn |
-|------|-----------|
-| Xiaomi/Redmi | Bật AutoStart + tắt Battery Optimization |
-| Samsung | Thêm vào 'Unmonitored apps' |
-| OPPO/Realme | Bật AutoStart + Allow background activity |
-| Vivo | Allow AutoStart + High background power |
-| Huawei/Honor | Tắt 'Manage automatically' |
-| OnePlus | Tắt Battery Optimization |
+**v2.0.0** · Android 12+ · Gemma 4 qua LiteRT-LM
 
 ---
 
-**BizClaw Android** v0.5.0 — *Phone = AI Agent Server — Smart Automation Platform*
+## Nó làm gì
+
+Khách nhắn tin → app đọc thông báo → Gemma 4 soạn câu trả lời dựa trên thông tin cửa hàng anh đã nạp → gửi lại vào đúng cuộc trò chuyện đó.
+
+```
+Khách nhắn Zalo/Messenger
+        │
+        ▼
+MessageListenerService ──── đọc tên người gửi + nội dung từ thông báo
+        │
+        ▼
+ReplyAgent ──── ghép prompt: giọng điệu + tài liệu cửa hàng khớp câu hỏi
+        │
+        ▼
+GemmaEngine ──── Gemma 4 chạy on-device (GPU, fallback CPU)
+        │
+        ├─► thiếu dữ liệu ──► chờ anh duyệt (luôn luôn)
+        └─► đủ dữ liệu ────► gửi thẳng hoặc chờ duyệt, tuỳ cài đặt
+        │
+        ▼
+ReplySender ──── bắn vào ô trả lời nhanh của thông báo
+```
+
+## Vì sao đi qua thông báo, không dùng Accessibility
+
+Trả lời qua **RemoteInput của thông báo** — đúng cơ chế đồng hồ thông minh dùng để nhắn tin. Đây là API công khai, ổn định: Zalo và Messenger đổi giao diện liên tục nhưng nút trả lời nhanh đó buộc phải giữ nguyên.
+
+Accessibility thì đọc được cả màn hình, nhưng vỡ mỗi lần app chat cập nhật giao diện, tốn pin, và cần màn hình sáng.
+
+**Đổi lại, có 3 giới hạn thật:**
+
+| Giới hạn | Hệ quả |
+|---|---|
+| Chỉ thấy tin **có sinh thông báo** | Tắt thông báo Zalo là agent mù |
+| Thông báo bị đóng thì hết trả lời được | Anh mở app đọc trước → tab Hộp thư báo "Hết hạn" |
+| Không đọc được lịch sử chat | Mỗi tin nhắn xử lý độc lập, không nhớ ngữ cảnh trước đó |
+
+## Chống bịa
+
+Gemma 4 E4B không có dữ liệu sẽ **bịa giá, bịa phí ship, bịa chính sách bảo hành** — và câu đó bay thẳng tới khách đang trả tiền.
+
+Nên agent bị ràng buộc:
+
+1. Chỉ được dùng tài liệu trong tab **Cửa hàng**, và chỉ những tài liệu khớp câu hỏi mới được đưa vào prompt.
+2. Thiếu dữ liệu → bắt buộc trả lời "để em kiểm tra rồi báo lại" và **tự chuyển sang chờ duyệt**, kể cả khi đã bật tự gửi.
+3. Cấm hứa giảm giá, hoàn tiền, đền bù ngoài tài liệu.
+4. `temperature = 0.3` — cùng câu hỏi cho cùng câu trả lời.
+
+Chưa nạp tài liệu nào thì agent gần như luôn chuyển việc lại cho anh. Đó là chủ ý.
+
+## Model
+
+| | Gemma 4 E2B | Gemma 4 E4B |
+|---|---|---|
+| Tải về | 2.58 GB | 3.65 GB |
+| RAM đỉnh | ~1.7 GB | ~3.3 GB |
+| Máy phù hợp | RAM ≥ 4 GB | RAM ≥ 6 GB |
+
+App tự chọn bản lớn nhất mà máy chịu được, đổi tay được ở tab Trạng thái. Model tải bằng DownloadManager nên tắt màn hình vẫn chạy, rớt Wi-Fi thì tự nối lại.
+
+## Cài đặt
+
+Xem [docs/setup.md](docs/setup.md) — build, ký APK, các bước bật trên máy.
+
+Tóm tắt: tải model → cấp quyền đọc thông báo → nạp thông tin cửa hàng → bật agent → duyệt vài chục tin đầu → khi nào yên tâm mới bật tự gửi.
+
+## Cấu trúc
+
+```
+app/src/main/java/vn/bizclaw/agent/
+├── llm/          GemmaEngine · ModelCatalog · ModelDownloader
+├── messaging/    MessageListenerService · ReplySender · SupportedApps
+├── agent/        ReplyAgent · PromptBuilder · AgentService · BootReceiver
+├── data/         Settings · ExchangeStore · KnowledgeStore · Models
+└── ui/           HomeScreen · InboxScreen · KnowledgeScreen · Common
+```
+
+| | |
+|---|---|
+| Ngôn ngữ | Kotlin 2.2, Jetpack Compose, Material 3 |
+| Inference | LiteRT-LM 0.15.0 (`com.google.ai.edge.litertlm`) |
+| Lưu trữ | SharedPreferences + kotlinx.serialization |
+| Min SDK | 31 (Android 12) · Target 35 · arm64-v8a |
+| Kích thước | debug ~77 MB · release ~24 MB |
+| Quyền | 7, không có `QUERY_ALL_PACKAGES` |
+
+## Trạng thái
+
+**Đã kiểm chứng:**
+
+- `./gradlew :app:assembleDebug` ✅
+- `./gradlew :app:assembleRelease` ✅ (24.4 MB, keystore truyền lúc build, không nằm trong repo)
+- `./gradlew :app:testDebugUnitTest` ✅ 5/5
+- Chữ ký API LiteRT-LM đối chiếu trực tiếp với AAR 0.15.0
+
+**Chưa kiểm chứng — cần máy thật:**
+
+- Gemma 4 nạp và sinh chữ trên thiết bị
+- Zalo bản hiện tại có nút trả lời nhanh trong thông báo hay không (Messenger thì có)
+- Chất lượng tiếng Việt của E4B cho chăm sóc khách hàng
+- Tốc độ và mức tốn pin khi chạy cả ngày
+
+## Riêng tư
+
+Tin nhắn khách không rời khỏi máy. Model chạy local, không có backend, không telemetry. Thứ duy nhất đi ra Internet là lần tải model từ Hugging Face.
+
+## Không phân phối qua Play Store
+
+App đọc nội dung thông báo của app khác — Google Play sẽ không duyệt cho mục đích này. Đây là app sideload, cài bằng APK.
+
+---
+
+## Nguồn
+
+- [LiteRT-LM Android — Google AI Edge](https://ai.google.dev/edge/litert-lm/android)
+- [LiteRT-LM Kotlin API](https://github.com/google-ai-edge/LiteRT-LM/blob/main/docs/api/kotlin/getting_started.md)
+- [litert-community/gemma-4-E4B-it-litert-lm](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm)
+- [Gemma 4 trên LiteRT-LM](https://developers.google.com/edge/litert-lm/models/gemma-4)

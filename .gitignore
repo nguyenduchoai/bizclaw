@@ -1,7 +1,7 @@
 # Build outputs
-app/build/
 build/
 .gradle/
+.kotlin/
 local.properties
 
 # Signing — NEVER commit keystores
@@ -9,23 +9,15 @@ local.properties
 *.keystore
 keystore.properties
 
-# CMake build cache
-app/.cxx/
+# Models are downloaded at runtime, never committed
+*.litertlm
+*.task
+*.gguf
 
 # IDE
 .idea/
 *.iml
 
-# Keep the debug APK for distribution
-!app/build/
-app/build/*
-!app/build/outputs/
-app/build/outputs/*
-!app/build/outputs/apk/
-app/build/outputs/apk/*
-!app/build/outputs/apk/debug/
-app/build/outputs/apk/debug/*
-!app/build/outputs/apk/debug/app-debug.apk
-!app/build/outputs/apk/release/
-app/build/outputs/apk/release/*
-!app/build/outputs/apk/release/app-release.apk
+# macOS
+.DS_Store
+._*
